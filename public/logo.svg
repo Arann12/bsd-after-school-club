@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 240" fill="none">
+  <!-- Butterfly Antennae & Head -->
+  <path d="M142 58 C138 42 130 32 126 30" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round"/>
+  <circle cx="126" cy="30" r="3.5" fill="#f59e0b" />
+  <path d="M158 58 C162 42 170 32 174 30" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round"/>
+  <circle cx="174" cy="30" r="3.5" fill="#f59e0b" />
+  <circle cx="150" cy="54" r="5" fill="#f59e0b" />
+
+  <!-- Butterfly Body (Golden Yellow) -->
+  <path d="M150 63 C145 78 144 98 147 114 C148 118 152 118 153 114 C156 98 155 78 150 63 Z" fill="#f59e0b"/>
+  <circle cx="150" cy="120" r="3.5" fill="#f59e0b" />
+
+  <!-- Left Book Wing (Outer & Inner Layer) -->
+  <!-- Outer left wing -->
+  <path d="M142 70 C125 58 100 50 82 56 C79 57 76 60 76 64 L67 118 C66 122 68 126 72 127 C90 132 118 136 142 126" 
+        stroke="#1a5c8a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Inner left page lines -->
+  <path d="M140 82 C124 72 104 68 88 72 L81 114 C98 118 122 122 140 114" 
+        stroke="#1a5c8a" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M72 127 C94 116 118 118 142 126" 
+        stroke="#1a5c8a" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- Right Book Wing (Outer & Inner Layer) -->
+  <!-- Outer right wing -->
+  <path d="M158 70 C175 58 200 50 218 56 C221 57 224 60 224 64 L233 118 C234 122 232 126 228 127 C210 132 182 136 158 126" 
+        stroke="#1a5c8a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Inner right page lines -->
+  <path d="M160 82 C176 72 196 68 212 72 L219 114 C202 118 178 122 160 114" 
+        stroke="#1a5c8a" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M228 127 C206 116 182 118 158 126" 
+        stroke="#1a5c8a" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- Lower Book Base Fold Line -->
+  <path d="M142 126 L150 122 L158 126" stroke="#1a5c8a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- Brand Typography -->
+  <text x="150" y="172" font-family="'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="22" font-weight="800" fill="#1a5c8a" text-anchor="middle" letter-spacing="-0.5">BSD After School Club</text>
+  <text x="150" y="196" font-family="'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="11.5" font-weight="600" fill="#2d6a8e" text-anchor="middle" letter-spacing="0.2">Calistung – Phonics – English – Mathematics</text>
+</svg>

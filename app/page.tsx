@@ -2,10 +2,12 @@
 
 import { useState, FormEvent } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 type TabType = "login" | "daftar";
 
 export default function AuthPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>("login");
   const [loginData, setLoginData] = useState({ username: "", password: "" });
   const [registerData, setRegisterData] = useState({
@@ -16,14 +18,14 @@ export default function AuthPage() {
 
   const handleLoginSubmit = (e: FormEvent) => {
     e.preventDefault();
-    // Front-end only — logic akan ditambahkan nanti
     console.log("Login:", loginData);
+    router.push("/owner/dashboard");
   };
 
   const handleRegisterSubmit = (e: FormEvent) => {
     e.preventDefault();
-    // Front-end only — logic akan ditambahkan nanti
     console.log("Register:", registerData);
+    setActiveTab("login");
   };
 
   return (
