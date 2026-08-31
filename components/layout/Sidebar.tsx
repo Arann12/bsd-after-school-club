@@ -290,6 +290,7 @@ export const orangTuaNav: NavSection[] = [
     section: "",
     items: [
       { label: "Beranda", href: "/orang-tua/dashboard", icon: "Dashboard" },
+      { label: "Anak Saya", href: "/orang-tua/anak", icon: "Users" },
       { label: "Jadwal", href: "/orang-tua/jadwal", icon: "Calendar" },
       { label: "Absensi", href: "/orang-tua/absensi", icon: "ClipboardCheck" },
       { label: "Kegiatan", href: "/orang-tua/kegiatan", icon: "Activity" },
