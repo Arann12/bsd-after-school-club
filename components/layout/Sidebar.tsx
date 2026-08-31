@@ -209,9 +209,9 @@ export const ownerNav: NavSection[] = [
   {
     section: "FINANCE",
     items: [
-      { label: "Tagihan / Invoice", href: "/orang-tua/pembayaran", icon: "Invoice" },
-      { label: "Pembayaran", href: "/orang-tua/pembayaran", icon: "CreditCard" },
-      { label: "Verifikasi Cash", href: "/orang-tua/pembayaran", icon: "CheckCircle" },
+      { label: "Tagihan / Invoice", href: "#", icon: "Invoice" },
+      { label: "Pembayaran", href: "#", icon: "CreditCard" },
+      { label: "Verifikasi Cash", href: "#", icon: "CheckCircle" },
       { label: "Honor Guru/Staff", href: "/owner/honor", icon: "DollarSign" },
     ],
   },
@@ -227,7 +227,7 @@ export const ownerNav: NavSection[] = [
     items: [
       { label: "Laporan Siswa", href: "/owner/laporan/siswa", icon: "BarChart2" },
       { label: "Laporan Kehadiran", href: "/owner/laporan/kehadiran", icon: "ClipboardCheck" },
-      { label: "Laporan Keuangan", href: "/orang-tua/pembayaran", icon: "BarChart2" },
+      { label: "Laporan Keuangan", href: "#", icon: "BarChart2" },
       { label: "Laporan Akhir & Sertifikat", href: "/owner/laporan/akhir", icon: "Award" },
       { label: "Laporan Inventaris", href: "/owner/laporan/inventaris", icon: "FileText" },
     ],
@@ -268,9 +268,9 @@ export const adminNav: NavSection[] = [
   {
     section: "FINANCE",
     items: [
-      { label: "Tagihan / Invoice", href: "/orang-tua/pembayaran", icon: "Invoice" },
-      { label: "Pembayaran", href: "/orang-tua/pembayaran", icon: "CreditCard" },
-      { label: "Verifikasi Cash", href: "/orang-tua/pembayaran", icon: "CheckCircle" },
+      { label: "Tagihan / Invoice", href: "#", icon: "Invoice" },
+      { label: "Pembayaran", href: "#", icon: "CreditCard" },
+      { label: "Verifikasi Cash", href: "#", icon: "CheckCircle" },
     ],
   },
   {
@@ -293,7 +293,7 @@ export const orangTuaNav: NavSection[] = [
       { label: "Jadwal", href: "/orang-tua/jadwal", icon: "Calendar" },
       { label: "Absensi", href: "/orang-tua/absensi", icon: "ClipboardCheck" },
       { label: "Kegiatan", href: "/orang-tua/kegiatan", icon: "Activity" },
-      { label: "Pembayaran", href: "/orang-tua/pembayaran", icon: "CreditCard" },
+      { label: "Pembayaran", href: "#", icon: "CreditCard" },
       { label: "Laporan", href: "/orang-tua/laporan", icon: "Lock", locked: true },
     ],
   },

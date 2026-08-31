@@ -35,7 +35,7 @@ export default function OrangTuaDashboardPage() {
         </div>
         <div>
           <Link
-            href="/orang-tua/pembayaran"
+            href="#"
             className="btn btn-accent"
             style={{
               padding: "10px 22px",
