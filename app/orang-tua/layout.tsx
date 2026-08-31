@@ -1,13 +1,16 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import { OrangTuaSidebar } from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Panel Orang Tua — BSD After School Club",
-  description: "Portal monitoring dan pembayaran orang tua BSD After School Club",
-};
 
 export default function OrangTuaLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  if (pathname?.endsWith("/login")) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="app-shell">
       <OrangTuaSidebar />

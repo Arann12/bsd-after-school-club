@@ -86,7 +86,10 @@ export default function Header({
                     fontSize: 12,
                   }}
                 >
-                  👦
+                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
                 </div>
                 <div style={{ textAlign: "left" }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)", lineHeight: 1.1 }}>
@@ -147,7 +150,10 @@ export default function Header({
                         background: currentChild === ch.name ? "var(--color-primary-bg)" : "#ffffff",
                       }}
                     >
-                      <span style={{ fontSize: 14 }}>👦</span>
+                      <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
                       <div>
                         <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--color-text-primary)" }}>
                           {ch.name}

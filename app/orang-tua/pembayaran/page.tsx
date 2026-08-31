@@ -81,7 +81,10 @@ export default function OrangTuaPembayaranPage() {
               Anak yang Dipilih:
             </span>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 14 }}>👦</span>
+              <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
               <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)" }}>
                 Merta
               </span>
@@ -421,7 +424,7 @@ export default function OrangTuaPembayaranPage() {
               }}
               onClick={() => handleOpenPayment("pertemuan")}
             >
-              💳 Bayar Pertemuan (Rp 100k)
+              Bayar Pertemuan (Rp 100k)
             </button>
           </div>
 
@@ -440,7 +443,7 @@ export default function OrangTuaPembayaranPage() {
           >
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 16, fontWeight: 800, color: "#ffffff" }}>
-                <span style={{ color: "#fbbf24" }}>✪</span> Lunasi Sisa Paket
+                Lunasi Sisa Paket
               </div>
               <p style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", marginTop: 4 }}>
                 Bayar semua sisa pertemuan di paket ini sekaligus.
@@ -516,7 +519,7 @@ export default function OrangTuaPembayaranPage() {
             }}
             onClick={() => alert("Mengunduh laporan pembayaran PDF...")}
           >
-            Unduh Laporan 📥
+            Unduh Laporan
           </button>
         </div>
         <div className="card-body" style={{ paddingTop: 0, overflowX: "auto" }}>
@@ -574,11 +577,11 @@ export default function OrangTuaPembayaranPage() {
                   <td>
                     {row.isPending ? (
                       <span className="badge badge-warning" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                        ⏳ {row.status}
+                        {row.status}
                       </span>
                     ) : (
                       <span className="badge badge-success" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                        ✓ {row.status}
+                        {row.status}
                       </span>
                     )}
                   </td>
@@ -688,7 +691,7 @@ export default function OrangTuaPembayaranPage() {
                     onClick={() => setModalStep(null)}
                     style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "var(--color-text-muted)" }}
                   >
-                    ✕
+                    &times;
                   </button>
                 </div>
 
@@ -765,7 +768,10 @@ export default function OrangTuaPembayaranPage() {
                           fontSize: 18,
                         }}
                       >
-                        🏛️
+                        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                          <rect x="2" y="5" width="20" height="14" rx="2" />
+                          <line x1="2" y1="10" x2="22" y2="10" />
+                        </svg>
                       </div>
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text-primary)" }}>
@@ -816,7 +822,10 @@ export default function OrangTuaPembayaranPage() {
                           fontSize: 18,
                         }}
                       >
-                        📱
+                        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                          <rect x="5" y="2" width="14" height="20" rx="2" />
+                          <line x1="12" y1="18" x2="12.01" y2="18" strokeWidth={3} />
+                        </svg>
                       </div>
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text-primary)" }}>
@@ -867,7 +876,12 @@ export default function OrangTuaPembayaranPage() {
                           fontSize: 18,
                         }}
                       >
-                        🔲
+                        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                          <rect x="3" y="3" width="7" height="7" />
+                          <rect x="14" y="3" width="7" height="7" />
+                          <rect x="14" y="14" width="7" height="7" />
+                          <rect x="3" y="14" width="7" height="7" />
+                        </svg>
                       </div>
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text-primary)" }}>
@@ -918,7 +932,10 @@ export default function OrangTuaPembayaranPage() {
                           fontSize: 18,
                         }}
                       >
-                        💵
+                        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                          <rect x="2" y="6" width="20" height="12" rx="2" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
                       </div>
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text-primary)" }}>
@@ -976,7 +993,7 @@ export default function OrangTuaPembayaranPage() {
                     onClick={() => setModalStep(null)}
                     style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "var(--color-text-muted)" }}
                   >
-                    ✕
+                    &times;
                   </button>
                 </div>
 
@@ -1088,7 +1105,7 @@ export default function OrangTuaPembayaranPage() {
                             color: "var(--color-primary)",
                           }}
                         >
-                          📋 {copied === "va" ? "Tersalin!" : "Salin"}
+                          {copied === "va" ? "Tersalin!" : "Salin"}
                         </button>
                       </div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)", marginTop: 2 }}>
@@ -1235,7 +1252,7 @@ export default function OrangTuaPembayaranPage() {
                         className="btn btn-outline btn-sm"
                         onClick={() => alert("Mengunduh gambar QRIS...")}
                       >
-                        Unduh QR 📥
+                        Unduh QR
                       </button>
                     </div>
                   </div>
@@ -1255,7 +1272,11 @@ export default function OrangTuaPembayaranPage() {
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <div style={{ fontSize: 24 }}>🏢</div>
+                      <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#e9d5ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth={2}>
+                          <path d="M3 21h18M9 8h1M9 12h1M9 16h1M14 8h1M14 12h1M14 16h1M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16" />
+                        </svg>
+                      </div>
                       <div>
                         <div style={{ fontSize: 13.5, fontWeight: 800, color: "#6b21a8" }}>
                           Kode Booking Pembayaran Tunai
@@ -1303,7 +1324,7 @@ export default function OrangTuaPembayaranPage() {
                     </div>
 
                     <div style={{ fontSize: 12, color: "#581c87", lineHeight: 1.4 }}>
-                      📍 <strong>Lokasi Pembayaran:</strong> Front Office BSD After School Club (Senin - Sabtu, 08.00 - 17.00 WIB). Admin akan memverifikasi pembayaran Anda setelah uang tunai diterima.
+                      <strong>Lokasi Pembayaran:</strong> Front Office BSD After School Club (Senin - Sabtu, 08.00 - 17.00 WIB). Admin akan memverifikasi pembayaran Anda setelah uang tunai diterima.
                     </div>
                   </div>
                 )}
@@ -1438,7 +1459,7 @@ export default function OrangTuaPembayaranPage() {
                     onClick={() => setModalStep(null)}
                     style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "var(--color-text-muted)" }}
                   >
-                    ✕
+                    &times;
                   </button>
                 </div>
 

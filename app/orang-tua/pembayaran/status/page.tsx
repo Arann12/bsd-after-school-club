@@ -58,12 +58,20 @@ function StatusContent() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 32,
             boxShadow: isSuccess ? "0 6px 16px rgba(16,185,129,0.3)" : "0 6px 16px rgba(245,158,11,0.3)",
             marginBottom: 14,
           }}
         >
-          {isSuccess ? "✓" : "⏳"}
+          {isSuccess ? (
+            <svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          ) : (
+            <svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          )}
         </div>
 
         <h1 style={{ fontSize: 22, fontWeight: 900, color: "var(--color-text-primary)", marginBottom: 6 }}>
@@ -236,14 +244,14 @@ function StatusContent() {
             onClick={() => window.print()}
             style={{ flex: 1, justifyContent: "center", minWidth: 160 }}
           >
-            🖨️ Cetak Bukti / Unduh PDF
+            Cetak Bukti / Unduh PDF
           </button>
           <Link
             href="/orang-tua/dashboard"
             className="btn btn-primary"
             style={{ flex: 1.2, justifyContent: "center", textDecoration: "none", minWidth: 180 }}
           >
-            📅 Lihat Jadwal Kelas Budi
+            Lihat Jadwal Kelas Budi
           </Link>
         </div>
       </div>

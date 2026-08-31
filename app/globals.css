@@ -336,6 +336,96 @@ html, body {
   }
 }
 
+/* Role selection styles */
+.auth-role-section {
+  margin-bottom: 22px;
+}
+
+.auth-role-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.auth-role-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.auth-role-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 4px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.auth-role-btn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+.auth-role-btn.active {
+  background: #eff6ff;
+  border-color: var(--primary-blue);
+  color: var(--primary-blue-dark);
+  box-shadow: 0 2px 8px rgba(58, 171, 227, 0.2);
+  transform: translateY(-1px);
+}
+
+.auth-role-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.auth-portal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+.auth-portal-badge.role-owner {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.auth-portal-badge.role-admin {
+  background: #ccfbf1;
+  color: #0f766e;
+}
+
+.auth-portal-badge.role-guru {
+  background: #f3e8ff;
+  color: #6d28d9;
+}
+
+.auth-portal-badge.role-orang-tua {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+
 /* Responsive */
 @media (max-width: 560px) {
   .auth-body {

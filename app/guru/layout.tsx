@@ -1,13 +1,16 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import { GuruSidebar } from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Dashboard Guru — BSD After School Club",
-  description: "Panel Guru BSD After School Club",
-};
 
 export default function GuruLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  if (pathname?.endsWith("/login")) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="app-shell">
       <GuruSidebar />

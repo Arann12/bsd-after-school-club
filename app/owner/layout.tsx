@@ -1,13 +1,16 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import { OwnerSidebar } from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Owner Dashboard — BSD After School Club",
-  description: "Panel manajemen Owner BSD After School Club",
-};
 
 export default function OwnerLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  if (pathname?.endsWith("/login")) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="app-shell">
       <OwnerSidebar />

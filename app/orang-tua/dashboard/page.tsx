@@ -26,7 +26,7 @@ export default function OrangTuaDashboardPage() {
       >
         <div style={{ maxWidth: 620 }}>
           <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}>
-            Selamat Pagi, Ayah Budi! <span style={{ fontSize: 24 }}>👋</span>
+            Selamat Pagi, Ayah Budi!
           </h1>
           <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.9)", lineHeight: 1.5 }}>
             Budi hadir <strong style={{ color: "#ffffff", fontWeight: 700 }}>92%</strong> bulan ini dan memiliki{" "}
@@ -59,7 +59,7 @@ export default function OrangTuaDashboardPage() {
               KEHADIRAN BUDI
             </span>
             <span className="badge badge-success" style={{ fontSize: 11, padding: "2px 8px" }}>
-              ↑ +2%
+              +2%
             </span>
           </div>
           <div className="stat-card-value" style={{ fontSize: 30, color: "var(--color-text-primary)" }}>
@@ -133,7 +133,7 @@ export default function OrangTuaDashboardPage() {
           {/* Student Profile Card */}
           <div className="card" style={{ padding: 20 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
-              {/* Child Avatar with Star Badge */}
+              {/* Child Avatar */}
               <div style={{ position: "relative" }}>
                 <div
                   style={{
@@ -144,31 +144,14 @@ export default function OrangTuaDashboardPage() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: 36,
                     border: "2px solid #bfdbfe",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
                   }}
                 >
-                  👦
-                </div>
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: -4,
-                    right: -4,
-                    width: 24,
-                    height: 24,
-                    borderRadius: "50%",
-                    background: "#f59e0b",
-                    color: "white",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 12,
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                  }}
-                >
-                  ★
+                  <svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
                 </div>
               </div>
 
@@ -211,8 +194,8 @@ export default function OrangTuaDashboardPage() {
                   </div>
                   <div>
                     <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>Guru Pembimbing</div>
-                    <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--color-text-primary)", display: "flex", alignItems: "center", gap: 4 }}>
-                      👩‍🏫 Ms. Sarah
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--color-text-primary)" }}>
+                      Ms. Sarah
                     </div>
                   </div>
                 </div>
@@ -265,17 +248,17 @@ export default function OrangTuaDashboardPage() {
                     <div style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text-primary)" }}>
                       Phonics L2
                     </div>
-                    <div style={{ fontSize: 12, color: "var(--color-text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
-                      🕒 14:00 - 15:30
+                    <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+                      14:00 - 15:30
                     </div>
                   </div>
                 </div>
-                <span className="badge badge-success" style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                  ✓ Selesai
+                <span className="badge badge-success">
+                  Selesai
                 </span>
               </div>
 
-              {/* Schedule Item 2: Berlangsung (Highlighted) */}
+              {/* Schedule Item 2: Berlangsung */}
               <div
                 style={{
                   display: "flex",
@@ -309,8 +292,8 @@ export default function OrangTuaDashboardPage() {
                     <div style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text-primary)" }}>
                       Phonics L2
                     </div>
-                    <div style={{ fontSize: 12, color: "var(--color-text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
-                      🕒 14:00 - 15:30
+                    <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+                      14:00 - 15:30
                     </div>
                   </div>
                 </div>
@@ -363,8 +346,8 @@ export default function OrangTuaDashboardPage() {
           <div className="card" id="tagihan-aktif" style={{ border: "1.5px solid #fee2e2" }}>
             <div className="card-header" style={{ paddingBottom: 12 }}>
               <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--color-text-primary)", fontWeight: 800, fontSize: 16 }}>
-                  <span style={{ color: "#ef4444" }}>⚠️</span> Tagihan Aktif
+                <div style={{ fontWeight: 800, fontSize: 16, color: "var(--color-text-primary)" }}>
+                  Tagihan Aktif
                 </div>
                 <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 2 }}>
                   #INV/2024/08/001
@@ -390,8 +373,8 @@ export default function OrangTuaDashboardPage() {
                 <div style={{ fontSize: 26, fontWeight: 800, color: "#be123c", lineHeight: 1 }}>
                   Rp 350.000
                 </div>
-                <div style={{ fontSize: 12, color: "#e11d48", fontWeight: 600, display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
-                  📅 Jatuh Tempo: <span style={{ fontWeight: 700 }}>3 Sept 2024</span>
+                <div style={{ fontSize: 12, color: "#e11d48", fontWeight: 600, marginTop: 4 }}>
+                  Jatuh Tempo: <span style={{ fontWeight: 700 }}>3 Sept 2024</span>
                 </div>
               </div>
 
@@ -479,7 +462,7 @@ export default function OrangTuaDashboardPage() {
 
       {/* ── BOTTOM 3-CARD ROW ──────────────────────────────────────── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
-        {/* Card 1: Sertifikat & Laporan (Locked per rules) */}
+        {/* Card 1: Sertifikat & Laporan */}
         <div
           className="card"
           style={{
@@ -578,7 +561,7 @@ export default function OrangTuaDashboardPage() {
               style={{ width: "100%", justifyContent: "center", padding: "8px 12px", fontSize: 13, fontWeight: 600, marginBottom: 8 }}
               onClick={() => alert("Menghubungi admin BSD After School Club...")}
             >
-              🎧 Hubungi Admin
+              Hubungi Admin
             </button>
             <div style={{ display: "flex", justifyContent: "center", gap: 12, fontSize: 11.5, color: "var(--color-primary)", fontWeight: 600 }}>
               <a href="#" style={{ textDecoration: "none", color: "inherit" }}>FAQ</a>
@@ -589,7 +572,7 @@ export default function OrangTuaDashboardPage() {
         </div>
       </div>
 
-      {/* ── MODAL: AJUKAN PEMBAYARAN CASH (Business Rule Support) ── */}
+      {/* ── MODAL: AJUKAN PEMBAYARAN CASH ── */}
       {cashModalOpen && (
         <div
           style={{
@@ -618,7 +601,10 @@ export default function OrangTuaDashboardPage() {
             </h3>
             {cashSubmitted ? (
               <div style={{ textAlign: "center", padding: "16px 0" }}>
-                <div style={{ fontSize: 40, marginBottom: 8 }}>✅</div>
+                <svg width={40} height={40} viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ margin: "0 auto 8px" }}>
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
                 <h4 style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)", marginBottom: 4 }}>
                   Pengajuan Berhasil Dikirim!
                 </h4>
