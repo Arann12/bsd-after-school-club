@@ -293,7 +293,7 @@ export const orangTuaNav: NavSection[] = [
       { label: "Jadwal", href: "/orang-tua/jadwal", icon: "Calendar" },
       { label: "Absensi", href: "/orang-tua/absensi", icon: "ClipboardCheck" },
       { label: "Kegiatan", href: "/orang-tua/kegiatan", icon: "Activity" },
-      { label: "Pembayaran", href: "#", icon: "CreditCard" },
+      { label: "Pembayaran", href: "/orang-tua/pembayaran", icon: "CreditCard" },
       { label: "Laporan", href: "/orang-tua/laporan", icon: "Lock", locked: true },
     ],
   },
