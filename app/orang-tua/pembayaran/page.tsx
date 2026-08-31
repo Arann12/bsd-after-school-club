@@ -1,11 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function OrangTuaPembayaranPage() {
   const router = useRouter();
+
+  // Child Dropdown Switcher state
+  const [selectedChild, setSelectedChild] = useState({
+    name: "Merta",
+    program: "Phonics Level 2",
+    avatar: "https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=100&auto=format&fit=crop&q=80",
+  });
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   // Payment Mode: 'pertemuan' (Rp 100k) or 'paket' (Rp 300k)
   const [selectedPaymentMode, setSelectedPaymentMode] = useState<"pertemuan" | "paket">("pertemuan");
@@ -16,7 +23,7 @@ export default function OrangTuaPembayaranPage() {
   // Selected Payment Method: 'va' | 'ewallet' | 'qris' | 'cash'
   const [paymentMethod, setPaymentMethod] = useState<"va" | "ewallet" | "qris" | "cash">("va");
   
-  // Specific Sub-options:
+  // Specific Sub-options
   const [selectedBank, setSelectedBank] = useState<"BCA" | "BNI" | "Mandiri" | "BRI">("BCA");
   const [selectedEwallet, setSelectedEwallet] = useState<"GoPay" | "OVO" | "Dana" | "ShopeePay">("GoPay");
   const [phoneNumber, setPhoneNumber] = useState("081234567890");
@@ -29,7 +36,6 @@ export default function OrangTuaPembayaranPage() {
 
   // Dynamic values depending on mode
   const billAmount = selectedPaymentMode === "pertemuan" ? 100000 : 300000;
-  const billLabel = selectedPaymentMode === "pertemuan" ? "Pertemuan 7 & 8" : "Sisa Pertemuan 7 - 12 (Paket)";
   const billBreakdown = selectedPaymentMode === "pertemuan" 
     ? [
         { label: "Pertemuan 7", amount: "Rp 50.000" },
@@ -58,442 +64,314 @@ export default function OrangTuaPembayaranPage() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      {/* ── PAGE HEADER & CHILD SELECTOR ─────────────────────────── */}
-      <div className="page-header" style={{ alignItems: "center" }}>
+    <div className="space-y-6 text-[#191c1e] bg-[#f7f9fc] min-h-screen p-2 sm:p-4">
+      {/* ── HEADER & CHILD SELECTOR ─────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div>
-          <h1 className="page-title">Pembayaran</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#005474] tracking-tight">Pembayaran</h1>
+          <p className="text-xs sm:text-sm text-[#70787e]">Kelola tagihan, sisa pertemuan, dan riwayat transaksi anak</p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div
-            style={{
-              background: "#ffffff",
-              border: "1px solid var(--color-border)",
-              borderRadius: "var(--radius-md)",
-              padding: "6px 14px",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              boxShadow: "var(--shadow-sm)",
-            }}
+
+        {/* Child Selector Dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="flex items-center justify-between gap-3 bg-white border-2 border-[#1f6d91] rounded-xl px-4 py-2.5 shadow-sm hover:shadow transition-all text-left min-w-[240px]"
           >
-            <span style={{ fontSize: 11.5, color: "var(--color-text-muted)", fontWeight: 500 }}>
-              Anak yang Dipilih:
-            </span>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)" }}>
-                Merta
-              </span>
+            <div>
+              <p className="text-[11px] font-semibold text-[#70787e] uppercase tracking-wider">Anak yang Dipilih:</p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <div className="w-5 h-5 rounded-full bg-[#1f6d91] text-white flex items-center justify-center text-[10px] font-bold">
+                  {selectedChild.name[0]}
+                </div>
+                <span className="text-sm font-bold text-[#1f6d91]">{selectedChild.name}</span>
+              </div>
             </div>
-            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <polyline points="6 9 12 15 18 9" />
+            <svg
+              className={`w-4 h-4 text-[#1f6d91] transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
             </svg>
-          </div>
+          </button>
+
+          {dropdownOpen && (
+            <div className="absolute right-0 top-full mt-2 w-full bg-white border border-[#c0c7ce]/40 rounded-xl shadow-lg z-50 p-2 space-y-1">
+              <button
+                onClick={() => {
+                  setSelectedChild({
+                    name: "Merta",
+                    program: "Phonics Level 2",
+                    avatar: "",
+                  });
+                  setDropdownOpen(false);
+                }}
+                className={`w-full flex items-center justify-between p-2.5 rounded-lg text-left text-xs font-bold transition-colors ${
+                  selectedChild.name === "Merta" ? "bg-[#1f6d91]/10 text-[#1f6d91]" : "hover:bg-slate-100 text-[#191c1e]"
+                }`}
+              >
+                <span>Merta (Phonics Level 2)</span>
+                {selectedChild.name === "Merta" && (
+                  <svg className="w-4 h-4 text-[#1f6d91]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedChild({
+                    name: "Siti",
+                    program: "Calistung Level 1",
+                    avatar: "",
+                  });
+                  setDropdownOpen(false);
+                }}
+                className={`w-full flex items-center justify-between p-2.5 rounded-lg text-left text-xs font-bold transition-colors ${
+                  selectedChild.name === "Siti" ? "bg-[#1f6d91]/10 text-[#1f6d91]" : "hover:bg-slate-100 text-[#191c1e]"
+                }`}
+              >
+                <span>Siti (Calistung Level 1)</span>
+                {selectedChild.name === "Siti" && (
+                  <svg className="w-4 h-4 text-[#1f6d91]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ── TOP 3 STAT CARDS ───────────────────────────────────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18 }}>
-        {/* Total Tagihan Tertunda */}
-        <div className="stat-card">
-          <span className="stat-card-label" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.04em" }}>
-            TOTAL TAGIHAN TERTUNDA
-          </span>
-          <div className="stat-card-value" style={{ fontSize: 26, color: "#ef4444" }}>
-            Rp 150.000
+      {/* ── BENTO SUMMARY CARDS ─────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Card 1: Total Tagihan Tertunda */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-[#c0c7ce]/30 flex flex-col justify-between">
+          <p className="text-xs font-bold text-[#70787e] uppercase tracking-wider">Total Tagihan Tertunda</p>
+          <div className="my-2">
+            <h3 className="text-2xl sm:text-3xl font-extrabold text-[#ba1a1a]">Rp 150.000</h3>
+            <p className="text-xs text-[#70787e] mt-1 font-medium">1 Tagihan belum dibayar</p>
           </div>
-          <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
-            1 Tagihan belum dibayar
-          </div>
-        </div>
-
-        {/* Progress Pertemuan */}
-        <div className="stat-card">
-          <span className="stat-card-label" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.04em" }}>
-            PROGRESS PERTEMUAN
-          </span>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div className="stat-card-value" style={{ fontSize: 26 }}>
-              6<span style={{ fontSize: 16, fontWeight: 600, color: "var(--color-text-muted)" }}>/12</span>
-            </div>
-            <div className="progress-bar-bg" style={{ height: 7 }}>
-              <div
-                className="progress-bar-fill"
-                style={{ width: `${(6 / 12) * 100}%`, background: "var(--color-primary)" }}
-              />
-            </div>
+          <div className="w-full bg-[#ffdad6] h-1.5 rounded-full overflow-hidden">
+            <div className="bg-[#ba1a1a] h-full w-2/3 rounded-full" />
           </div>
         </div>
 
-        {/* Status Pembayaran Terakhir */}
-        <div className="stat-card">
-          <span className="stat-card-label" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.04em" }}>
-            STATUS PEMBAYARAN TERAKHIR
-          </span>
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#10b981", fontWeight: 800, fontSize: 16 }}>
-              <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                <polyline points="20 6 9 17 4 12" />
+        {/* Card 2: Progress Pertemuan */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-[#c0c7ce]/30 flex flex-col justify-between">
+          <p className="text-xs font-bold text-[#70787e] uppercase tracking-wider">Progress Pertemuan</p>
+          <div className="my-2">
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl sm:text-3xl font-extrabold text-[#191c1e]">6</span>
+              <span className="text-base font-semibold text-[#70787e]">/ 12 Pertemuan</span>
+            </div>
+            <p className="text-xs text-[#70787e] mt-1 font-medium">50% Selesai dari Total Paket</p>
+          </div>
+          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+            <div className="bg-[#1f6d91] h-full w-1/2 rounded-full transition-all duration-500" />
+          </div>
+        </div>
+
+        {/* Card 3: Status Pembayaran Terakhir */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-[#c0c7ce]/30 flex flex-col justify-between">
+          <p className="text-xs font-bold text-[#70787e] uppercase tracking-wider">Status Pembayaran Terakhir</p>
+          <div className="my-2 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
               </svg>
-              Berhasil
             </div>
-            <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
-              25 Ags 2024
+            <div>
+              <h4 className="text-base font-bold text-[#191c1e]">Berhasil</h4>
+              <p className="text-xs text-[#70787e]">25 Agustus 2024</p>
             </div>
           </div>
+          <span className="inline-flex items-center text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md w-fit">
+            Terverifikasi Otomatis
+          </span>
         </div>
       </div>
 
-      {/* ── MIDDLE 2-COLUMN SECTION ────────────────────────────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: 22 }}>
-        {/* ── LEFT COLUMN: Detail Program & Timeline ─────────────────── */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {/* ── 2-COLUMN MAIN CONTENT ─────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* LEFT COLUMN: Detail Program & Visual Timeline */}
+        <div className="space-y-6">
           {/* Detail Program Card */}
-          <div className="card" style={{ padding: "20px 22px" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-              <h2 className="card-title" style={{ fontSize: 14 }}>Detail Program</h2>
-              <span className="badge badge-info" style={{ fontSize: 10.5, padding: "2px 8px" }}>
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#c0c7ce]/30">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold text-[#191c1e]">Detail Program Active</h3>
+              <span className="bg-[#1f6d91]/10 text-[#1f6d91] px-3 py-1 rounded-full text-xs font-bold border border-[#1f6d91]/20">
                 Aktif
               </span>
             </div>
 
-            <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 2 }}>
-              Program
-            </div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: "var(--color-text-primary)", marginBottom: 16 }}>
-              Phonics Level 2
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, borderTop: "1px solid var(--color-border-light)", paddingTop: 14 }}>
+            <div className="space-y-3">
               <div>
-                <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>Harga per Pertemuan</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)", marginTop: 2 }}>
-                  Rp 50.000
-                </div>
+                <p className="text-xs text-[#70787e]">Program Yang Diikuti</p>
+                <p className="text-lg font-extrabold text-[#005474]">{selectedChild.program}</p>
               </div>
-              <div>
-                <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>Total Pertemuan Paket</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)", marginTop: 2 }}>
-                  12 Pertemuan
+
+              <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-100">
+                <div>
+                  <p className="text-xs text-[#70787e]">Harga per Pertemuan</p>
+                  <p className="text-sm font-bold text-[#191c1e]">Rp 50.000</p>
+                </div>
+                <div>
+                  <p className="text-xs text-[#70787e]">Total Pertemuan Paket</p>
+                  <p className="text-sm font-bold text-[#191c1e]">12 Pertemuan</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Progress Pertemuan (Paket Aktif) Stepper */}
-          <div className="card">
-            <div className="card-header" style={{ paddingBottom: 14 }}>
-              <h2 className="card-title">Progress Pertemuan (Paket Aktif)</h2>
-            </div>
-            <div className="card-body" style={{ paddingTop: 0, display: "flex", flexDirection: "column", gap: 16 }}>
-              {/* Item 1: Pertemuan 1 - 5 (Lunas) */}
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-                <div
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: "50%",
-                    background: "#d1fae5",
-                    color: "#059669",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                    marginTop: 2,
-                  }}
-                >
-                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}>
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
+          {/* Visual Stepper Timeline */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#c0c7ce]/30">
+            <h3 className="text-base font-bold text-[#191c1e] mb-6">Progress Pertemuan (Paket Aktif)</h3>
+
+            <div className="relative pl-6 space-y-6 border-l-2 border-slate-200 ml-3">
+              {/* Item 1: Pertemuan 1-5 */}
+              <div className="relative pl-4">
+                <div className="absolute -left-[31px] top-0 w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold border-4 border-white shadow-sm">
+                  ✓
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--color-text-primary)" }}>
-                    Pertemuan 1 - 5
-                  </div>
-                  <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
-                    Selesai • Lunas
-                  </div>
+                <div>
+                  <h4 className="text-sm font-bold text-[#191c1e]">Pertemuan 1 - 5</h4>
+                  <p className="text-xs text-[#70787e]">Selesai • Lunas</p>
                 </div>
               </div>
 
-              {/* Item 2: Pertemuan 6 (Hari Ini - Lunas) */}
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-                <div
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: "50%",
-                    background: "#fef3c7",
-                    color: "#d97706",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                    marginTop: 2,
-                  }}
-                >
-                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#f59e0b" }} />
+              {/* Item 2: Pertemuan 6 (Hari ini) */}
+              <div className="relative pl-4 bg-slate-50 p-3 rounded-xl border border-slate-200/80 -ml-2">
+                <div className="absolute -left-[27px] top-4 w-5 h-5 rounded-full bg-[#f2ab3b] border-4 border-white flex items-center justify-center shadow-sm">
+                  <div className="w-2 h-2 rounded-full bg-white animate-ping" />
                 </div>
-                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div className="flex items-center justify-between">
                   <div>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--color-text-primary)" }}>
-                      Pertemuan 6
-                    </div>
-                    <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
-                      Hari ini • Phonics Review
-                    </div>
+                    <h4 className="text-sm font-bold text-[#191c1e]">Pertemuan 6</h4>
+                    <p className="text-xs text-[#70787e]">Hari ini • Phonics Review</p>
                   </div>
-                  <span className="badge badge-success" style={{ fontSize: 10, padding: "2px 7px", fontWeight: 700 }}>
+                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded">
                     LUNAS
                   </span>
                 </div>
               </div>
 
-              {/* Item 3: Pertemuan 7 (Belum Dibayar) */}
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-                <div
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: "50%",
-                    background: "#fee2e2",
-                    color: "#dc2626",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                    marginTop: 2,
-                    fontSize: 12,
-                    fontWeight: 700,
-                  }}
-                >
+              {/* Item 3: Pertemuan 7 */}
+              <div className="relative pl-4">
+                <div className="absolute -left-[31px] top-0 w-6 h-6 rounded-full bg-[#ffdad6] text-[#ba1a1a] flex items-center justify-center text-xs font-bold border-4 border-white shadow-sm">
                   !
                 </div>
-                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div className="flex items-center justify-between">
                   <div>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--color-text-primary)" }}>
-                      Pertemuan 7
-                    </div>
-                    <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
-                      2 Sept 2024
-                    </div>
+                    <h4 className="text-sm font-bold text-[#191c1e]">Pertemuan 7</h4>
+                    <p className="text-xs text-[#70787e]">2 September 2024</p>
                   </div>
-                  <span className="badge badge-danger" style={{ fontSize: 10, padding: "2px 7px", fontWeight: 700 }}>
+                  <span className="bg-[#ffdad6] text-[#ba1a1a] text-[10px] font-extrabold px-2 py-0.5 rounded">
                     BELUM DIBAYAR
                   </span>
                 </div>
               </div>
 
-              {/* Item 4: Pertemuan 8 (Belum Dibayar) */}
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-                <div
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: "50%",
-                    background: "#fee2e2",
-                    color: "#dc2626",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                    marginTop: 2,
-                    fontSize: 12,
-                    fontWeight: 700,
-                  }}
-                >
+              {/* Item 4: Pertemuan 8 */}
+              <div className="relative pl-4">
+                <div className="absolute -left-[31px] top-0 w-6 h-6 rounded-full bg-[#ffdad6] text-[#ba1a1a] flex items-center justify-center text-xs font-bold border-4 border-white shadow-sm">
                   !
                 </div>
-                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div className="flex items-center justify-between">
                   <div>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--color-text-primary)" }}>
-                      Pertemuan 8
-                    </div>
-                    <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
-                      4 Sept 2024
-                    </div>
+                    <h4 className="text-sm font-bold text-[#191c1e]">Pertemuan 8</h4>
+                    <p className="text-xs text-[#70787e]">4 September 2024</p>
                   </div>
-                  <span className="badge badge-danger" style={{ fontSize: 10, padding: "2px 7px", fontWeight: 700 }}>
+                  <span className="bg-[#ffdad6] text-[#ba1a1a] text-[10px] font-extrabold px-2 py-0.5 rounded">
                     BELUM DIBAYAR
                   </span>
                 </div>
               </div>
 
-              {/* Item 5: Pertemuan 9 - 12 (Mendatang) */}
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 14, opacity: 0.6 }}>
-                <div
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: "50%",
-                    background: "#f1f5f9",
-                    color: "#94a3b8",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                    marginTop: 2,
-                  }}
-                >
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#cbd5e1" }} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--color-text-secondary)" }}>
-                    Pertemuan 9 - 12
-                  </div>
-                  <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
-                    Jadwal mendatang
-                  </div>
+              {/* Item 5: Pertemuan 9 - 12 */}
+              <div className="relative pl-4 opacity-50">
+                <div className="absolute -left-[31px] top-0 w-6 h-6 rounded-full bg-slate-200 border-4 border-white" />
+                <div>
+                  <h4 className="text-sm font-bold text-[#191c1e]">Pertemuan 9 - 12</h4>
+                  <p className="text-xs text-[#70787e]">Jadwal Mendatang</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* ── RIGHT COLUMN: Tindakan Pembayaran (Option 1 & Option 2) ─ */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 800, color: "var(--color-text-primary)" }}>
-            Tindakan Pembayaran
-          </h2>
+        {/* RIGHT COLUMN: Payment Actions */}
+        <div className="space-y-6">
+          <h3 className="text-base font-bold text-[#191c1e]">Tindakan Pembayaran</h3>
 
-          {/* OPSI 1: Bayar per Pertemuan (Light Border + Yellow accent) */}
-          <div
-            className="card"
-            style={{
-              border: "1.5px solid #fde68a",
-              boxShadow: "0 4px 14px rgba(245,158,11,0.08)",
-              padding: "20px 22px",
-              display: "flex",
-              flexDirection: "column",
-              gap: 16,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+          {/* Option A: Bayar per Pertemuan */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border-t-4 border-[#feb645] border-x border-b border-[#c0c7ce]/30 space-y-4">
+            <div className="flex items-start justify-between">
               <div>
-                <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--color-text-primary)" }}>
-                  Bayar per Pertemuan
-                </h3>
-                <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>
-                  Bayar untuk pertemuan yang sudah berjalan atau akan datang.
-                </p>
+                <h4 className="text-base font-extrabold text-[#191c1e]">Bayar per Pertemuan</h4>
+                <p className="text-xs text-[#70787e]">Bayar untuk pertemuan yang sudah berjalan atau akan datang.</p>
               </div>
-              <span className="badge badge-danger" style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 8px" }}>
+              <span className="bg-[#ffdad6] text-[#ba1a1a] text-xs font-bold px-2.5 py-1 rounded-md border border-[#ba1a1a]/20">
                 2 Belum Dibayar
               </span>
             </div>
 
-            {/* List breakdown */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, borderTop: "1px solid var(--color-border-light)", paddingTop: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                <span style={{ color: "var(--color-text-secondary)" }}>Pertemuan 7</span>
-                <span style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>Rp 50.000</span>
+            <div className="bg-slate-50 p-4 rounded-xl space-y-2 border border-slate-200">
+              <div className="flex justify-between text-xs font-semibold text-[#191c1e]">
+                <span>Pertemuan 7</span>
+                <span>Rp 50.000</span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                <span style={{ color: "var(--color-text-secondary)" }}>Pertemuan 8</span>
-                <span style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>Rp 50.000</span>
+              <div className="flex justify-between text-xs font-semibold text-[#191c1e] pb-2 border-b border-slate-200">
+                <span>Pertemuan 8</span>
+                <span>Rp 50.000</span>
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  borderTop: "1px dashed var(--color-border)",
-                  paddingTop: 10,
-                  marginTop: 4,
-                }}
-              >
-                <span style={{ fontSize: 12.5, color: "var(--color-text-muted)" }}>Total Dibayar</span>
-                <span style={{ fontSize: 20, fontWeight: 800, color: "#be123c" }}>Rp 100.000</span>
+              <div className="flex justify-between items-end pt-1">
+                <span className="text-xs text-[#70787e]">Total Dibayar</span>
+                <span className="text-lg font-extrabold text-[#ba1a1a]">Rp 100.000</span>
               </div>
             </div>
 
-            {/* Button */}
             <button
-              className="btn btn-accent"
-              style={{
-                width: "100%",
-                justifyContent: "center",
-                padding: "11px",
-                fontWeight: 700,
-                fontSize: 14,
-                borderRadius: "var(--radius-md)",
-              }}
               onClick={() => handleOpenPayment("pertemuan")}
+              className="w-full bg-[#f2ab3b] hover:bg-[#e09b2b] text-white font-bold text-sm py-3 px-4 rounded-xl shadow transition-all flex items-center justify-center gap-2 active:scale-98"
             >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <rect x="2" y="5" width="20" height="14" rx="2" strokeWidth="2" />
+                <line x1="2" y1="10" x2="22" y2="10" strokeWidth="2" />
+              </svg>
               Bayar Pertemuan (Rp 100k)
             </button>
           </div>
 
-          {/* OPSI 2: Lunasi Sisa Paket (Dark Blue Gradient Box) */}
-          <div
-            style={{
-              background: "linear-gradient(135deg, #103b57 0%, #1a5c8a 100%)",
-              borderRadius: "var(--radius-lg)",
-              padding: "24px 22px",
-              color: "#ffffff",
-              display: "flex",
-              flexDirection: "column",
-              gap: 16,
-              boxShadow: "0 6px 18px rgba(26,92,138,0.2)",
-            }}
-          >
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 16, fontWeight: 800, color: "#ffffff" }}>
-                Lunasi Sisa Paket
-              </div>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", marginTop: 4 }}>
-                Bayar semua sisa pertemuan di paket ini sekaligus.
-              </p>
-            </div>
-
-            <div
-              style={{
-                background: "rgba(255,255,255,0.1)",
-                borderRadius: "var(--radius-md)",
-                padding: "14px",
-                display: "flex",
-                flexDirection: "column",
-                gap: 10,
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "rgba(255,255,255,0.9)" }}>
-                <span>Sisa Pertemuan (7-12)</span>
-                <span style={{ fontWeight: 700 }}>6 x Rp 50.000</span>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  borderTop: "1px solid rgba(255,255,255,0.15)",
-                  paddingTop: 10,
-                }}
-              >
-                <span style={{ fontSize: 12.5, color: "rgba(255,255,255,0.8)" }}>Total Pelunasan</span>
-                <span style={{ fontSize: 24, fontWeight: 900, color: "#ffffff" }}>Rp 300.000</span>
+          {/* Option B: Lunasi Sisa Paket */}
+          <div className="bg-gradient-to-br from-[#005474] to-[#1f6d91] rounded-2xl p-6 text-white shadow-md relative overflow-hidden space-y-4">
+            <div className="relative z-10 flex items-start justify-between">
+              <div>
+                <h4 className="text-base font-extrabold flex items-center gap-2">
+                  <svg className="w-5 h-5 text-[#feb645]" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                  Lunasi Sisa Paket
+                </h4>
+                <p className="text-xs text-white/80 mt-1">Bayar semua sisa pertemuan di paket ini sekaligus.</p>
               </div>
             </div>
 
-            {/* White Button */}
+            <div className="relative z-10 bg-white/10 p-4 rounded-xl space-y-2 backdrop-blur-sm border border-white/15">
+              <div className="flex justify-between text-xs font-medium text-white/90">
+                <span>Sisa Pertemuan (7 - 12)</span>
+                <span>6 x Rp 50.000</span>
+              </div>
+              <div className="flex justify-between items-end pt-3 border-t border-white/20">
+                <span className="text-xs text-white/80">Total Pelunasan</span>
+                <span className="text-xl font-black text-white">Rp 300.000</span>
+              </div>
+            </div>
+
             <button
-              style={{
-                width: "100%",
-                background: "#ffffff",
-                color: "#1a5c8a",
-                border: "none",
-                borderRadius: "var(--radius-md)",
-                padding: "12px",
-                fontWeight: 800,
-                fontSize: 14,
-                cursor: "pointer",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                transition: "all 0.15s ease",
-              }}
               onClick={() => handleOpenPayment("paket")}
+              className="relative z-10 w-full bg-white hover:bg-slate-100 text-[#005474] font-bold text-sm py-3 px-4 rounded-xl shadow transition-all text-center active:scale-98"
             >
               Lunasi Paket Sekarang
             </button>
@@ -501,570 +379,266 @@ export default function OrangTuaPembayaranPage() {
         </div>
       </div>
 
-      {/* ── BOTTOM SECTION: Riwayat Pembayaran Table ───────────────── */}
-      <div className="card">
-        <div className="card-header" style={{ paddingBottom: 14 }}>
-          <h2 className="card-title">Riwayat Pembayaran</h2>
+      {/* ── RIWAYAT PEMBAYARAN (FULL WIDTH TABLE) ─────────────────────────── */}
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#c0c7ce]/30 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base sm:text-lg font-bold text-[#191c1e]">Riwayat Pembayaran</h3>
           <button
-            className="link-text"
-            style={{
-              border: "none",
-              background: "none",
-              cursor: "pointer",
-              fontSize: 13,
-              fontWeight: 700,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
             onClick={() => alert("Mengunduh laporan pembayaran PDF...")}
+            className="text-[#1f6d91] hover:underline text-xs font-bold flex items-center gap-1.5"
           >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
             Unduh Laporan
           </button>
         </div>
-        <div className="card-body" style={{ paddingTop: 0, overflowX: "auto" }}>
-          <table className="data-table">
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs sm:text-sm">
             <thead>
-              <tr>
-                <th>ID TRANSAKSI</th>
-                <th>TANGGAL</th>
-                <th>KETERANGAN</th>
-                <th>METODE</th>
-                <th>JUMLAH</th>
-                <th>STATUS</th>
-                <th>AKSI</th>
+              <tr className="border-b border-slate-200 bg-slate-50 text-[#70787e] font-semibold uppercase tracking-wider">
+                <th className="py-3 px-4 rounded-tl-lg">ID Transaksi</th>
+                <th className="py-3 px-4">Tanggal</th>
+                <th className="py-3 px-4">Keterangan</th>
+                <th className="py-3 px-4">Metode</th>
+                <th className="py-3 px-4 text-right">Jumlah</th>
+                <th className="py-3 px-4 rounded-tr-lg">Status</th>
               </tr>
             </thead>
-            <tbody>
-              {[
-                {
-                  id: "INV-08-002",
-                  tanggal: "25 Ags 2024",
-                  keterangan: "Pertemuan 6",
-                  metode: "Cash (Di Cabang)",
-                  jumlah: "Rp 50.000",
-                  status: "Menunggu Verifikasi Admin",
-                  isPending: true,
-                  mode: "pertemuan",
-                },
-                {
-                  id: "INV-08-001",
-                  tanggal: "15 Ags 2024",
-                  keterangan: "Pertemuan 1 - 5 (Paket)",
-                  metode: "Virtual Account BCA",
-                  jumlah: "Rp 250.000",
-                  status: "Selesai",
-                  isPending: false,
-                  mode: "paket",
-                },
-                {
-                  id: "INV-07-015",
-                  tanggal: "01 Jul 2024",
-                  keterangan: "Biaya Pendaftaran & Seragam",
-                  metode: "QRIS",
-                  jumlah: "Rp 150.000",
-                  status: "Selesai",
-                  isPending: false,
-                  mode: "paket",
-                },
-              ].map((row) => (
-                <tr key={row.id}>
-                  <td style={{ fontFamily: "monospace", fontSize: 12.5, fontWeight: 600 }}>#{row.id}</td>
-                  <td>{row.tanggal}</td>
-                  <td style={{ fontWeight: 600 }}>{row.keterangan}</td>
-                  <td style={{ color: "var(--color-text-secondary)" }}>{row.metode}</td>
-                  <td style={{ fontWeight: 700 }}>{row.jumlah}</td>
-                  <td>
-                    {row.isPending ? (
-                      <span className="badge badge-warning" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                        {row.status}
-                      </span>
-                    ) : (
-                      <span className="badge badge-success" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                        {row.status}
-                      </span>
-                    )}
-                  </td>
-                  <td>
-                    <Link
-                      href={`/orang-tua/pembayaran/status?id=${row.id}&method=${row.metode.toLowerCase().includes('cash') ? 'cash' : 'va'}&status=${row.isPending ? 'pending' : 'success'}`}
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: "var(--color-primary)",
-                        textDecoration: "none",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 2,
-                      }}
-                    >
-                      Lihat Bukti →
-                    </Link>
-                  </td>
-                </tr>
-              ))}
+            <tbody className="divide-y divide-slate-100 font-medium">
+              {/* Row 1: Cash Pending */}
+              <tr className="bg-amber-50/50 hover:bg-amber-50 transition-colors">
+                <td className="py-3.5 px-4 font-mono font-bold text-slate-600">#INV-08-002</td>
+                <td className="py-3.5 px-4">25 Ags 2024</td>
+                <td className="py-3.5 px-4">Pertemuan 6</td>
+                <td className="py-3.5 px-4 text-slate-600">Cash (Di Cabang)</td>
+                <td className="py-3.5 px-4 text-right font-extrabold text-[#191c1e]">Rp 50.000</td>
+                <td className="py-3.5 px-4">
+                  <span className="bg-amber-100 text-amber-800 text-[11px] font-bold px-2.5 py-1 rounded-md inline-flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                    Menunggu Verifikasi Admin
+                  </span>
+                </td>
+              </tr>
+
+              {/* Row 2: VA Success */}
+              <tr className="hover:bg-slate-50 transition-colors">
+                <td className="py-3.5 px-4 font-mono font-bold text-slate-600">#INV-08-001</td>
+                <td className="py-3.5 px-4">15 Ags 2024</td>
+                <td className="py-3.5 px-4">Pertemuan 1 - 5 (Paket)</td>
+                <td className="py-3.5 px-4 text-slate-600">Virtual Account BCA</td>
+                <td className="py-3.5 px-4 text-right font-extrabold text-[#191c1e]">Rp 250.000</td>
+                <td className="py-3.5 px-4">
+                  <span className="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-1 rounded-md inline-flex items-center gap-1">
+                    ✓ Selesai
+                  </span>
+                </td>
+              </tr>
+
+              {/* Row 3: QRIS Success */}
+              <tr className="hover:bg-slate-50 transition-colors">
+                <td className="py-3.5 px-4 font-mono font-bold text-slate-600">#INV-07-015</td>
+                <td className="py-3.5 px-4">01 Jul 2024</td>
+                <td className="py-3.5 px-4">Biaya Pendaftaran & Seragam</td>
+                <td className="py-3.5 px-4 text-slate-600">QRIS</td>
+                <td className="py-3.5 px-4 text-right font-extrabold text-[#191c1e]">Rp 150.000</td>
+                <td className="py-3.5 px-4">
+                  <span className="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-1 rounded-md inline-flex items-center gap-1">
+                    ✓ Selesai
+                  </span>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* ── KEBIJAKAN PEMBAYARAN & KEHADIRAN ───────────────────────── */}
-      <div
-        style={{
-          background: "#f8fafc",
-          border: "1px solid #e2e8f0",
-          borderRadius: "var(--radius-md)",
-          padding: "20px 24px",
-          display: "flex",
-          alignItems: "flex-start",
-          gap: 16,
-        }}
-      >
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: "50%",
-            background: "#dbeafe",
-            color: "#1d4ed8",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontWeight: 800,
-            fontSize: 14,
-            flexShrink: 0,
-            marginTop: 2,
-          }}
-        >
-          ℹ
+      {/* ── POLICY FOOTER CARD ─────────────────────────── */}
+      <div className="bg-white rounded-2xl p-6 border border-[#c0c7ce]/30 flex items-start gap-4">
+        <div className="w-10 h-10 rounded-full bg-slate-100 text-[#1f6d91] flex items-center justify-center flex-shrink-0">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" strokeWidth="2" />
+            <line x1="12" y1="16" x2="12" y2="12" strokeWidth="2" />
+            <line x1="12" y1="8" x2="12.01" y2="8" strokeWidth="3" />
+          </svg>
         </div>
-        <div style={{ flex: 1 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 800, color: "var(--color-text-primary)", marginBottom: 8 }}>
-            Kebijakan Pembayaran & Kehadiran
-          </h3>
-          <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: "var(--color-text-secondary)", lineHeight: 1.6, display: "flex", flexDirection: "column", gap: 4 }}>
+        <div>
+          <h4 className="text-sm font-bold text-[#191c1e] mb-1">Kebijakan Pembayaran & Kehadiran</h4>
+          <ul className="list-disc pl-4 space-y-1 text-xs text-[#70787e] leading-relaxed">
             <li>Pembayaran tagihan maksimal dilakukan <strong>sebelum pertemuan dimulai</strong>.</li>
             <li>Pertemuan yang jatuh pada hari libur nasional (tanggal merah) <strong>tidak dikenakan biaya</strong> dan jadwal akan digeser ke pertemuan berikutnya.</li>
-            <li>Jika anak izin (dengan pemberitahuan maksimal <strong>H-1</strong>), pertemuan dapat di-reschedule tanpa biaya tambahan (maksimal 2x per bulan).</li>
+            <li>Jika anak izin (dengan pemberitahuan maksimal H-1), pertemuan dapat di-reschedule tanpa biaya tambahan (maksimal 2x per bulan).</li>
             <li>Pembayaran secara cash (tunai) di cabang wajib memberikan bukti struk kepada Admin untuk diverifikasi pada sistem.</li>
           </ul>
         </div>
       </div>
 
-      {/* ============================================================ */}
-      {/* ── MULTI-STEP PAYMENT MODAL ──────────────────────────────── */}
-      {/* ============================================================ */}
+      {/* ── MODAL PEMBAYARAN WORKFLOW ─────────────────────────── */}
       {modalStep !== null && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(15, 23, 42, 0.6)",
-            backdropFilter: "blur(4px)",
-            zIndex: 100,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 16,
-          }}
-        >
-          <div
-            style={{
-              background: "#ffffff",
-              borderRadius: "var(--radius-lg)",
-              maxWidth: 520,
-              width: "100%",
-              boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
-              overflow: "hidden",
-              border: "1px solid var(--color-border)",
-            }}
-          >
-            {/* ── STEP 1: PILIH METODE PEMBAYARAN ─────────────────────── */}
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden animate-fadeIn border border-slate-200">
+            {/* STEP 1: PILIH METODE PEMBAYARAN */}
             {modalStep === "select_method" && (
-              <div style={{ padding: "26px 28px", display: "flex", flexDirection: "column", gap: 18 }}>
-                {/* Header */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <h3 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)" }}>
-                    Pilih Metode Pembayaran
-                  </h3>
-                  <button
-                    onClick={() => setModalStep(null)}
-                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "var(--color-text-muted)" }}
-                  >
+              <div className="p-6 space-y-5">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div>
+                    <h3 className="text-lg font-bold text-[#191c1e]">Pilih Metode Pembayaran</h3>
+                    <p className="text-xs text-[#70787e]">
+                      Total: <span className="font-bold text-[#1f6d91]">Rp {billAmount.toLocaleString("id-ID")}</span>
+                    </p>
+                  </div>
+                  <button onClick={() => setModalStep(null)} className="text-slate-400 hover:text-slate-600 text-xl font-bold">
                     &times;
                   </button>
                 </div>
 
-                <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: -8 }}>
-                  Pilih metode pembayaran untuk melunasi tagihan pertemuan yang dipilih.
-                </p>
-
-                {/* Ringkasan Tagihan Box */}
-                <div
-                  style={{
-                    background: "#f8fafc",
-                    border: "1px solid #e2e8f0",
-                    borderRadius: "var(--radius-md)",
-                    padding: "14px 16px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 8,
-                  }}
-                >
-                  <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--color-text-muted)", letterSpacing: "0.05em" }}>
-                    RINGKASAN TAGIHAN
-                  </div>
-                  {billBreakdown.map((item) => (
-                    <div key={item.label} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--color-text-secondary)" }}>
-                      <span>{item.label}</span>
-                      <span style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>{item.amount}</span>
-                    </div>
-                  ))}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      borderTop: "1px solid #e2e8f0",
-                      paddingTop: 10,
-                      marginTop: 2,
-                    }}
-                  >
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)" }}>Total Pembayaran</span>
-                    <span style={{ fontSize: 19, fontWeight: 900, color: "var(--color-primary)" }}>
-                      Rp {billAmount.toLocaleString("id-ID")}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Radio Payment Methods */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div className="space-y-3">
                   {/* Virtual Account */}
                   <label
                     onClick={() => setPaymentMethod("va")}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "12px 16px",
-                      borderRadius: "var(--radius-md)",
-                      border: paymentMethod === "va" ? "2px solid var(--color-primary)" : "1px solid var(--color-border)",
-                      background: paymentMethod === "va" ? "#f0f7ff" : "#ffffff",
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                    }}
+                    className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all ${
+                      paymentMethod === "va" ? "border-[#1f6d91] bg-sky-50/60" : "border-slate-200 hover:bg-slate-50"
+                    }`}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                      <div
-                        style={{
-                          width: 38,
-                          height: 38,
-                          borderRadius: "var(--radius-md)",
-                          background: "#e0f2fe",
-                          color: "var(--color-primary)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 18,
-                        }}
-                      >
-                        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                          <rect x="2" y="5" width="20" height="14" rx="2" />
-                          <line x1="2" y1="10" x2="22" y2="10" />
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-sky-100 text-[#1f6d91] flex items-center justify-center">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <rect x="2" y="5" width="20" height="14" rx="2" strokeWidth="2" />
+                          <line x1="2" y1="10" x2="22" y2="10" strokeWidth="2" />
                         </svg>
                       </div>
                       <div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text-primary)" }}>
-                          Virtual Account
-                        </div>
-                        <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>
-                          Bayar melalui nomor Virtual Account
-                        </div>
+                        <h4 className="text-sm font-bold text-[#191c1e]">Virtual Account</h4>
+                        <p className="text-xs text-[#70787e]">BCA, BNI, Mandiri, BRI</p>
                       </div>
                     </div>
-                    <div
-                      style={{
-                        width: 18,
-                        height: 18,
-                        borderRadius: "50%",
-                        border: paymentMethod === "va" ? "5px solid var(--color-primary)" : "2px solid #cbd5e1",
-                        background: "#ffffff",
-                      }}
-                    />
+                    <div className={`w-4 h-4 rounded-full border-2 ${paymentMethod === "va" ? "border-[#1f6d91] bg-[#1f6d91]" : "border-slate-300"}`} />
                   </label>
 
                   {/* E-Wallet */}
                   <label
                     onClick={() => setPaymentMethod("ewallet")}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "12px 16px",
-                      borderRadius: "var(--radius-md)",
-                      border: paymentMethod === "ewallet" ? "2px solid var(--color-primary)" : "1px solid var(--color-border)",
-                      background: paymentMethod === "ewallet" ? "#f0f7ff" : "#ffffff",
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                    }}
+                    className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all ${
+                      paymentMethod === "ewallet" ? "border-[#1f6d91] bg-sky-50/60" : "border-slate-200 hover:bg-slate-50"
+                    }`}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                      <div
-                        style={{
-                          width: 38,
-                          height: 38,
-                          borderRadius: "var(--radius-md)",
-                          background: "#fef3c7",
-                          color: "#d97706",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 18,
-                        }}
-                      >
-                        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                          <rect x="5" y="2" width="14" height="20" rx="2" />
-                          <line x1="12" y1="18" x2="12.01" y2="18" strokeWidth={3} />
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <rect x="5" y="2" width="14" height="20" rx="2" strokeWidth="2" />
+                          <line x1="12" y1="18" x2="12.01" y2="18" strokeWidth="3" />
                         </svg>
                       </div>
                       <div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text-primary)" }}>
-                          E-Wallet
-                        </div>
-                        <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>
-                          Bayar menggunakan dompet digital (GoPay, OVO, Dana, ShopeePay)
-                        </div>
+                        <h4 className="text-sm font-bold text-[#191c1e]">E-Wallet</h4>
+                        <p className="text-xs text-[#70787e]">GoPay, OVO, Dana, ShopeePay</p>
                       </div>
                     </div>
-                    <div
-                      style={{
-                        width: 18,
-                        height: 18,
-                        borderRadius: "50%",
-                        border: paymentMethod === "ewallet" ? "5px solid var(--color-primary)" : "2px solid #cbd5e1",
-                        background: "#ffffff",
-                      }}
-                    />
+                    <div className={`w-4 h-4 rounded-full border-2 ${paymentMethod === "ewallet" ? "border-[#1f6d91] bg-[#1f6d91]" : "border-slate-300"}`} />
                   </label>
 
                   {/* QRIS */}
                   <label
                     onClick={() => setPaymentMethod("qris")}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "12px 16px",
-                      borderRadius: "var(--radius-md)",
-                      border: paymentMethod === "qris" ? "2px solid var(--color-primary)" : "1px solid var(--color-border)",
-                      background: paymentMethod === "qris" ? "#f0f7ff" : "#ffffff",
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                    }}
+                    className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all ${
+                      paymentMethod === "qris" ? "border-[#1f6d91] bg-sky-50/60" : "border-slate-200 hover:bg-slate-50"
+                    }`}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                      <div
-                        style={{
-                          width: 38,
-                          height: 38,
-                          borderRadius: "var(--radius-md)",
-                          background: "#dcfce7",
-                          color: "#15803d",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 18,
-                        }}
-                      >
-                        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                          <rect x="3" y="3" width="7" height="7" />
-                          <rect x="14" y="3" width="7" height="7" />
-                          <rect x="14" y="14" width="7" height="7" />
-                          <rect x="3" y="14" width="7" height="7" />
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <rect x="3" y="3" width="7" height="7" strokeWidth="2" />
+                          <rect x="14" y="3" width="7" height="7" strokeWidth="2" />
+                          <rect x="14" y="14" width="7" height="7" strokeWidth="2" />
+                          <rect x="3" y="14" width="7" height="7" strokeWidth="2" />
                         </svg>
                       </div>
                       <div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text-primary)" }}>
-                          QRIS
-                        </div>
-                        <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>
-                          Scan QRIS menggunakan semua aplikasi pembayaran
-                        </div>
+                        <h4 className="text-sm font-bold text-[#191c1e]">QRIS Instant</h4>
+                        <p className="text-xs text-[#70787e]">Scan via semua aplikasi m-Banking & dompet digital</p>
                       </div>
                     </div>
-                    <div
-                      style={{
-                        width: 18,
-                        height: 18,
-                        borderRadius: "50%",
-                        border: paymentMethod === "qris" ? "5px solid var(--color-primary)" : "2px solid #cbd5e1",
-                        background: "#ffffff",
-                      }}
-                    />
+                    <div className={`w-4 h-4 rounded-full border-2 ${paymentMethod === "qris" ? "border-[#1f6d91] bg-[#1f6d91]" : "border-slate-300"}`} />
                   </label>
 
                   {/* Cash */}
                   <label
                     onClick={() => setPaymentMethod("cash")}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "12px 16px",
-                      borderRadius: "var(--radius-md)",
-                      border: paymentMethod === "cash" ? "2px solid var(--color-primary)" : "1px solid var(--color-border)",
-                      background: paymentMethod === "cash" ? "#f0f7ff" : "#ffffff",
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                    }}
+                    className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all ${
+                      paymentMethod === "cash" ? "border-[#1f6d91] bg-sky-50/60" : "border-slate-200 hover:bg-slate-50"
+                    }`}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                      <div
-                        style={{
-                          width: 38,
-                          height: 38,
-                          borderRadius: "var(--radius-md)",
-                          background: "#ede9fe",
-                          color: "#7c3aed",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 18,
-                        }}
-                      >
-                        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                          <rect x="2" y="6" width="20" height="12" rx="2" />
-                          <circle cx="12" cy="12" r="3" />
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <rect x="2" y="6" width="20" height="12" rx="2" strokeWidth="2" />
+                          <circle cx="12" cy="12" r="3" strokeWidth="2" />
                         </svg>
                       </div>
                       <div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text-primary)" }}>
-                          Cash
-                        </div>
-                        <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>
-                          Pembayaran tunai melalui Admin atau Cabang
-                        </div>
+                        <h4 className="text-sm font-bold text-[#191c1e]">Cash di Cabang</h4>
+                        <p className="text-xs text-[#70787e]">Bayar tunai ke Admin BSD After School Club</p>
                       </div>
                     </div>
-                    <div
-                      style={{
-                        width: 18,
-                        height: 18,
-                        borderRadius: "50%",
-                        border: paymentMethod === "cash" ? "5px solid var(--color-primary)" : "2px solid #cbd5e1",
-                        background: "#ffffff",
-                      }}
-                    />
+                    <div className={`w-4 h-4 rounded-full border-2 ${paymentMethod === "cash" ? "border-[#1f6d91] bg-[#1f6d91]" : "border-slate-300"}`} />
                   </label>
                 </div>
 
-                {/* Footer Buttons */}
-                <div style={{ display: "flex", gap: 12, marginTop: 6 }}>
-                  <button
-                    className="btn btn-ghost"
-                    style={{ flex: 1, justifyContent: "center", padding: "11px", fontWeight: 600 }}
-                    onClick={() => setModalStep(null)}
-                  >
+                <div className="flex gap-3 pt-2">
+                  <button onClick={() => setModalStep(null)} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50">
                     Batal
                   </button>
-                  <button
-                    className="btn btn-accent"
-                    style={{ flex: 1.5, justifyContent: "center", padding: "11px", fontWeight: 700 }}
-                    onClick={() => setModalStep("pay_details")}
-                  >
+                  <button onClick={() => setModalStep("pay_details")} className="flex-1 py-2.5 rounded-xl bg-[#1f6d91] hover:bg-[#005474] text-xs font-bold text-white shadow">
                     Lanjutkan Pembayaran
                   </button>
                 </div>
               </div>
             )}
 
-            {/* ── STEP 2: DETAIL PEMBAYARAN SESUAI METODE ────────────── */}
+            {/* STEP 2: DETAIL PEMBAYARAN SESUAI METODE */}
             {modalStep === "pay_details" && (
-              <div style={{ padding: "26px 28px", display: "flex", flexDirection: "column", gap: 18, maxHeight: "85vh", overflowY: "auto" }}>
-                {/* Header */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <h3 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)" }}>
+              <div className="p-6 space-y-5 max-h-[85vh] overflow-y-auto">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h3 className="text-base font-bold text-[#191c1e]">
                     {paymentMethod === "va" && "Pembayaran Virtual Account"}
                     {paymentMethod === "ewallet" && "Pembayaran E-Wallet"}
-                    {paymentMethod === "qris" && "Pembayaran QRIS"}
-                    {paymentMethod === "cash" && "Pembayaran Cash (Tunai di Cabang)"}
+                    {paymentMethod === "qris" && "Pembayaran QRIS Instant"}
+                    {paymentMethod === "cash" && "Pembayaran Cash di Cabang"}
                   </h3>
-                  <button
-                    onClick={() => setModalStep(null)}
-                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "var(--color-text-muted)" }}
-                  >
+                  <button onClick={() => setModalStep(null)} className="text-slate-400 hover:text-slate-600 text-xl font-bold">
                     &times;
                   </button>
                 </div>
 
-                <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: -8 }}>
-                  {paymentMethod === "va" && "Silakan selesaikan pembayaran menggunakan Virtual Account sebelum batas waktu."}
-                  {paymentMethod === "ewallet" && "Pilih dompet digital Anda dan lakukan konfirmasi pembayaran."}
-                  {paymentMethod === "qris" && "Buka aplikasi pembayaran dan scan kode QR di bawah."}
-                  {paymentMethod === "cash" && "Tunjukkan kode referensi pembayaran ini kepada Admin di cabang."}
-                </p>
-
-                {/* Ringkasan Pembayaran Box */}
-                <div
-                  style={{
-                    background: "#f8fafc",
-                    border: "1px solid #e2e8f0",
-                    borderRadius: "var(--radius-md)",
-                    padding: "14px 16px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 8,
-                  }}
-                >
-                  <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--color-text-muted)", letterSpacing: "0.05em" }}>
-                    RINGKASAN PEMBAYARAN
-                  </div>
+                {/* Ringkasan Box */}
+                <div className="bg-slate-50 p-4 rounded-xl space-y-2 border border-slate-200">
+                  <p className="text-[11px] font-bold text-[#70787e] uppercase tracking-wider">Ringkasan Tagihan</p>
                   {billBreakdown.map((item) => (
-                    <div key={item.label} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--color-text-secondary)" }}>
+                    <div key={item.label} className="flex justify-between text-xs text-[#191c1e]">
                       <span>{item.label}</span>
-                      <span style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>{item.amount}</span>
+                      <span className="font-semibold">{item.amount}</span>
                     </div>
                   ))}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      borderTop: "1px solid #e2e8f0",
-                      paddingTop: 10,
-                      marginTop: 2,
-                    }}
-                  >
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)" }}>Total Pembayaran</span>
-                    <span style={{ fontSize: 19, fontWeight: 900, color: "var(--color-primary)" }}>
-                      Rp {billAmount.toLocaleString("id-ID")}
-                    </span>
+                  <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+                    <span className="text-xs font-bold text-[#191c1e]">Total Tagihan</span>
+                    <span className="text-base font-extrabold text-[#1f6d91]">Rp {billAmount.toLocaleString("id-ID")}</span>
                   </div>
                 </div>
 
-                {/* 1. VIRTUAL ACCOUNT VIEW */}
+                {/* VA VIEW */}
                 {paymentMethod === "va" && (
-                  <>
+                  <div className="space-y-4">
                     <div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", marginBottom: 8, letterSpacing: "0.04em" }}>
-                        PILIH BANK
-                      </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
+                      <p className="text-xs font-bold text-[#70787e] mb-2">PILIH BANK</p>
+                      <div className="grid grid-cols-2 gap-2">
                         {(["BCA", "BNI", "Mandiri", "BRI"] as const).map((b) => (
                           <button
                             key={b}
                             onClick={() => setSelectedBank(b)}
-                            style={{
-                              padding: "10px",
-                              borderRadius: "var(--radius-md)",
-                              border: selectedBank === b ? "2px solid var(--color-primary)" : "1px solid var(--color-border)",
-                              background: selectedBank === b ? "#ffffff" : "#f8fafc",
-                              fontWeight: selectedBank === b ? 800 : 600,
-                              color: selectedBank === b ? "var(--color-primary)" : "var(--color-text-primary)",
-                              cursor: "pointer",
-                              fontSize: 13.5,
-                              boxShadow: selectedBank === b ? "0 1px 4px rgba(26,92,138,0.15)" : "none",
-                            }}
+                            className={`py-2 px-3 rounded-lg border text-xs font-bold transition-all ${
+                              selectedBank === b ? "border-[#1f6d91] bg-sky-50 text-[#1f6d91]" : "border-slate-200 text-slate-700"
+                            }`}
                           >
                             {b}
                           </button>
@@ -1072,74 +646,34 @@ export default function OrangTuaPembayaranPage() {
                       </div>
                     </div>
 
-                    <div
-                      style={{
-                        background: "#f0f7ff",
-                        border: "1px solid #bfdbfe",
-                        borderRadius: "var(--radius-md)",
-                        padding: "16px",
-                        textAlign: "center",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                    >
-                      <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--color-text-muted)", letterSpacing: "0.06em" }}>
-                        NOMOR VIRTUAL ACCOUNT {selectedBank}
-                      </span>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <span style={{ fontSize: 20, fontWeight: 900, color: "var(--color-primary)", letterSpacing: "1px" }}>
-                          1234 5678 9012 3456
-                        </span>
+                    <div className="bg-sky-50 border border-sky-200 p-4 rounded-xl text-center space-y-2">
+                      <p className="text-xs font-bold text-[#70787e]">NOMOR VIRTUAL ACCOUNT {selectedBank}</p>
+                      <div className="flex items-center justify-center gap-3">
+                        <span className="text-xl font-black text-[#1f6d91] tracking-wider">1234 5678 9012 3456</span>
                         <button
                           onClick={() => handleCopy("1234567890123456", "va")}
-                          style={{
-                            background: "#ffffff",
-                            border: "1px solid #bfdbfe",
-                            borderRadius: 6,
-                            padding: "4px 8px",
-                            cursor: "pointer",
-                            fontSize: 12,
-                            fontWeight: 700,
-                            color: "var(--color-primary)",
-                          }}
+                          className="bg-white border border-sky-200 px-2.5 py-1 rounded text-xs font-bold text-[#1f6d91]"
                         >
                           {copied === "va" ? "Tersalin!" : "Salin"}
                         </button>
                       </div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)", marginTop: 2 }}>
-                        Total: Rp {billAmount.toLocaleString("id-ID")}
-                      </div>
-                      <div style={{ fontSize: 11.5, color: "#be123c", fontWeight: 600 }}>
-                        Bayar sebelum 27 Agustus 2024, 23:59
-                      </div>
                     </div>
-                  </>
+                  </div>
                 )}
 
-                {/* 2. E-WALLET VIEW */}
+                {/* E-WALLET VIEW */}
                 {paymentMethod === "ewallet" && (
-                  <>
+                  <div className="space-y-4">
                     <div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", marginBottom: 8, letterSpacing: "0.04em" }}>
-                        PILIH E-WALLET
-                      </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
+                      <p className="text-xs font-bold text-[#70787e] mb-2">PILIH E-WALLET</p>
+                      <div className="grid grid-cols-2 gap-2">
                         {(["GoPay", "OVO", "Dana", "ShopeePay"] as const).map((ew) => (
                           <button
                             key={ew}
                             onClick={() => setSelectedEwallet(ew)}
-                            style={{
-                              padding: "10px",
-                              borderRadius: "var(--radius-md)",
-                              border: selectedEwallet === ew ? "2px solid #f59e0b" : "1px solid var(--color-border)",
-                              background: selectedEwallet === ew ? "#fffbeb" : "#f8fafc",
-                              fontWeight: selectedEwallet === ew ? 800 : 600,
-                              color: selectedEwallet === ew ? "#b45309" : "var(--color-text-primary)",
-                              cursor: "pointer",
-                              fontSize: 13.5,
-                            }}
+                            className={`py-2 px-3 rounded-lg border text-xs font-bold transition-all ${
+                              selectedEwallet === ew ? "border-amber-500 bg-amber-50 text-amber-800" : "border-slate-200 text-slate-700"
+                            }`}
                           >
                             {ew}
                           </button>
@@ -1147,79 +681,32 @@ export default function OrangTuaPembayaranPage() {
                       </div>
                     </div>
 
-                    <div
-                      style={{
-                        background: "#fffbeb",
-                        border: "1px solid #fde68a",
-                        borderRadius: "var(--radius-md)",
-                        padding: "16px",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 10,
-                      }}
-                    >
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#92400e" }}>
-                        Nomor Handphone Terdaftar di {selectedEwallet}:
-                      </div>
-                      <div style={{ display: "flex", gap: 8 }}>
+                    <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl space-y-3">
+                      <p className="text-xs font-bold text-amber-900">No. Handphone {selectedEwallet}:</p>
+                      <div className="flex gap-2">
                         <input
                           type="text"
                           value={phoneNumber}
                           onChange={(e) => setPhoneNumber(e.target.value)}
-                          className="search-input"
-                          style={{ padding: "8px 12px", borderRadius: "var(--radius-md)" }}
+                          className="flex-1 bg-white border border-amber-300 rounded-lg px-3 py-1.5 text-xs font-medium"
                         />
                         <button
-                          className="btn btn-accent"
-                          style={{ padding: "8px 14px", fontSize: 12.5 }}
-                          onClick={() => alert(`Notifikasi pembayaran dikirim ke aplikasi ${selectedEwallet}!`)}
+                          onClick={() => alert(`Notifikasi dikirim ke ${selectedEwallet}!`)}
+                          className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg"
                         >
                           Buka {selectedEwallet}
                         </button>
                       </div>
-                      <div style={{ fontSize: 11.5, color: "#b45309" }}>
-                        Pastikan saldo {selectedEwallet} Anda mencukupi (Min. Rp {billAmount.toLocaleString("id-ID")}).
-                      </div>
                     </div>
-                  </>
+                  </div>
                 )}
 
-                {/* 3. QRIS VIEW */}
+                {/* QRIS VIEW */}
                 {paymentMethod === "qris" && (
-                  <div
-                    style={{
-                      background: "#f8fafc",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: "var(--radius-md)",
-                      padding: "20px 16px",
-                      textAlign: "center",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: 12,
-                    }}
-                  >
-                    <div style={{ fontSize: 13, fontWeight: 800, color: "var(--color-primary)" }}>
-                      BSD AFTER SCHOOL CLUB (NMID: ID1029384756)
-                    </div>
-                    
-                    {/* SVG Vector QR Code */}
-                    <div
-                      style={{
-                        width: 170,
-                        height: 170,
-                        background: "#ffffff",
-                        border: "2px solid var(--color-border)",
-                        borderRadius: 12,
-                        padding: 12,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-                      }}
-                    >
-                      <svg width={130} height={130} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                  <div className="bg-slate-50 border border-slate-200 p-5 rounded-xl text-center space-y-3 flex flex-col items-center">
+                    <p className="text-xs font-extrabold text-[#005474]">BSD AFTER SCHOOL CLUB (NMID: ID1029384756)</p>
+                    <div className="w-40 h-40 bg-white border-2 border-slate-300 p-3 rounded-xl flex items-center justify-center shadow-xs">
+                      <svg width={120} height={120} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
                         <rect x="2" y="2" width="8" height="8" rx="1" fill="#1e293b" />
                         <rect x="4" y="4" width="4" height="4" fill="#ffffff" />
                         <rect x="14" y="2" width="8" height="8" rx="1" fill="#1e293b" />
@@ -1230,311 +717,81 @@ export default function OrangTuaPembayaranPage() {
                         <rect x="19" y="14" width="3" height="3" fill="#1e293b" />
                         <rect x="14" y="19" width="3" height="3" fill="#1e293b" />
                         <rect x="19" y="19" width="3" height="3" fill="#1e293b" />
-                        <rect x="11" y="7" width="2" height="2" fill="#1e293b" />
-                        <rect x="7" y="11" width="2" height="2" fill="#1e293b" />
-                        <rect x="11" y="11" width="2" height="2" fill="#1e293b" />
-                        <rect x="15" y="11" width="2" height="2" fill="#1e293b" />
-                        <rect x="11" y="15" width="2" height="2" fill="#1e293b" />
                       </svg>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: "#475569", letterSpacing: "1px" }}>
-                        QRIS STANDAR NASIONAL
-                      </div>
                     </div>
-
-                    <div style={{ display: "flex", gap: 10 }}>
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => handleCopy("ID1029384756", "qris")}
-                      >
-                        {copied === "qris" ? "NMID Tersalin!" : "Salin NMID"}
-                      </button>
-                      <button
-                        className="btn btn-outline btn-sm"
-                        onClick={() => alert("Mengunduh gambar QRIS...")}
-                      >
-                        Unduh QR
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleCopy("ID1029384756", "qris")}
+                      className="bg-white border border-slate-300 px-3 py-1 rounded text-xs font-bold text-[#1f6d91]"
+                    >
+                      {copied === "qris" ? "NMID Tersalin!" : "Salin NMID"}
+                    </button>
                   </div>
                 )}
 
-                {/* 4. CASH VIEW */}
+                {/* CASH VIEW */}
                 {paymentMethod === "cash" && (
-                  <div
-                    style={{
-                      background: "#f5f3ff",
-                      border: "1px solid #ddd6fe",
-                      borderRadius: "var(--radius-md)",
-                      padding: "18px 16px",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 12,
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#e9d5ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth={2}>
-                          <path d="M3 21h18M9 8h1M9 12h1M9 16h1M14 8h1M14 12h1M14 16h1M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16" />
-                        </svg>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 13.5, fontWeight: 800, color: "#6b21a8" }}>
-                          Kode Booking Pembayaran Tunai
-                        </div>
-                        <div style={{ fontSize: 11.5, color: "#7c3aed" }}>
-                          Tunjukkan ke Admin / Resepsionis BSD After School Club
-                        </div>
-                      </div>
-                    </div>
-
-                    <div
-                      style={{
-                        background: "#ffffff",
-                        border: "1.5px dashed #8b5cf6",
-                        borderRadius: "var(--radius-md)",
-                        padding: "12px 16px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontSize: 10.5, color: "var(--color-text-muted)", fontWeight: 700 }}>
-                          KODE REFERENSI
-                        </div>
-                        <div style={{ fontSize: 18, fontWeight: 900, color: "#6b21a8", letterSpacing: "1px" }}>
-                          CASH-88921-08
-                        </div>
-                      </div>
+                  <div className="bg-purple-50 border border-purple-200 p-4 rounded-xl space-y-3">
+                    <p className="text-xs font-bold text-purple-900">Kode Booking Pembayaran Tunai:</p>
+                    <div className="flex items-center justify-between bg-white border border-purple-300 p-3 rounded-lg">
+                      <span className="text-base font-black text-purple-800">CASH-88921-08</span>
                       <button
                         onClick={() => handleCopy("CASH-88921-08", "cash")}
-                        style={{
-                          background: "#f5f3ff",
-                          border: "1px solid #c4b5fd",
-                          borderRadius: 6,
-                          padding: "6px 12px",
-                          cursor: "pointer",
-                          fontSize: 12,
-                          fontWeight: 700,
-                          color: "#6b21a8",
-                        }}
+                        className="bg-purple-100 text-purple-800 text-xs font-bold px-2.5 py-1 rounded"
                       >
                         {copied === "cash" ? "Tersalin!" : "Salin Kode"}
                       </button>
                     </div>
-
-                    <div style={{ fontSize: 12, color: "#581c87", lineHeight: 1.4 }}>
-                      <strong>Lokasi Pembayaran:</strong> Front Office BSD After School Club (Senin - Sabtu, 08.00 - 17.00 WIB). Admin akan memverifikasi pembayaran Anda setelah uang tunai diterima.
-                    </div>
+                    <p className="text-[11px] text-purple-800">
+                      Tunjukkan kode ini ke Admin cabang BSD After School Club saat melakukan pembayaran tunai.
+                    </p>
                   </div>
                 )}
 
-                {/* Notice Box */}
-                <div
-                  style={{
-                    background: "#fffbeb",
-                    border: "1px solid #fde68a",
-                    borderRadius: "var(--radius-md)",
-                    padding: "12px 14px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    fontSize: 12,
-                    color: "#92400e",
-                  }}
-                >
-                  <span style={{ fontSize: 16 }}>ℹ</span>
-                  <span>Pastikan nominal pembayaran sesuai agar pembayaran dapat terverifikasi secara otomatis.</span>
-                </div>
-
-                {/* Accordion Cara Pembayaran */}
-                <div
-                  style={{
-                    border: "1px solid var(--color-border)",
-                    borderRadius: "var(--radius-md)",
-                    overflow: "hidden",
-                  }}
-                >
+                {/* Accordion Petunjuk Pembayaran */}
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
                   <button
                     onClick={() => setAccordionOpen(!accordionOpen)}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "#ffffff",
-                      border: "none",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      fontSize: 13.5,
-                      fontWeight: 700,
-                      color: "var(--color-text-primary)",
-                      cursor: "pointer",
-                    }}
+                    className="w-full bg-slate-50 p-3 text-left text-xs font-bold text-slate-700 flex items-center justify-between"
                   >
-                    <span>Cara Pembayaran</span>
-                    <svg
-                      width={16}
-                      height={16}
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      style={{
-                        transform: accordionOpen ? "rotate(180deg)" : "rotate(0deg)",
-                        transition: "transform 0.2s ease",
-                      }}
-                    >
-                      <polyline points="6 9 12 15 18 9" />
+                    <span>Petunjuk Cara Pembayaran</span>
+                    <svg className={`w-4 h-4 transition-transform ${accordionOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
-
                   {accordionOpen && (
-                    <div style={{ padding: "12px 16px", background: "var(--color-bg)", fontSize: 12.5, color: "var(--color-text-secondary)", borderTop: "1px solid var(--color-border-light)" }}>
-                      {paymentMethod === "va" && (
-                        <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6 }}>
-                          <li>Buka aplikasi Mobile Banking atau ATM {selectedBank}.</li>
-                          <li>Pilih menu <strong>Transfer / Pembayaran</strong> &gt; <strong>Virtual Account</strong>.</li>
-                          <li>Masukkan nomor Virtual Account: <strong>1234 5678 9012 3456</strong>.</li>
-                          <li>Periksa rincian tagihan (Rp {billAmount.toLocaleString("id-ID")}) lalu konfirmasi PIN.</li>
-                          <li>Simpan bukti pembayaran dan klik tombol di bawah.</li>
-                        </ol>
-                      )}
-                      {paymentMethod === "ewallet" && (
-                        <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6 }}>
-                          <li>Buka aplikasi <strong>{selectedEwallet}</strong> di smartphone Anda.</li>
-                          <li>Buka notifikasi tagihan atau konfirmasi pembayaran masuk dari BSD After School Club.</li>
-                          <li>Pastikan nominal sebesar <strong>Rp {billAmount.toLocaleString("id-ID")}</strong>.</li>
-                          <li>Masukkan PIN {selectedEwallet} untuk menyelesaikan transaksi.</li>
-                        </ol>
-                      )}
-                      {paymentMethod === "qris" && (
-                        <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6 }}>
-                          <li>Buka aplikasi dompet digital atau m-banking apa saja yang memiliki fitur QRIS.</li>
-                          <li>Pilih menu <strong>Scan QR</strong>.</li>
-                          <li>Arahkan kamera ke kode QR di atas atau unggah gambar QR.</li>
-                          <li>Periksa nama penerima <strong>BSD After School Club</strong> dan nominal, lalu bayar.</li>
-                        </ol>
-                      )}
-                      {paymentMethod === "cash" && (
-                        <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6 }}>
-                          <li>Kunjungi kantor cabang BSD After School Club.</li>
-                          <li>Temui petugas Admin / Resepsionis dan sebutkan kode <strong>CASH-88921-08</strong>.</li>
-                          <li>Serahkan uang tunai sebesar <strong>Rp {billAmount.toLocaleString("id-ID")}</strong>.</li>
-                          <li>Admin akan mencetak tanda terima resmi dan memverifikasi pembayaran di sistem.</li>
-                        </ol>
-                      )}
+                    <div className="p-3 text-xs text-slate-600 bg-white border-t border-slate-200 space-y-1.5">
+                      <ol className="list-decimal pl-4 space-y-1">
+                        <li>Buka aplikasi sesuai metode yang Anda pilih.</li>
+                        <li>Masukkan nominal tepat sebesar <strong>Rp {billAmount.toLocaleString("id-ID")}</strong>.</li>
+                        <li>Selesaikan transaksi dan simpan bukti konfirmasi.</li>
+                      </ol>
                     </div>
                   )}
                 </div>
 
-                {/* Footer Buttons */}
-                <div style={{ display: "flex", gap: 12, marginTop: 4 }}>
-                  <button
-                    className="btn btn-ghost"
-                    style={{ flex: 1, justifyContent: "center", padding: "11px", fontWeight: 600 }}
-                    onClick={() => setModalStep("select_method")}
-                  >
+                <div className="flex gap-3 pt-2">
+                  <button onClick={() => setModalStep("select_method")} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50">
                     Kembali
                   </button>
-                  <button
-                    className="btn btn-accent"
-                    style={{ flex: 1.5, justifyContent: "center", padding: "11px", fontWeight: 700 }}
-                    onClick={() => setModalStep("waiting_confirmation")}
-                  >
-                    Saya Sudah Melakukan Pembayaran
+                  <button onClick={() => setModalStep("waiting_confirmation")} className="flex-1 py-2.5 rounded-xl bg-[#1f6d91] hover:bg-[#005474] text-xs font-bold text-white shadow">
+                    Saya Sudah Bayar
                   </button>
                 </div>
               </div>
             )}
 
-            {/* ── STEP 3: MENUNGGU KONFIRMASI PEMBAYARAN ───────────────── */}
+            {/* STEP 3: MENUNGGU KONFIRMASI */}
             {modalStep === "waiting_confirmation" && (
-              <div style={{ padding: "32px 28px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 20 }}>
-                {/* Header Close */}
-                <div style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <h3 style={{ fontSize: 17, fontWeight: 800, color: "var(--color-text-primary)" }}>
-                    Menunggu Konfirmasi Pembayaran
-                  </h3>
-                  <button
-                    onClick={() => setModalStep(null)}
-                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "var(--color-text-muted)" }}
-                  >
-                    &times;
-                  </button>
+              <div className="p-8 text-center space-y-5">
+                <div className="w-12 h-12 border-4 border-sky-200 border-t-[#1f6d91] rounded-full animate-spin mx-auto" />
+                <div>
+                  <h3 className="text-base font-extrabold text-[#191c1e]">Menunggu Konfirmasi Pembayaran</h3>
+                  <p className="text-xs text-[#70787e] mt-1">Sistem sedang memverifikasi transaksi pembayaran Anda...</p>
                 </div>
 
-                {/* Animated Circular Spinner */}
-                <div style={{ padding: "10px 0" }}>
-                  <div
-                    style={{
-                      width: 60,
-                      height: 60,
-                      borderRadius: "50%",
-                      border: "4px solid #e0f2fe",
-                      borderTopColor: "var(--color-primary)",
-                      animation: "spin 1s linear infinite",
-                      margin: "0 auto",
-                    }}
-                  />
-                  <style>{`
-                    @keyframes spin {
-                      0% { transform: rotate(0deg); }
-                      100% { transform: rotate(360deg); }
-                    }
-                  `}</style>
-                </div>
-
-                <p style={{ fontSize: 13, color: "var(--color-text-muted)", maxWidth: 360, lineHeight: 1.4 }}>
-                  {paymentMethod === "cash" 
-                    ? "Pengajuan pembayaran cash Anda telah dikirim ke Admin. Silakan serahkan uang tunai di cabang."
-                    : "Sistem sedang menunggu konfirmasi dari penyedia pembayaran."}
-                </p>
-
-                {/* Ringkasan Tagihan Box */}
-                <div
-                  style={{
-                    width: "100%",
-                    background: "#f8fafc",
-                    border: "1px solid #e2e8f0",
-                    borderRadius: "var(--radius-md)",
-                    padding: "14px 16px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 8,
-                    textAlign: "left",
-                  }}
-                >
-                  <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--color-text-muted)", letterSpacing: "0.05em" }}>
-                    RINGKASAN TAGIHAN
-                  </div>
-                  {billBreakdown.map((item) => (
-                    <div key={item.label} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--color-text-secondary)" }}>
-                      <span>{item.label}</span>
-                      <span style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>{item.amount}</span>
-                    </div>
-                  ))}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      borderTop: "1px solid #e2e8f0",
-                      paddingTop: 10,
-                      marginTop: 2,
-                    }}
-                  >
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)" }}>Total Pembayaran</span>
-                    <span style={{ fontSize: 19, fontWeight: 900, color: "var(--color-primary)" }}>
-                      Rp {billAmount.toLocaleString("id-ID")}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Cek Status Button — Routes to status invoice page */}
                 <button
-                  className="btn btn-accent"
-                  style={{ width: "100%", justifyContent: "center", padding: "12px", fontWeight: 700, fontSize: 14 }}
                   onClick={handleCheckStatus}
+                  className="w-full py-3 rounded-xl bg-[#1f6d91] hover:bg-[#005474] text-xs font-bold text-white shadow transition-all"
                 >
                   Cek Status Pembayaran
                 </button>
