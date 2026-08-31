@@ -7,10 +7,10 @@ export default function GuruDashboardPage() {
       {/* Kepala Halaman */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">Selamat Datang, Ms. Sarah 👋</h1>
+          <h1 className="page-title">Selamat Datang, Ms. Sarah</h1>
           <p className="page-subtitle">Ringkasan kelas mengajar Anda hari ini dan rekap statistik mengajar.</p>
         </div>
-        <Link href="/guru/jadwal" className="btn btn-primary">📅 Lihat Semua Jadwal Saya</Link>
+        <Link href="/guru/jadwal" className="btn btn-primary">Lihat Semua Jadwal Saya</Link>
       </div>
 
       {/* Stats Strip */}
@@ -52,12 +52,12 @@ export default function GuruDashboardPage() {
                   <span style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)" }}>{k.kelas} — {k.program}</span>
                 </div>
                 <div style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>
-                  ⏰ {k.jam} · 📍 {k.ruang} · 👥 {k.siswa} Siswa · Pertemuan ke-{k.pertemuan} dari {k.total}
+                  {k.jam} · {k.ruang} · {k.siswa} Siswa · Pertemuan ke-{k.pertemuan} dari {k.total}
                 </div>
               </div>
 
               <Link href={`/guru/kelas/${k.id}`} className="btn btn-accent" style={{ textDecoration: "none" }}>
-                ▶ Mulai Kelas & Isi Logbook
+                Mulai Kelas & Isi Logbook
               </Link>
             </div>
           ))}

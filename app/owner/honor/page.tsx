@@ -5,10 +5,10 @@ import Link from "next/link";
 const periodePilihan = ["Agustus 2026", "Juli 2026", "Juni 2026"];
 
 const dataGuru = [
-  { id: "GUR-2026-001", nama: "Ms. Sarah", spesialisasi: "Calistung & Phonics", sesiSelesai: 18, totalJam: 18, tarifPerJam: 75000, bonus: 100000, status: "Belum Dibayar" },
-  { id: "GUR-2026-002", nama: "Mr. Andi", spesialisasi: "English", sesiSelesai: 14, totalJam: 14, tarifPerJam: 80000, bonus: 0, status: "Sudah Dibayar" },
-  { id: "GUR-2026-003", nama: "Ms. Nina", spesialisasi: "Matematika", sesiSelesai: 10, totalJam: 10, tarifPerJam: 80000, bonus: 50000, status: "Belum Dibayar" },
-  { id: "GUR-2026-004", nama: "Mr. Budi", spesialisasi: "Calistung Lanjut", sesiSelesai: 12, totalJam: 12, tarifPerJam: 75000, bonus: 0, status: "Sudah Dibayar" },
+  { id: "GUR-2026-0001", nama: "Ms. Sarah", spesialisasi: "Calistung & Phonics", sesiSelesai: 18, totalJam: 18.0, tarifPerJam: 75000, bonus: 100000, status: "Belum Dibayar" },
+  { id: "GUR-2026-0002", nama: "Mr. Andi",  spesialisasi: "English",            sesiSelesai: 14, totalJam: 14.0, tarifPerJam: 80000, bonus: 0,      status: "Sudah Dibayar" },
+  { id: "GUR-2026-0003", nama: "Ms. Nina",  spesialisasi: "Matematika",          sesiSelesai: 10, totalJam: 10.5, tarifPerJam: 80000, bonus: 50000, status: "Belum Dibayar" },
+  { id: "GUR-2026-0004", nama: "Mr. Budi",  spesialisasi: "Calistung Lanjut",   sesiSelesai: 12, totalJam: 12.0, tarifPerJam: 75000, bonus: 0,      status: "Sudah Dibayar" },
 ];
 
 const warnaStatus: Record<string, { bg: string; color: string }> = {
@@ -25,7 +25,8 @@ export default function OwnerHonorPage() {
   const getStatus = (g: typeof dataGuru[0]) =>
     sudahBayar.includes(g.id) ? "Sudah Dibayar" : g.status;
 
-  const hitungHonor = (g: typeof dataGuru[0]) => g.sesiSelesai * g.tarifPerJam + g.bonus;
+  // Honor = totalJam × tarifPerJam + bonus (sesuai PRD: jam mengajar, bukan jumlah sesi)
+  const hitungHonor = (g: typeof dataGuru[0]) => Math.round(g.totalJam * g.tarifPerJam) + g.bonus;
 
   const totalHonor = dataGuru.reduce((a, g) => a + hitungHonor(g), 0);
   const sudahCair  = dataGuru.filter(g => sudahBayar.includes(g.id)).reduce((a, g) => a + hitungHonor(g), 0);
@@ -196,7 +197,7 @@ export default function OwnerHonorPage() {
               <button className="btn btn-ghost" onClick={() => setDipilih(null)}>Tutup</button>
               {getStatus(dipilih) === "Belum Dibayar" && (
                 <button className="btn btn-accent" onClick={() => bayarHonor(dipilih.id)}>
-                  💸 Cairkan Honor
+                  Cairkan Honor
                 </button>
               )}
             </div>

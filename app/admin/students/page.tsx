@@ -2,27 +2,31 @@
 import { useState } from "react";
 
 const students = [
-  { id: "STD-2026-001", name: "Andi Setiawan", parent: "Budi Setiawan", program: "Calistung Level 1", kelas: "KLS-A", pertemuan: "6/12", status: "Aktif", tagihan: "Lunas" },
-  { id: "STD-2026-002", name: "Budi Santoso", parent: "Hendra Santoso", program: "English B1", kelas: "KLS-B", pertemuan: "10/12", status: "Aktif", tagihan: "Belum Bayar" },
-  { id: "STD-2026-003", name: "Citra Kirana", parent: "Dewi Kirana", program: "Math Advance", kelas: "KLS-C", pertemuan: "3/12", status: "Aktif", tagihan: "Lunas" },
-  { id: "STD-2026-004", name: "Dian Pratama", parent: "Sari Pratama", program: "Phonics Starter", kelas: "KLS-A", pertemuan: "1/12", status: "Aktif", tagihan: "Menunggu" },
-  { id: "STD-2026-005", name: "Eko Wijaya", parent: "Joko Wijaya", program: "Calistung Level 2", kelas: "KLS-B", pertemuan: "12/12", status: "Lulus", tagihan: "Lunas" },
-  { id: "STD-2026-006", name: "Fitri Handayani", parent: "Rina Handayani", program: "English B1", kelas: "KLS-B", pertemuan: "8/12", status: "Aktif", tagihan: "Lunas" },
-  { id: "STD-2026-007", name: "Gilang Ramadan", parent: "Ahmad Ramadan", program: "Math Advance", kelas: "KLS-C", pertemuan: "5/12", status: "Cuti", tagihan: "Lunas" },
-  { id: "STD-2026-008", name: "Hana Pertiwi", parent: "Siska Pertiwi", program: "Phonics Starter", kelas: "KLS-A", pertemuan: "2/12", status: "Aktif", tagihan: "Belum Bayar" },
+  { id: "STD-2026-0001", name: "Andi Setiawan", parent: "Budi Setiawan", program: "Calistung Level 1", kelas: "KLS-2026-0001", pertemuan: "6/12", status: "Aktif", tagihan: "Lunas" },
+  { id: "STD-2026-0002", name: "Budi Santoso", parent: "Hendra Santoso", program: "English B1", kelas: "KLS-2026-0002", pertemuan: "10/12", status: "Aktif", tagihan: "Belum Bayar" },
+  { id: "STD-2026-0003", name: "Citra Kirana", parent: "Dewi Kirana", program: "Math Advance", kelas: "KLS-2026-0003", pertemuan: "3/12", status: "Aktif", tagihan: "Lunas" },
+  { id: "STD-2026-0004", name: "Dian Pratama", parent: "Sari Pratama", program: "Phonics Starter", kelas: "KLS-2026-0001", pertemuan: "1/12", status: "Trial", tagihan: "Belum Bayar" },
+  { id: "STD-2026-0005", name: "Eko Wijaya", parent: "Joko Wijaya", program: "Calistung Level 2", kelas: "KLS-2026-0002", pertemuan: "12/12", status: "Graduated", tagihan: "Lunas" },
+  { id: "STD-2026-0006", name: "Fitri Handayani", parent: "Rina Handayani", program: "English B1", kelas: "KLS-2026-0002", pertemuan: "8/12", status: "Aktif", tagihan: "Lunas" },
+  { id: "STD-2026-0007", name: "Gilang Ramadan", parent: "Ahmad Ramadan", program: "Math Advance", kelas: "KLS-2026-0003", pertemuan: "5/12", status: "On Leave", tagihan: "Lunas" },
+  { id: "STD-2026-0008", name: "Hana Pertiwi", parent: "Siska Pertiwi", program: "Phonics Starter", kelas: "KLS-2026-0001", pertemuan: "2/12", status: "Aktif", tagihan: "Overdue" },
+  { id: "STD-2026-0009", name: "Ivan Kurnia", parent: "Lestari Kurnia", program: "Calistung Level 1", kelas: "KLS-2026-0001", pertemuan: "0/8", status: "Trial", tagihan: "Belum Bayar" },
 ];
 
 const warnaStatus: Record<string, { bg: string; color: string }> = {
-  Aktif:    { bg: "#d1fae5", color: "#059669" },
-  Lulus:    { bg: "#dbeafe", color: "#1d4ed8" },
-  Cuti:     { bg: "#fef3c7", color: "#b45309" },
-  Nonaktif: { bg: "#f1f5f9", color: "#64748b" },
+  Trial:     { bg: "#fef9c3", color: "#ca8a04" },
+  Aktif:     { bg: "#d1fae5", color: "#059669" },
+  "On Leave":{ bg: "#fef3c7", color: "#b45309" },
+  Nonaktif:  { bg: "#f1f5f9", color: "#64748b" },
+  Graduated: { bg: "#dbeafe", color: "#1d4ed8" },
 };
 
 const warnaTagihan: Record<string, { bg: string; color: string }> = {
-  Lunas:         { bg: "#d1fae5", color: "#059669" },
-  Menunggu:      { bg: "#fef3c7", color: "#b45309" },
-  "Belum Bayar": { bg: "#fee2e2", color: "#dc2626" },
+  Lunas:                { bg: "#d1fae5", color: "#059669" },
+  "Menunggu Konfirmasi":{ bg: "#fef3c7", color: "#b45309" },
+  "Belum Bayar":        { bg: "#fee2e2", color: "#dc2626" },
+  "Overdue":            { bg: "#fce7f3", color: "#be185d" },
+  "Partially Paid":     { bg: "#e0f2fe", color: "#0369a1" },
 };
 
 export default function AdminStudentsPage() {
@@ -33,7 +37,7 @@ export default function AdminStudentsPage() {
   const [selectedStudent, setSelectedStudent] = useState<typeof students[0] | null>(null);
 
   const programs = ["Semua", ...Array.from(new Set(students.map(s => s.program)))];
-  const statusList = ["Semua", "Aktif", "Cuti", "Lulus", "Nonaktif"];
+  const statusList = ["Semua", "Trial", "Aktif", "On Leave", "Nonaktif", "Graduated"];
 
   const filtered = students.filter(s => {
     const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -77,10 +81,10 @@ export default function AdminStudentsPage() {
       {/* Stat Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
         {[
-          { label: "Total Siswa", value: students.length, bg: "#dbeafe", color: "#1d4ed8" },
-          { label: "Aktif", value: students.filter(s => s.status === "Aktif").length, bg: "#d1fae5", color: "#059669" },
-          { label: "Belum Bayar", value: students.filter(s => s.tagihan === "Belum Bayar").length, bg: "#fee2e2", color: "#dc2626" },
-          { label: "Lulus", value: students.filter(s => s.status === "Lulus").length, bg: "#ede9fe", color: "#6d28d9" },
+          { label: "Total Siswa",   value: students.length, bg: "#dbeafe", color: "#1d4ed8" },
+          { label: "Trial",         value: students.filter(s => s.status === "Trial").length,     bg: "#fef9c3", color: "#ca8a04" },
+          { label: "Aktif",         value: students.filter(s => s.status === "Aktif").length,     bg: "#d1fae5", color: "#059669" },
+          { label: "Overdue / Belum Bayar", value: students.filter(s => s.tagihan === "Overdue" || s.tagihan === "Belum Bayar").length, bg: "#fee2e2", color: "#dc2626" },
         ].map(c => (
           <div key={c.label} className="stat-card" style={{ gap: 8 }}>
             <div className="stat-card-header">
@@ -245,26 +249,74 @@ export default function AdminStudentsPage() {
                 </div>
               </div>
             ) : (
-              /* Tambah Siswa Form */
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                {[
-                  { label: "Nama Lengkap Siswa", placeholder: "Masukkan nama lengkap", type: "text" },
-                  { label: "Nama Orang Tua / Wali", placeholder: "Masukkan nama orang tua", type: "text" },
-                  { label: "No. HP Orang Tua", placeholder: "08xx-xxxx-xxxx", type: "tel" },
-                  { label: "Tanggal Lahir", placeholder: "", type: "date" },
-                ].map(f => (
-                  <div key={f.label} className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">{f.label}</label>
-                    <input className="form-input" type={f.type} placeholder={f.placeholder} />
+              /* Tambah Siswa Form — Master Data Lengkap sesuai PRD */
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Nama Lengkap Siswa</label>
+                    <input className="form-input" placeholder="Masukkan nama siswa" />
                   </div>
-                ))}
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Program</label>
-                  <select className="form-input" style={{ cursor: "pointer" }}>
-                    <option value="">-- Pilih Program --</option>
-                    {programs.filter(p => p !== "Semua").map(p => <option key={p}>{p}</option>)}
-                  </select>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Tanggal Lahir</label>
+                    <input className="form-input" type="date" />
+                  </div>
                 </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Sekolah Asal</label>
+                    <input className="form-input" placeholder="Contoh: SD BSD 01" />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Kelas di Sekolah</label>
+                    <input className="form-input" placeholder="Contoh: Kelas 2 SD / TK B" />
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Orang Tua / Wali</label>
+                    <input className="form-input" placeholder="Nama Orang Tua" />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">No. HP Orang Tua</label>
+                    <input className="form-input" placeholder="08xx-xxxx-xxxx" />
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Program Utama (Maks 2)</label>
+                    <select className="form-input">
+                      <option value="">-- Pilih Program Utama --</option>
+                      {programs.filter(p => p !== "Semua").map(p => <option key={p}>{p}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Program Tambahan (opsional)</label>
+                    <select className="form-input">
+                      <option value="">-- Tanpa Program ke-2 --</option>
+                      {programs.filter(p => p !== "Semua").map(p => <option key={p}>{p}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Level Kursus</label>
+                    <input className="form-input" placeholder="Contoh: Level 1 / Intermediate" />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Tanggal Mulai Belajar</label>
+                    <input className="form-input" type="date" />
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Catatan Khusus (Alergi, kebutuhan khusus, dll)</label>
+                  <input className="form-input" placeholder="Contoh: Alergi kacang, butuh perhatian khusus membaca" />
+                </div>
+
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
                   <button className="btn btn-ghost" onClick={() => setShowModal(false)}>Batal</button>
                   <button className="btn btn-accent" onClick={() => { alert("Siswa berhasil ditambahkan!"); setShowModal(false); }}>Simpan Siswa</button>

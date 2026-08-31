@@ -7,7 +7,7 @@ export default function OrangTuaDashboardPage() {
       {/* Kepala Halaman */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">Selamat Datang, Bapak Budi 👋</h1>
+          <h1 className="page-title">Selamat Datang, Bapak Budi</h1>
           <p className="page-subtitle">Ringkasan aktivitas akademik dan pembayaran anak Anda di BSD After School Club.</p>
         </div>
       </div>
@@ -24,10 +24,10 @@ export default function OrangTuaDashboardPage() {
 
         <div style={{ display: "flex", gap: 12 }}>
           <Link href="/orang-tua/anak" className="btn btn-accent" style={{ textDecoration: "none" }}>
-            👤 Lihat Detail Progress
+            Lihat Detail Progress
           </Link>
           <Link href="/orang-tua/pembayaran" className="btn btn-outline" style={{ color: "white", borderColor: "white", textDecoration: "none" }}>
-            💳 Status SPP
+            Status SPP
           </Link>
         </div>
       </div>
@@ -76,7 +76,7 @@ export default function OrangTuaDashboardPage() {
         </div>
 
         <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "16px 18px", borderLeft: "4px solid var(--color-accent)" }}>
-          <span style={{ background: "#fee2e2", color: "#dc2626", fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 999, textTransform: "uppercase" }}>🔴 PENTING</span>
+          <span style={{ background: "#fee2e2", color: "#dc2626", fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 999, textTransform: "uppercase" }}>PENTING</span>
           <h4 style={{ fontSize: 14, fontWeight: 800, color: "var(--color-text-primary)", margin: "6px 0 4px" }}>Pembayaran SPP September Jatuh Tempo 10 September</h4>
           <p style={{ fontSize: 13, color: "var(--color-text-secondary)", margin: 0, lineHeight: 1.5 }}>
             Batas waktu pembayaran SPP bulan September adalah tanggal 10 September 2026. Pembayaran dapat dilakukan melalui Virtual Account, QRIS, E-Wallet, atau tunai di kantor.

@@ -2,12 +2,12 @@
 import { useState } from "react";
 
 const classes = [
-  { id: "KLS-2026-001", name: "KLS-A", program: "Calistung Level 1", guru: "Ms. Sarah", day: "Senin & Rabu", time: "14:00–15:00", capacity: 8, enrolled: 6, room: "Ruang 1", status: "Aktif" },
-  { id: "KLS-2026-002", name: "KLS-B", program: "English B1", guru: "Mr. Andi", day: "Selasa & Kamis", time: "15:00–16:00", capacity: 8, enrolled: 8, room: "Ruang 2", status: "Penuh" },
-  { id: "KLS-2026-003", name: "KLS-C", program: "Math Advance", guru: "Ms. Nina", day: "Rabu & Jumat", time: "16:00–17:00", capacity: 6, enrolled: 4, room: "Ruang 3", status: "Aktif" },
-  { id: "KLS-2026-004", name: "KLS-D", program: "Phonics Starter", guru: "Ms. Sarah", day: "Senin & Kamis", time: "13:00–14:00", capacity: 8, enrolled: 5, room: "Ruang 1", status: "Aktif" },
-  { id: "KLS-2026-005", name: "KLS-E", program: "Calistung Level 2", guru: "Mr. Budi", day: "Selasa & Jumat", time: "14:00–15:00", capacity: 8, enrolled: 7, room: "Ruang 2", status: "Aktif" },
-  { id: "KLS-2026-006", name: "KLS-F", program: "English Advanced", guru: "Mr. Andi", day: "Sabtu", time: "09:00–11:00", capacity: 6, enrolled: 0, room: "Ruang 3", status: "Baru" },
+  { id: "KLS-2026-0001", name: "KLS-A", program: "Calistung Level 1", guru: "Ms. Sarah", day: "Senin & Rabu", time: "14:00–15:00", capacity: 7, enrolled: 6, room: "Ruang 1", status: "Aktif" },
+  { id: "KLS-2026-0002", name: "KLS-B", program: "English B1", guru: "Mr. Andi", day: "Selasa & Kamis", time: "15:00–16:00", capacity: 7, enrolled: 7, room: "Ruang 2", status: "Penuh" },
+  { id: "KLS-2026-0003", name: "KLS-C", program: "Math Advance", guru: "Ms. Nina", day: "Rabu & Jumat", time: "16:00–17:00", capacity: 7, enrolled: 4, room: "Ruang 3", status: "Aktif" },
+  { id: "KLS-2026-0004", name: "KLS-D", program: "Phonics Starter", guru: "Ms. Sarah", day: "Senin & Kamis", time: "13:00–14:00", capacity: 7, enrolled: 5, room: "Ruang 1", status: "Aktif" },
+  { id: "KLS-2026-0005", name: "KLS-E", program: "Calistung Level 2", guru: "Mr. Budi", day: "Selasa & Jumat", time: "14:00–15:00", capacity: 7, enrolled: 7, room: "Ruang 2", status: "Penuh" },
+  { id: "KLS-2026-0006", name: "KLS-F", program: "English Advanced", guru: "Mr. Andi", day: "Sabtu", time: "09:00–11:00", capacity: 7, enrolled: 0, room: "Ruang 3", status: "Baru" },
 ];
 
 const statusColor: Record<string, { bg: string; color: string }> = {

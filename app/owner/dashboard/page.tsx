@@ -11,8 +11,8 @@ export default function OwnerDashboardPage() {
           <p className="page-subtitle">Ringkasan performa finansial, akademik, dan aktivitas operasional club.</p>
         </div>
         <div className="page-header-actions">
-          <Link href="/owner/honor" className="btn btn-accent">💸 Kelola Honor Guru</Link>
-          <Link href="/owner/laporan" className="btn btn-outline">📊 Laporan Lengkap</Link>
+          <Link href="/owner/honor" className="btn btn-accent">Kelola Honor Guru</Link>
+          <Link href="/owner/laporan" className="btn btn-outline">Laporan Lengkap</Link>
         </div>
       </div>
 

@@ -44,7 +44,7 @@ export default function GuruLogbookPage() {
             </div>
 
             <div style={{ fontSize: 12.5, color: "var(--color-text-secondary)", fontStyle: "italic" }}>
-              📝 Catatan Guru: "{l.catatan}"
+              Catatan Guru: "{l.catatan}"
             </div>
           </div>
         ))}

@@ -3,20 +3,22 @@ import { useState } from "react";
 import Link from "next/link";
 
 const daftarTagihan = [
-  { id: "INV-2026-000001", siswa: "Andi Setiawan", idSiswa: "STD-2026-001", program: "Calistung Level 1", pertemuan: "Pertemuan 7 & 8", jumlah: 100000, metode: "Transfer BCA", tanggal: "2 Sept 2026", status: "Menunggu Konfirmasi", jalur: "via Orang Tua" },
-  { id: "INV-2026-000002", siswa: "Budi Santoso", idSiswa: "STD-2026-002", program: "English B1", pertemuan: "Pertemuan 4", jumlah: 75000, metode: "QRIS", tanggal: "1 Sept 2026", status: "Lunas", jalur: "via Orang Tua" },
-  { id: "INV-2026-000003", siswa: "Citra Kirana", idSiswa: "STD-2026-003", program: "Math Advance", pertemuan: "Pertemuan 9 & 10", jumlah: 120000, metode: "Cash", tanggal: "31 Agt 2026", status: "Menunggu Konfirmasi", jalur: "via Orang Tua" },
-  { id: "INV-2026-000004", siswa: "Dian Pratama", idSiswa: "STD-2026-004", program: "Phonics Starter", pertemuan: "Pertemuan 3", jumlah: 50000, metode: "–", tanggal: "–", status: "Belum Bayar", jalur: "–" },
-  { id: "INV-2026-000005", siswa: "Eko Wijaya", idSiswa: "STD-2026-005", program: "Calistung Level 2", pertemuan: "Pertemuan 11 & 12", jumlah: 100000, metode: "Cash", tanggal: "28 Agt 2026", status: "Lunas", jalur: "via Admin" },
-  { id: "INV-2026-000006", siswa: "Fitri Handayani", idSiswa: "STD-2026-006", program: "English B1", pertemuan: "Pertemuan 8", jumlah: 75000, metode: "Transfer Mandiri", tanggal: "29 Agt 2026", status: "Lunas", jalur: "via Orang Tua" },
-  { id: "INV-2026-000007", siswa: "Gilang Ramadan", idSiswa: "STD-2026-007", program: "Math Advance", pertemuan: "Pertemuan 5", jumlah: 60000, metode: "–", tanggal: "–", status: "Belum Bayar", jalur: "–" },
-  { id: "INV-2026-000008", siswa: "Hana Pertiwi", idSiswa: "STD-2026-008", program: "Phonics Starter", pertemuan: "Pertemuan 1 & 2", jumlah: 100000, metode: "E-Wallet", tanggal: "27 Agt 2026", status: "Lunas", jalur: "via Orang Tua" },
+  { id: "INV-2026-000001", siswa: "Andi Setiawan", idSiswa: "STD-2026-0001", program: "Calistung Level 1", pertemuan: "Pertemuan 7 & 8", jumlah: 100000, metode: "Cash", tanggal: "2 Sept 2026", status: "Menunggu Konfirmasi", jalur: "via Orang Tua" },
+  { id: "INV-2026-000002", siswa: "Budi Santoso", idSiswa: "STD-2026-0002", program: "English B1", pertemuan: "Pertemuan 4", jumlah: 75000, metode: "QRIS", tanggal: "1 Sept 2026", status: "Lunas", jalur: "via Orang Tua" },
+  { id: "INV-2026-000003", siswa: "Citra Kirana", idSiswa: "STD-2026-0003", program: "Math Advance", pertemuan: "Pertemuan 9 & 10", jumlah: 120000, metode: "Cash", tanggal: "31 Agt 2026", status: "Menunggu Konfirmasi", jalur: "via Orang Tua" },
+  { id: "INV-2026-000004", siswa: "Dian Pratama", idSiswa: "STD-2026-0004", program: "Phonics Starter", pertemuan: "Pertemuan 3", jumlah: 50000, metode: "–", tanggal: "–", status: "Overdue", jalur: "–" },
+  { id: "INV-2026-000005", siswa: "Eko Wijaya", idSiswa: "STD-2026-0005", program: "Calistung Level 2", pertemuan: "Pertemuan 11 & 12", jumlah: 100000, metode: "Cash", tanggal: "28 Agt 2026", status: "Lunas", jalur: "via Admin" },
+  { id: "INV-2026-000006", siswa: "Fitri Handayani", idSiswa: "STD-2026-0006", program: "English B1", pertemuan: "Pertemuan 8", jumlah: 75000, metode: "Transfer Mandiri", tanggal: "29 Agt 2026", status: "Lunas", jalur: "via Orang Tua" },
+  { id: "INV-2026-000007", siswa: "Gilang Ramadan", idSiswa: "STD-2026-0007", program: "Math Advance", pertemuan: "Pertemuan 5", jumlah: 60000, metode: "VA BCA", tanggal: "28 Agt 2026", status: "Partially Paid", jalur: "via Orang Tua" },
+  { id: "INV-2026-000008", siswa: "Hana Pertiwi", idSiswa: "STD-2026-0008", program: "Phonics Starter", pertemuan: "Pertemuan 1 & 2", jumlah: 100000, metode: "–", tanggal: "–", status: "Overdue", jalur: "–" },
 ];
 
 const warnaStatus: Record<string, { bg: string; color: string }> = {
   "Lunas":                { bg: "#d1fae5", color: "#059669" },
   "Menunggu Konfirmasi":  { bg: "#fef3c7", color: "#b45309" },
   "Belum Bayar":          { bg: "#fee2e2", color: "#dc2626" },
+  "Overdue":              { bg: "#fce7f3", color: "#be185d" },
+  "Partially Paid":       { bg: "#e0f2fe", color: "#0369a1" },
 };
 
 export default function AdminTagihanPage() {
@@ -26,7 +28,7 @@ export default function AdminTagihanPage() {
   const [showKonfirmasi, setShowKonfirmasi] = useState(false);
   const [sudahKonfirmasi, setSudahKonfirmasi] = useState<string[]>([]);
 
-  const daftarStatus = ["Semua", "Lunas", "Menunggu Konfirmasi", "Belum Bayar"];
+  const daftarStatus = ["Semua", "Lunas", "Menunggu Konfirmasi", "Partially Paid", "Belum Bayar", "Overdue"];
 
   const terfilter = daftarTagihan.filter(t => {
     const q = cari.toLowerCase();
@@ -67,12 +69,13 @@ export default function AdminTagihanPage() {
       </div>
 
       {/* Kartu Statistik */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 14 }}>
         {[
-          { label: "Total Tagihan", value: daftarTagihan.length, warna: "#1d4ed8", bg: "#dbeafe" },
-          { label: "Lunas", value: daftarTagihan.filter(t=>t.status==="Lunas").length + sudahKonfirmasi.length, warna: "#059669", bg: "#d1fae5" },
-          { label: "Menunggu Konfirmasi", value: Math.max(0, daftarTagihan.filter(t=>t.status==="Menunggu Konfirmasi").length - sudahKonfirmasi.length), warna: "#b45309", bg: "#fef3c7" },
-          { label: "Belum Bayar", value: daftarTagihan.filter(t=>t.status==="Belum Bayar").length, warna: "#dc2626", bg: "#fee2e2" },
+          { label: "Total Tagihan",          value: daftarTagihan.length, warna: "#1d4ed8", bg: "#dbeafe" },
+          { label: "Lunas",                  value: daftarTagihan.filter(t=>t.status==="Lunas").length + sudahKonfirmasi.length, warna: "#059669", bg: "#d1fae5" },
+          { label: "Menunggu Konfirmasi",    value: Math.max(0, daftarTagihan.filter(t=>t.status==="Menunggu Konfirmasi").length - sudahKonfirmasi.length), warna: "#b45309", bg: "#fef3c7" },
+          { label: "Belum Bayar",            value: daftarTagihan.filter(t=>t.status==="Belum Bayar").length, warna: "#dc2626", bg: "#fee2e2" },
+          { label: "Overdue",                value: daftarTagihan.filter(t=>t.status==="Overdue").length, warna: "#be185d", bg: "#fce7f3" },
         ].map(k => (
           <div key={k.label} className="stat-card" style={{ gap: 8 }}>
             <span className="stat-card-label" style={{ fontSize: 11.5 }}>{k.label}</span>
@@ -238,11 +241,11 @@ export default function AdminTagihanPage() {
                 <input className="form-input" placeholder="Contoh: Diterima tunai di kantor" />
               </div>
               <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "10px 14px", fontSize: 12.5, color: "#166534" }}>
-                ✅ Setelah dikonfirmasi, status tagihan berubah menjadi <strong>Lunas</strong> dan nomor transaksi akan digenerate otomatis.
+                Setelah dikonfirmasi, status tagihan berubah menjadi <strong>Lunas</strong> dan nomor transaksi akan digenerate otomatis.
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <button className="btn btn-ghost" onClick={() => { setShowKonfirmasi(false); setDipilih(null); }}>Batal</button>
-                <button className="btn btn-accent" onClick={() => konfirmasi(dipilih.id)}>✓ Konfirmasi Lunas</button>
+                <button className="btn btn-accent" onClick={() => konfirmasi(dipilih.id)}>Konfirmasi Lunas</button>
               </div>
             </div>
           </div>

@@ -64,7 +64,7 @@ export default function AdminOrangTuaPage() {
                 </td>
                 <td style={{ padding: "14px 16px", fontSize: 12.5, color: "var(--color-text-muted)" }}>{o.terdaftar}</td>
                 <td style={{ padding: "14px 16px" }}>
-                  <button className="btn btn-ghost btn-sm" onClick={() => alert(`Hubungi WA ${o.hp}`)}>📱 WA Wali</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => alert(`Hubungi WA ${o.hp}`)}>WA Wali</button>
                 </td>
               </tr>
             ))}

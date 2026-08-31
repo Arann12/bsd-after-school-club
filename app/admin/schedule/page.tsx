@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState } from "react";
 
 const HARI = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
@@ -33,6 +33,19 @@ export default function AdminSchedulePage() {
   const [tampilan, setTampilan] = useState<"tabel" | "daftar">("tabel");
   const [sesiDipilih, setSelectedSes] = useState<typeof sesiList[0] | null>(null);
   const [showJadwalUlang, setShowReschedule] = useState(false);
+  const [showTambah, setShowTambah] = useState(false);
+
+  // Form Tambah Sesi & Conflict Detection
+  const [inputHari, setInputHari] = useState(0);
+  const [inputJam, setInputJam] = useState(14);
+  const [inputGuru, setInputGuru] = useState("Ms. Sarah");
+  const [inputRuang, setInputRuang] = useState("Ruang 1");
+  const [inputKelas, setInputKelas] = useState("KLS-A");
+
+  // Conflict Detection Logic
+  const bentrokGuru = sesiList.find(s => s.day === inputHari && s.hour === inputJam && s.guru === inputGuru);
+  const bentrokRuang = sesiList.find(s => s.day === inputHari && s.hour === inputJam && s.room === inputRuang);
+  const adaBentrok = Boolean(bentrokGuru || bentrokRuang);
 
   const statusCol: Record<string, string> = {
     Terjadwal: "#1a5c8a",
@@ -63,7 +76,7 @@ export default function AdminSchedulePage() {
               </button>
             ))}
           </div>
-          <button className="btn btn-accent" onClick={()=>alert("Tambah sesi")}>+ Tambah Sesi</button>
+          <button className="btn btn-accent" onClick={() => setShowTambah(true)}>+ Tambah Sesi</button>
         </div>
       </div>
 
@@ -253,6 +266,77 @@ export default function AdminSchedulePage() {
               <div style={{display:"tabel",gridTemplateColumns:"1fr 1fr",gap:10}}>
                 <button className="btn btn-ghost" onClick={()=>{setShowReschedule(false);setSelectedSes(null);}}>Batal</button>
                 <button className="btn btn-primary" onClick={()=>{alert("Reschedule berhasil!");setShowReschedule(false);setSelectedSes(null);}}>Simpan Reschedule</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal Tambah Sesi dengan Conflict Detection */}
+      {showTambah && (
+        <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,0.55)",backdropFilter:"blur(4px)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:16,animation:"fadeIn 0.2s ease-out"}}>
+          <div style={{background:"#fff",borderRadius:18,maxWidth:460,width:"100%",padding:28,boxShadow:"0 25px 50px -12px rgba(0,0,0,0.25)",animation:"modalIn 0.25s cubic-bezier(0.16,1,0.3,1)"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+              <h2 style={{fontSize:18,fontWeight:800,color:"var(--color-text-primary)",margin:0}}>Tambah Sesi & Cek Bentrok</h2>
+              <button onClick={()=>setShowTambah(false)} style={{background:"transparent",border:"none",cursor:"pointer",color:"var(--color-text-muted)"}}>
+                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:14}}>
+              <div className="form-group" style={{marginBottom:0}}>
+                <label className="form-label">Kelas</label>
+                <select className="form-input" value={inputKelas} onChange={e=>setInputKelas(e.target.value)}>
+                  {["KLS-A", "KLS-B", "KLS-C", "KLS-D", "KLS-E"].map(k=><option key={k}>{k}</option>)}
+                </select>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                <div className="form-group" style={{marginBottom:0}}>
+                  <label className="form-label">Hari</label>
+                  <select className="form-input" value={inputHari} onChange={e=>setInputHari(Number(e.target.value))}>
+                    {HARI.map((h,i)=><option key={h} value={i}>{h}</option>)}
+                  </select>
+                </div>
+                <div className="form-group" style={{marginBottom:0}}>
+                  <label className="form-label">Jam Mulai</label>
+                  <select className="form-input" value={inputJam} onChange={e=>setInputJam(Number(e.target.value))}>
+                    {JAM.map(h=><option key={h} value={parseInt(h)}>{h}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                <div className="form-group" style={{marginBottom:0}}>
+                  <label className="form-label">Guru Pengajar</label>
+                  <select className="form-input" value={inputGuru} onChange={e=>setInputGuru(e.target.value)}>
+                    {["Ms. Sarah", "Mr. Andi", "Ms. Nina", "Mr. Budi"].map(g=><option key={g}>{g}</option>)}
+                  </select>
+                </div>
+                <div className="form-group" style={{marginBottom:0}}>
+                  <label className="form-label">Ruang Kelas</label>
+                  <select className="form-input" value={inputRuang} onChange={e=>setInputRuang(e.target.value)}>
+                    {["Ruang 1", "Ruang 2", "Ruang 3"].map(r=><option key={r}>{r}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Conflict Alert Banner */}
+              {adaBentrok ? (
+                <div style={{background:"#fee2e2",border:"1.5px solid #fca5a5",borderRadius:10,padding:"12px 14px",fontSize:12.5,color:"#991b1b",lineHeight:1.4}}>
+                  <strong>BENTROK JADWAL DETEKSI!</strong><br />
+                  {bentrokGuru && <div>• Guru <strong>{inputGuru}</strong> sudah mengajar {bentrokGuru.kelas} di jam tersebut!</div>}
+                  {bentrokRuang && <div>• <strong>{inputRuang}</strong> sedang dipakai {bentrokRuang.kelas} di jam tersebut!</div>}
+                  <div style={{marginTop:4,fontSize:11.5,color:"#b91c1c"}}>Ganti jam, guru, atau ruang untuk menyimpan.</div>
+                </div>
+              ) : (
+                <div style={{background:"#d1fae5",border:"1px solid #86efac",borderRadius:10,padding:"10px 14px",fontSize:12.5,color:"#15803d"}}>
+                  Jadwal aman! Tidak ada bentrok guru maupun ruang.
+                </div>
+              )}
+
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:4}}>
+                <button className="btn btn-ghost" onClick={()=>setShowTambah(false)}>Batal</button>
+                <button className="btn btn-accent" disabled={adaBentrok} style={{opacity: adaBentrok ? 0.5 : 1, cursor: adaBentrok ? "not-allowed" : "pointer"}}
+                  onClick={() => { alert("Sesi berhasil ditambahkan!"); setShowTambah(false); }}>
+                  {adaBentrok ? "Bentrok — Ganti Waktu" : "Simpan Sesi"}
+                </button>
               </div>
             </div>
           </div>

@@ -46,9 +46,9 @@ export default function LaporanPage() {
       {/* Tab Navigasi Utama */}
       <div style={{ display: "flex", gap: 8, borderBottom: "1px solid var(--color-border)", paddingBottom: 12 }}>
         {[
-          { id: "sertifikat", label: "📜 Sertifikat & Kelulusan" },
-          { id: "akademik", label: "📊 Laporan Akademik" },
-          { id: "keuangan", label: "💰 Laporan Keuangan" },
+          { id: "sertifikat", label: "Sertifikat & Kelulusan" },
+          { id: "akademik", label: "Laporan Akademik" },
+          { id: "keuangan", label: "Laporan Keuangan" },
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id as any)}
             style={{
@@ -125,7 +125,7 @@ export default function LaporanPage() {
                             <button className="btn btn-outline btn-sm" onClick={() => { setDipilih(s); setShowPreview(true); }}>Lihat Sertifikat</button>
                           ) : (
                             <button className="btn btn-accent btn-sm" disabled={sedangGenerate} onClick={() => handleGenerate(s)}>
-                              {sedangGenerate ? "⏳ Generating..." : "⚡ Generate Sertifikat"}
+                              {sedangGenerate ? "Generating..." : "Generate Sertifikat"}
                             </button>
                           )}
                         </td>
@@ -258,8 +258,8 @@ export default function LaporanPage() {
             {/* Tombol Aksi */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 24 }}>
               <button className="btn btn-ghost" onClick={() => setShowPreview(false)}>Tutup</button>
-              <button className="btn btn-outline" onClick={() => alert("Mencetak sertifikat...")}>🖨️ Cetak</button>
-              <button className="btn btn-accent" onClick={() => alert("Mengunduh PDF sertifikat...")}>📥 Unduh PDF</button>
+              <button className="btn btn-outline" onClick={() => alert("Mencetak sertifikat...")}>Cetak</button>
+              <button className="btn btn-accent" onClick={() => alert("Mengunduh PDF sertifikat...")}>Unduh PDF</button>
             </div>
 
           </div>

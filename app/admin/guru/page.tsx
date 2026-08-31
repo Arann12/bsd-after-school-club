@@ -50,7 +50,7 @@ export default function AdminGuruPage() {
                   <span style={{ background: "#d1fae5", color: "#059669", fontSize: 11.5, fontWeight: 700, padding: "3px 10px", borderRadius: 999 }}>{g.status}</span>
                 </td>
                 <td style={{ padding: "14px 16px" }}>
-                  <button className="btn btn-ghost btn-sm" onClick={() => alert(`Hubungi WA ${g.hp}`)}>📱 Hubungi</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => alert(`Hubungi WA ${g.hp}`)}>Hubungi</button>
                 </td>
               </tr>
             ))}

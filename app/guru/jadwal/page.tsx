@@ -116,7 +116,6 @@ export default function GuruJadwalPage() {
 
         {terfilter.length === 0 && (
           <div className="card" style={{ padding: "48px 24px", textAlign: "center" }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>📅</div>
             <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)", marginBottom: 6 }}>Tidak ada sesi {filter.toLowerCase()}</div>
             <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>Sesi akan muncul di sini sesuai jadwal.</div>
           </div>

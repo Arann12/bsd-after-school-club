@@ -27,7 +27,7 @@ export default function OrangTuaJadwalPage() {
                 <div style={{ fontSize: 13.5, color: "var(--color-text-secondary)", fontWeight: 600 }}>{j.program}</div>
                 <div style={{ fontSize: 12.5, color: "var(--color-text-muted)", marginTop: 2 }}>{j.ruang} · Pengajar: {j.guru}</div>
               </div>
-              <button className="btn btn-outline btn-sm" onClick={() => alert("Pengingat jadwal diaktifkan.")}>🔔 Ingatkan Saya</button>
+              <button className="btn btn-outline btn-sm" onClick={() => alert("Pengingat jadwal diaktifkan.")}>Ingatkan Saya</button>
             </div>
           </div>
         ))}

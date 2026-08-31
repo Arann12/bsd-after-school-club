@@ -12,14 +12,13 @@ export default function AdminDashboardPage() {
         </div>
         <div className="page-header-actions">
           <Link href="/admin/pendaftaran" className="btn btn-accent">+ Pendaftaran Baru</Link>
-          <Link href="/admin/tagihan" className="btn btn-outline">💳 Verifikasi Cash</Link>
+          <Link href="/admin/tagihan" className="btn btn-outline">Verifikasi Cash</Link>
         </div>
       </div>
 
       {/* Action Banner Antrian Cash */}
       <div style={{ background: "#fef3c7", border: "1px solid #fde68a", borderRadius: "var(--radius-lg)", padding: "18px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ fontSize: 28 }}>⚡</div>
           <div>
             <div style={{ fontWeight: 800, fontSize: 15, color: "#92400e" }}>
               2 Pembayaran Cash Menunggu Verifikasi Anda
@@ -85,16 +84,16 @@ export default function AdminDashboardPage() {
             <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 14px" }}>Aksi Cepat Admin</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <Link href="/admin/pendaftaran" className="btn btn-outline" style={{ justifyContent: "flex-start" }}>
-                📝 Form Pendaftaran Siswa Baru
+                Form Pendaftaran Siswa Baru
               </Link>
               <Link href="/admin/tagihan" className="btn btn-outline" style={{ justifyContent: "flex-start" }}>
-                💵 Input Pembayaran Cash Manual
+                Input Pembayaran Cash Manual
               </Link>
               <Link href="/admin/pengumuman" className="btn btn-outline" style={{ justifyContent: "flex-start" }}>
-                📢 Buat Broadcast Pengumuman
+                Buat Broadcast Pengumuman
               </Link>
               <Link href="/admin/laporan" className="btn btn-outline" style={{ justifyContent: "flex-start" }}>
-                🎓 Generate Sertifikat Kelulusan
+                Generate Sertifikat Kelulusan
               </Link>
             </div>
           </div>

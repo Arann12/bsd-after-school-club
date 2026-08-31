@@ -25,9 +25,11 @@ const daftarPengumuman: Pengumuman[] = [
 ];
 
 const warnaTarget: Record<string, { bg: string; color: string }> = {
-  "Guru":      { bg: "#ede9fe", color: "#6d28d9" },
-  "Orang Tua": { bg: "#e0f2fe", color: "#0369a1" },
-  "Semua":     { bg: "#f1f5f9", color: "#475569" },
+  "Guru":               { bg: "#ede9fe", color: "#6d28d9" },
+  "Orang Tua":          { bg: "#e0f2fe", color: "#0369a1" },
+  "Semua":              { bg: "#f1f5f9", color: "#475569" },
+  "Kelas Tertentu":     { bg: "#fef3c7", color: "#b45309" },
+  "Program Tertentu":   { bg: "#d1fae5", color: "#059669" },
 };
 
 interface Props { peran?: Peran; }
@@ -153,7 +155,7 @@ export default function PengumumanPage({ peran = "admin" }: Props) {
               <div style={{ flex: 1 }}>
                 {/* Baris Header */}
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
-                  {p.penting && <span style={{ background: "#fee2e2", color: "#dc2626", fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 999, textTransform: "uppercase" }}>🔴 Penting</span>}
+                  {p.penting && <span style={{ background: "#fee2e2", color: "#dc2626", fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 999, textTransform: "uppercase" }}>Penting</span>}
                   {!p.sudahDibaca && p.status === "Aktif" && !bisaKelola && (
                     <span style={{ background: "var(--color-primary)", color: "white", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999 }}>• Baru</span>
                   )}
@@ -179,7 +181,6 @@ export default function PengumumanPage({ peran = "admin" }: Props) {
 
         {terfilter.length === 0 && (
           <div className="card" style={{ padding: "48px 24px", textAlign: "center" }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>📢</div>
             <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)", marginBottom: 6 }}>Belum ada pengumuman</div>
             <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 16 }}>Pengumuman yang dipublikasikan akan muncul di sini.</div>
             {bisaKelola && <button className="btn btn-accent" onClick={() => setShowForm(true)}>+ Buat Pengumuman</button>}
@@ -193,7 +194,7 @@ export default function PengumumanPage({ peran = "admin" }: Props) {
           <div style={{ background: "#fff", borderRadius: 18, maxWidth: 560, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,.25)", animation: "modalIn .25s cubic-bezier(0.16,1,0.3,1)", maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 18 }}>
               <div style={{ flex: 1 }}>
-                {dipilih.penting && <span style={{ background: "#fee2e2", color: "#dc2626", fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 999, marginBottom: 8, display: "inline-block" }}>🔴 PENTING</span>}
+                {dipilih.penting && <span style={{ background: "#fee2e2", color: "#dc2626", fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 999, marginBottom: 8, display: "inline-block" }}>PENTING</span>}
                 <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0, lineHeight: 1.3 }}>{dipilih.judul}</h2>
               </div>
               <button onClick={() => setDipilih(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)", flexShrink: 0 }}>
@@ -248,16 +249,27 @@ export default function PengumumanPage({ peran = "admin" }: Props) {
               {/* Pilih Target */}
               <div>
                 <label className="form-label" style={{ marginBottom: 8, display: "block" }}>Target Penerima</label>
-                <div style={{ display: "flex", gap: 10 }}>
-                  {["Guru", "Orang Tua"].map(t => (
-                    <button key={t} onClick={() => setTarget(prev => prev.includes(t) ? prev.filter(x=>x!==t) : [...prev,t])}
-                      style={{ padding: "8px 18px", borderRadius: "var(--radius-full)", border: "2px solid", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all .15s",
-                        background: target.includes(t) ? (t==="Guru"?"#ede9fe":"#e0f2fe") : "white",
-                        color: target.includes(t) ? (t==="Guru"?"#6d28d9":"#0369a1") : "var(--color-text-muted)",
-                        borderColor: target.includes(t) ? (t==="Guru"?"#a78bfa":"#7dd3fc") : "var(--color-border)",
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {["Semua", "Guru", "Orang Tua", "Kelas Tertentu", "Program Tertentu"].map(t => (
+                    <button key={t} type="button" onClick={() => {
+                      if (t === "Semua") { setTarget(["Semua"]); return; }
+                      setTarget(prev => {
+                        const tanpaSemua = prev.filter(x => x !== "Semua");
+                        return tanpaSemua.includes(t) ? tanpaSemua.filter(x => x !== t) : [...tanpaSemua, t];
+                      });
+                    }}
+                      style={{ padding: "7px 14px", borderRadius: "var(--radius-full)", border: "2px solid", fontSize: 12.5, fontWeight: 700, cursor: "pointer", transition: "all .15s",
+                        background: target.includes(t) ? (warnaTarget[t]?.bg || "#f1f5f9") : "white",
+                        color: target.includes(t) ? (warnaTarget[t]?.color || "#475569") : "var(--color-text-muted)",
+                        borderColor: target.includes(t) ? (warnaTarget[t]?.color || "#94a3b8") : "var(--color-border)",
                       }}>{t}</button>
                   ))}
                 </div>
+                {(target.includes("Kelas Tertentu") || target.includes("Program Tertentu")) && (
+                  <div className="form-group" style={{ marginTop: 10, marginBottom: 0 }}>
+                    <input className="form-input" placeholder={target.includes("Kelas Tertentu") ? "Contoh: KLS-A, KLS-B" : "Contoh: Calistung Level 1"} />
+                  </div>
+                )}
               </div>
 
               {/* Toggle Penting */}
@@ -271,7 +283,7 @@ export default function PengumumanPage({ peran = "admin" }: Props) {
 
               {(!judul.trim() || !isi.trim() || target.length === 0) && (
                 <div style={{ background: "#fef3c7", border: "1px solid #fde68a", borderRadius: "var(--radius-md)", padding: "10px 14px", fontSize: 12.5, color: "#92400e" }}>
-                  ⚠️ Isi judul, isi pengumuman, dan pilih minimal satu target penerima.
+                  Isi judul, isi pengumuman, dan pilih minimal satu target penerima.
                 </div>
               )}
 

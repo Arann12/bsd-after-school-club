@@ -29,7 +29,7 @@ export default function OwnerTarifPage() {
           <p className="page-subtitle">Kelola tarif standar mengajar per jam, bonus per sesi, dan lembur (Owner Only).</p>
         </div>
         <button className="btn btn-accent" onClick={handleSimpan}>
-          {tersimpan ? "✅ Tarif Berhasil Disimpan!" : "💾 Simpan Pengaturan Tarif"}
+          {tersimpan ? "Tarif Berhasil Disimpan!" : "Simpan Pengaturan Tarif"}
         </button>
       </div>
 

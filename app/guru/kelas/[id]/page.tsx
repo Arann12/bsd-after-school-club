@@ -10,7 +10,7 @@ const dataSiswa = [
   { id: "STD-009", nama: "Ivan Kurnia", hadir: null as boolean | null },
 ];
 
-type StatusKehadiran = "hadir" | "izin" | "alpha";
+type StatusKehadiran = "hadir" | "sakit" | "izin" | "alpha" | "libur";
 
 export default function GuruKelasPage({ params }: { params: { id: string } }) {
   const [kehadiran, setKehadiran] = useState<Record<string, StatusKehadiran>>({});
@@ -34,9 +34,11 @@ export default function GuruKelasPage({ params }: { params: { id: string } }) {
   };
 
   const warnaStatus: Record<StatusKehadiran, { bg: string; color: string; label: string }> = {
-    hadir: { bg: "#d1fae5", color: "#059669", label: "Hadir" },
-    izin:  { bg: "#fef3c7", color: "#b45309", label: "Izin" },
-    alpha: { bg: "#fee2e2", color: "#dc2626", label: "Alpha" },
+    hadir:  { bg: "#d1fae5", color: "#059669", label: "Hadir" },
+    sakit:  { bg: "#fce7f3", color: "#be185d", label: "Sakit" },
+    izin:   { bg: "#fef3c7", color: "#b45309", label: "Izin" },
+    alpha:  { bg: "#fee2e2", color: "#dc2626", label: "Alpha" },
+    libur:  { bg: "#e0f2fe", color: "#0369a1", label: "Libur" },
   };
 
   return (
@@ -56,7 +58,7 @@ export default function GuruKelasPage({ params }: { params: { id: string } }) {
           <p className="page-subtitle">Pertemuan ke-7 dari 12 · Senin, 2 September 2026 · 14:00–15:00 · Ruang 1</p>
         </div>
         <span style={{ background: "#d1fae5", color: "#059669", fontSize: 12, fontWeight: 700, padding: "6px 16px", borderRadius: 999 }}>
-          🟢 Sesi Berjalan
+          Sesi Berjalan
         </span>
       </div>
 
@@ -89,9 +91,9 @@ export default function GuruKelasPage({ params }: { params: { id: string } }) {
                   {/* Nama */}
                   <span style={{ flex: 1, fontSize: 13.5, fontWeight: 600, color: "var(--color-text-primary)" }}>{siswa.nama}</span>
 
-                  {/* Tombol Hadir / Izin / Alpha */}
-                  <div style={{ display: "flex", gap: 6 }}>
-                    {(["hadir", "izin", "alpha"] as StatusKehadiran[]).map(s => (
+                  {/* Tombol 5 Status Absensi */}
+                  <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                    {(["hadir", "sakit", "izin", "alpha", "libur"] as StatusKehadiran[]).map(s => (
                       <button key={s} className="tombol-absen"
                         onClick={() => setStatusKehadiran(siswa.id, s)}
                         style={{ padding: "5px 12px", borderRadius: 999, fontSize: 11.5, fontWeight: 700, cursor: "pointer",
@@ -110,7 +112,7 @@ export default function GuruKelasPage({ params }: { params: { id: string } }) {
           </div>
           {/* Ringkasan */}
           <div style={{ padding: "12px 20px", borderTop: "1px solid var(--color-border)", display: "flex", gap: 16 }}>
-            {(["hadir","izin","alpha"] as StatusKehadiran[]).map(s => (
+            {(["hadir","sakit","izin","alpha","libur"] as StatusKehadiran[]).map(s => (
               <div key={s} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5 }}>
                 <div style={{ width: 10, height: 10, borderRadius: "50%", background: warnaStatus[s].color }} />
                 <span style={{ color: "var(--color-text-secondary)" }}>{warnaStatus[s].label}:</span>
@@ -153,7 +155,7 @@ export default function GuruKelasPage({ params }: { params: { id: string } }) {
           {/* Validasi & Tombol Simpan */}
           {(sudahDiabsen < totalSiswa || !materi.trim()) && (
             <div style={{ background: "#fef3c7", border: "1px solid #fde68a", borderRadius: "var(--radius-md)", padding: "10px 14px", fontSize: 12.5, color: "#92400e" }}>
-              ⚠️ Lengkapi absensi semua siswa dan isi materi sebelum menyimpan logbook.
+              Lengkapi absensi semua siswa dan isi materi sebelum menyimpan logbook.
             </div>
           )}
 
@@ -163,7 +165,7 @@ export default function GuruKelasPage({ params }: { params: { id: string } }) {
               background: sudahSimpan ? "#d1fae5" : sudahDiabsen < totalSiswa || !materi.trim() ? "var(--color-border)" : "var(--color-primary)",
               color: sudahSimpan ? "#059669" : sudahDiabsen < totalSiswa || !materi.trim() ? "var(--color-text-muted)" : "white",
             }}>
-            {sedangSimpan ? "⏳ Menyimpan..." : sudahSimpan ? "✅ Logbook Berhasil Disimpan!" : "💾 Simpan Absensi & Logbook"}
+            {sedangSimpan ? "Menyimpan..." : sudahSimpan ? "Logbook Berhasil Disimpan!" : "Simpan Absensi & Logbook"}
           </button>
         </div>
       </div>

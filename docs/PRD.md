@@ -1,285 +1,198 @@
-# 📋 Product Requirements Document (PRD)
-## BSD After School Club — Web App Manajemen Akademik
-
-> **Versi:** 1.0  
-> **Terakhir diperbarui:** 31 Agustus 2026  
-> **Status:** Draft Aktif
-
----
-
-## 1. Ringkasan Produk
-
-Web app manajemen akademik untuk after-school club, dengan **4 role akun**: Owner, Admin, Guru, Orang Tua.  
-Siswa **tidak punya akun login** — datanya dikelola oleh Admin/Guru.
-
-### Modul Inti
-
-| Modul | Deskripsi |
-|---|---|
-| Manajemen Siswa, Program & Kelas | CRUD data siswa, paket, dan pengelompokan kelas |
-| Jadwal & Absensi / Logbook Guru | Kalender sesi, reschedule, checklist kehadiran, catatan materi |
-| Pembayaran (digital + cash) & Tagihan | VA, E-Wallet, QRIS, cash via Admin/Orang Tua |
-| Honor Guru | Kalkulasi otomatis berdasar sesi (Owner only) |
-| Laporan & Sertifikat | Laporan akademik, generate sertifikat, PDF download |
-| Pengumuman | Broadcast per role, draft & publish |
-
----
-
-## 2. Role & Hak Akses
-
-| Role | Landing setelah login | Menu Utama |
-|---|---|---|
-| **Owner / Super Admin** | Dashboard eksekutif | Dashboard, Akademik, Siswa, Guru, Pembayaran, Honor, Laporan, Pengumuman, Pengaturan |
-| **Admin** | Dashboard operasional | Dashboard, Pendaftaran, Siswa & Orang Tua, Program/Kelas, Jadwal, Pembayaran, Absensi/Logbook (monitor), Pengumuman |
-| **Guru** | Kelas hari ini | Jadwal Saya, Kelas & Absensi, Logbook, Assessment (jika diaktifkan), Pengumuman |
-| **Orang Tua** | Ringkasan anak | Anak Saya, Jadwal, Tagihan & Pembayaran, Laporan Akhir (jika Graduated), Pengumuman |
-
-> [!IMPORTANT]
-> **Prinsip keamanan honor:** Data honor guru **tidak pernah muncul** di UI Admin/Guru — bukan sekadar disembunyikan via permission, tapi memang tidak ada elemen, route, atau network request yang bocor ke role selain Owner.
-
----
-
-## 3. Peta Halaman (Sitemap)
-
-```
-/login
-/dashboard                     (konten berbeda per role)
-
-── Owner & Admin ──────────────────────────────────────────
-/students                      daftar siswa
-/students/:id                  detail siswa (profil, paket, tagihan, riwayat, progress)
-/parents                       daftar orang tua
-/programs                      daftar program
-/classes                       daftar kelas/group
-/classes/:id                   detail kelas (jadwal, roster, logbook history)
-/schedule                      kalender jadwal (dengan reschedule)
-/billing                       daftar tagihan semua siswa
-/billing/:id                   detail tagihan + konfirmasi cash
-/payments/cash/new             form input cash oleh Admin
-/reports                       laporan Owner (akademik + keuangan)
-/reports/certificates          generate & kelola sertifikat
-/announcements                 kelola pengumuman
-/settings                      pengaturan sistem, tarif honor (Owner only)
-
-── Owner Only ─────────────────────────────────────────────
-/payroll                       honor guru per periode
-/payroll/:teacherId            detail honor + riwayat sesi
-
-── Guru ───────────────────────────────────────────────────
-/my-schedule                   jadwal mengajar
-/my-classes/:id                absen + isi logbook + materi
-/my-classes/:id/assessment     input nilai (jika fitur aktif)
-
-── Orang Tua ──────────────────────────────────────────────
-/my-children                   daftar anak terhubung
-/my-children/:id               jadwal, progress ringkas
-/my-children/:id/billing       tagihan & riwayat pembayaran
-/my-children/:id/report        laporan akhir & sertifikat (setelah Graduated)
-/announcements                 (read-only)
-```
-
----
-
-## 4. Alur Utama (User Flows)
-
-### 4.1 Pembayaran Digital — Orang Tua
-
-```
-Orang Tua login
-  → buka Tagihan
-    → pilih tagihan berstatus "Belum Bayar"
-      → pilih metode: VA / E-Wallet / QRIS
-        → redirect/modal payment gateway
-          → [sukses]         status otomatis "Paid" + masuk riwayat
-          → [gagal/pending]  status tetap "Belum Bayar", tampilkan retry
-```
-
-**Animasi yang disarankan:**
-- Status tagihan: badge **color-morph** merah → kuning "Menunggu" → hijau "Lunas" (scale + fade, bukan reload halaman).
-- Saat menunggu gateway: **skeleton/pulsing loader**, bukan spinner generik.
-
----
-
-### 4.2 Pembayaran Cash — Jalur Orang Tua
-
-```
-Orang Tua pilih metode "Cash" pada tagihan
-  → status: "Menunggu Konfirmasi Admin"  ← BUKAN langsung Lunas
-  → Admin menerima notifikasi / lihat antrian cash di dashboard
-    → Admin buka detail → konfirmasi jumlah diterima
-      → status → "Paid/Lunas"
-      → nomor transaksi CASH-#### tergenerate otomatis
-```
-
----
-
-### 4.3 Pembayaran Cash — Jalur Admin Langsung
-
-```
-Admin buka profil siswa → tab Tagihan
-  → pilih tagihan → pilih Cash → input nominal → konfirmasi
-    → transaksi tercatat instan, status Paid
-```
-
-> [!NOTE]
-> Kedua jalur cash harus terlihat jelas berbeda di riwayat transaksi:  
-> badge **"via Orang Tua"** vs **"via Admin"** — untuk keperluan audit trail.
-
----
-
-### 4.4 Absensi & Logbook Guru
-
-```
-Guru login → Jadwal Saya (kartu kelas hari ini, sorted by jam)
-  → tap kelas → halaman Kelas
-    → checklist kehadiran siswa (toggle hadir / izin / alpha)
-    → isi materi / pokok bahasan (rich text singkat)
-    → simpan → tercatat sebagai teaching session (dasar honor)
-```
-
-**Animasi:**
-- Toggle absensi: **bounce micro-interaction**, warna berubah instan tapi ada bounce kecil.
-- Progress bar `X/Y siswa sudah diabsen` naik **smooth** saat setiap toggle.
-
----
-
-### 4.5 Reschedule / Jadwal
-
-```
-Admin buka Jadwal (calendar view)
-  → drag sesi ke tanggal lain  ATAU  klik sesi → "Reschedule"
-    → pilih tanggal/jam baru → simpan
-      → nomor pertemuan TETAP SAMA, hanya tanggal berubah
-      → riwayat reschedule tercatat di detail sesi
-```
-
-**Animasi:**
-- Drag-and-drop: smooth drag preview + drop-zone highlight.
-- Setelah drop: kartu sesi "settle" dengan easing (bukan snap kasar).
-
----
-
-### 4.6 Generate Sertifikat
-
-```
-Admin input nilai / komponen assessment siswa
-  → sistem hitung nilai akhir otomatis (formula 🔒 TBD)
-  → status Lulus / Tidak Lulus ditentukan sistem
-  → Owner/Admin verifikasi final
-    → tombol "Generate Sertifikat" aktif
-      → sertifikat dibuat dari template sesuai program
-        → siswa status → "Graduated"
-          → Orang Tua otomatis bisa lihat laporan akhir + sertifikat
-```
-
-**Animasi:**
-- Saat generate sukses: preview sertifikat **reveal animation** (fade + slight scale-up), opsi download PDF langsung dari situ.
-
----
-
-### 4.7 Pengumuman
-
-```
-Owner/Admin → Pengumuman → "Tambah Pengumuman"
-  → isi judul, tanggal, deskripsi, upload poster (opsional), pilih target
-  → simpan sebagai Draft  ATAU  langsung Publish
-    → [Publish] muncul di dashboard user target dengan indikator "Baru"
-```
-
-**Animasi:**
-- Kartu pengumuman baru: **slide-in + subtle glow** badge "Baru" yang fade out setelah dibaca.
-
----
-
-## 5. Panduan Komponen & Animasi
-
-| Elemen | Perilaku |
-|---|---|
-| Status tagihan / badge | Color transition halus, tidak instan berubah warna |
-| Navigasi antar halaman | Page transition fade/slide ringan (150–250ms), hindari flash putih |
-| Dashboard cards (Owner) | Angka statistik pakai **count-up animation** saat pertama load |
-| Loading state | **Skeleton screen** sesuai bentuk konten asli (bukan spinner polos) |
-| Konfirmasi aksi penting | Modal dengan **scale-in + backdrop blur** |
-| Kalender jadwal | Hover pada sesi: tooltip ringkas (siswa, jam, guru) dengan fade-in cepat |
-| Toggle absensi | Micro-interaction per tap, warna berubah instan + bounce kecil |
-| Empty state | Ilustrasi ringan + CTA, bukan halaman kosong polos |
-
-### Tone Visual & Responsivitas
-
-- **Tone:** Bersih, ramah (target user termasuk orang tua non-teknis).
-- **Warna status:** Merah / Kuning / Hijau konsisten di semua modul.
-- **Tipografi:** Mudah dibaca di mobile (banyak orang tua akses via HP).
-- **Responsivitas:**
-  - **Mobile-first** → role Orang Tua & Guru (kemungkinan besar akses via HP).
-  - **Desktop-first tapi tetap responsif** → Owner & Admin.
-
----
-
-## 6. Struktur Data & Prefix ID
-
-| Entitas | Prefix | Contoh |
-|---|---|---|
-| Owner | `OWN` | `OWN-0001` |
-| Admin | `ADM` | `ADM-0001` |
-| Guru | `GUR` | `GUR-2026-0001` |
-| Orang Tua | `PAR` | `PAR-2026-0001` |
-| Siswa | `STD` | `STD-2026-0001` |
-| Program | `PRG` | `PRG-0001` |
-| Kelas | `KLS` | `KLS-2026-0001` |
-| Tagihan | `INV` | `INV-2026-000001` |
-| Pembayaran digital | `PAY` | `PAY-2026-000001` |
-| Cash | `CASH` | `CASH-2026-000001` |
-| Absensi | `ATT` | `ATT-2026-000001` |
-| Sertifikat | `CERT` | `CERT-2026-000001` |
-
----
-
-## 7. Fitur yang SENGAJA Tidak Dibuat
-
-> [!CAUTION]
-> Jangan tambahkan fitur-fitur berikut ke UI, meskipun secara teknis memungkinkan:
-
-- Login / akun untuk siswa
-- Form input "catatan progress" per pertemuan oleh guru
-- Reminder WhatsApp otomatis
-- Form pendaftaran mandiri panjang untuk Orang Tua (enrollment tetap lewat Admin)
-- Tampilan nominal honor di role selain Owner
-
----
-
-## 8. Hal yang Masih 🔒 TBD
-
-> [!WARNING]
-> Jangan hardcode nilai-nilai berikut sebagai final. Buat sebagai **settings/config** yang dapat diubah Owner dari `/settings` — sehingga tidak perlu re-build UI saat keputusan final keluar.
-
-| Item | Keterangan |
-|---|---|
-| Provider payment gateway | VA / E-Wallet / QRIS final & kemampuan webhook |
-| Kategori merchant & MDR QRIS | Bergantung provider final |
-| Timing trigger tagihan | Sebelum vs sesudah sesi |
-| Aturan sesi hangus | Kelas grup vs privat |
-| Formula honor | Pembulatan durasi, overtime, bonus |
-| Formula nilai akhir | Bobot komponen sertifikat |
-| Approval cash nominal besar | Apakah perlu approval Owner |
-| Frekuensi backup/restore | TBD oleh tim teknis |
-
----
-
-## 9. Prioritas Build (Urutan Pengerjaan)
-
-| # | Modul | Keterangan |
-|---|---|---|
-| 1 | Auth + role-based routing & layout per role | Fondasi semua fitur |
-| 2 | Dashboard shell | Kosong dulu, fokus layout + navigasi |
-| 3 | Modul Siswa / Program / Kelas | CRUD dasar |
-| 4 | Modul Jadwal + kalender + reschedule | Fitur drag-and-drop |
-| 5 | Modul Absensi / Logbook Guru | Toggle + progress bar |
-| 6 | Modul Tagihan & Pembayaran | Digital + cash, flow konfirmasi |
-| 7 | Modul Honor | Owner only |
-| 8 | Modul Pengumuman | Broadcast per role |
-| 9 | Modul Laporan & Sertifikat | Generate + PDF download |
-| 10 | Polish animasi & micro-interactions | Semua modul |
-
----
-
-*Dokumen ini adalah living document — akan diperbarui seiring keputusan produk yang semakin matang.*
+# PROJECT: Sistem Manajemen Akademik BSD After School Club
+
+## Ringkasan
+Web app manajemen akademik untuk after-school club dengan 4 jenis akun: Owner/Super Admin,
+Admin, Guru, Orang Tua. TIDAK ADA akun login untuk Siswa — data siswa dikelola oleh Admin/Guru,
+dan diakses oleh Orang Tua lewat akunnya sendiri.
+
+## Role & Hak Akses
+- **Owner/Super Admin**: akses penuh — dashboard, akademik, keuangan, pembayaran, HONOR (hanya
+  role ini yang bisa lihat nominal honor & ubah tarif per jam per guru), laporan, pengumuman,
+  pengaturan sistem.
+- **Admin**: enrollment/pendaftaran, data siswa/orang tua/guru, program/kelas, jadwal, pembayaran,
+  monitoring absensi/logbook, pengumuman, inventaris. TIDAK bisa lihat honor.
+- **Guru**: jadwal & kelas yang ditugaskan, absensi siswa, logbook/materi, input nilai/assessment
+  (jika fitur nilai diaktifkan). TIDAK bisa lihat honor (miliknya sendiri maupun guru lain), tidak
+  bisa lihat data keuangan bimbel.
+- **Orang Tua**: anak yang terhubung ke akunnya (bisa lebih dari satu), jadwal, tagihan, riwayat
+  pembayaran, pengumuman, laporan akhir & sertifikat (setelah anak berstatus Graduated).
+
+Hak akses diterapkan sampai level data (row-level), bukan cuma sembunyikan menu. Akun Admin,
+Guru, dan Orang Tua dibuat oleh Admin/Owner (bukan self-register); user mengganti password
+setelah login pertama.
+
+## Data Master
+- **Siswa**: nama, foto, tanggal lahir, sekolah, kelas sekolah, program (maks 2 program per
+  siswa), level, tanggal mulai, status, catatan. Status: Trial → Active → On Leave / Inactive →
+  Graduated. ID unik: STD-2026-0001.
+- **Orang Tua**: satu akun bisa terhubung ke lebih dari satu siswa. ID: PAR-2026-0001.
+- **Guru**: bisa mengajar beberapa kelas; satu kelas bisa punya lebih dari satu guru. ID:
+  GUR-2026-0001.
+- **Program & Level**: sepenuhnya dinamis — Admin bisa tambah/ubah program dan level tanpa
+  mengubah kode aplikasi (mis. satu program bisa punya banyak level).
+- **Kelas**: dibuat berdasarkan program, level, guru, hari, jam, ruangan. Kapasitas maksimal
+  **7 siswa per kelas/batch**. Jika penuh, sistem MENCEGAH penambahan siswa (bukan cuma warning)
+  dan mengarahkan ke batch/kelompok berikutnya. Kelas punya identitas sendiri yang tetap walau
+  jadwal berubah.
+- **Enrollment**: calon siswa didata → status "Pending" → Admin review data, program, dan
+  kelas/batch → Approve (jadi siswa resmi, akun Orang Tua dibuat) atau Reject (data tetap
+  tersimpan untuk histori).
+
+## Jadwal
+- Calendar view: filter per hari/minggu/bulan/guru/ruangan/kelas.
+- Sistem WAJIB mendeteksi bentrok jadwal SEBELUM disimpan — minimal cek bentrok guru (guru tidak
+  boleh mengajar 2 kelas di jam yang sama). Tampilkan konflik dengan jelas jika terdeteksi.
+- Reschedule satu sesi TIDAK mengubah nomor pertemuan, hanya tanggal/jam aktualnya; histori
+  tersimpan. Perubahan jadwal reguler (rutin) punya tanggal mulai efektif terpisah dari
+  reschedule sesi tunggal.
+- Hari libur tidak dihitung sebagai pertemuan / tidak menambah counter pertemuan.
+- Jadwal menyimpan: tanggal, jam mulai, jam selesai, guru, kelas, program/level, ruangan — durasi
+  ini jadi dasar perhitungan honor.
+
+## Paket Belajar & Pembayaran
+- Paket: **8 pertemuan** (2x/minggu) atau **12 pertemuan** (3x/minggu). Dasar tagihan adalah
+  JUMLAH PERTEMUAN, bukan tanggal kalender — pergeseran jadwal tidak mengunci tagihan ke tanggal
+  lama.
+- Skema pembayaran HANYA 2 pilihan: bayar per pertemuan, atau langsung lunas per paket. TIDAK
+  ADA skema cicilan/bertahap kompleks di versi ini.
+- Metode: Virtual Account (VA), E-Wallet, QRIS, Cash.
+- **Pembayaran digital**: idealnya via payment gateway, status otomatis jadi Paid setelah
+  terkonfirmasi. Riwayat minimal simpan tanggal, nominal, metode, nomor transaksi, status.
+- **Pembayaran cash — 2 jalur**:
+  1. Orang Tua ajukan Cash dari akunnya → status "Menunggu Konfirmasi Admin" → Admin konfirmasi
+     setelah terima uang offline → status jadi Paid/Lunas.
+  2. Admin input langsung saat menerima uang tunai → langsung Paid/Lunas.
+  Tombol Cash dari Orang Tua TIDAK BOLEH otomatis membuat status Lunas — harus lewat konfirmasi
+  Admin untuk audit trail. Setiap transaksi cash dapat nomor otomatis (format CASH-2026-000001),
+  simpan tanggal/jam, siswa & tagihan terkait, nominal, admin penerima, catatan opsional.
+- **Bukti transfer manual** (opsional/fallback): Orang Tua bisa upload bukti transfer, status
+  verifikasi Pending Verification / Approved / Rejected sampai dikonfirmasi Admin.
+- **Status tagihan**: Unpaid (belum bayar, belum lewat jatuh tempo), Overdue (belum bayar dan
+  sudah lewat jatuh tempo), Partially Paid (jika ada pembayaran sebagian), Paid/Lunas.
+- TIDAK ADA integrasi WhatsApp otomatis untuk reminder pembayaran di versi ini. Reminder cukup
+  ditampilkan sebagai daftar tagihan yang perlu ditindaklanjuti di dashboard Admin/Owner.
+
+## Absensi & Logbook Guru
+- Guru melakukan absensi siswa per sesi kelas dengan status: Present, Absent, Sick, Permission,
+  Holiday.
+- Guru mengisi logbook (materi/pokok bahasan yang diajarkan) dari halaman kelasnya — ini jadi
+  sumber data jam mengajar untuk honor.
+- Akses riwayat absensi difilter sesuai relasi: Guru hanya lihat siswa yang diajar, Orang Tua
+  hanya lihat anaknya.
+- TIDAK ADA modul progress belajar rutin per pertemuan (dihapus dari scope, supaya guru tidak
+  perlu input rutin setiap kelas selesai).
+
+## Honor Guru
+- HANYA Owner/Super Admin yang bisa lihat nominal honor semua guru dan mengubah tarif per jam
+  per guru (tarif bisa beda-beda antar guru).
+- Guru dan Admin TIDAK bisa lihat nominal honor (guru maupun bukan miliknya sendiri).
+- Perhitungan otomatis: durasi sesi mengajar (jam selesai − jam mulai) × tarif per jam = honor
+  sesi. Direkap total harian, mingguan, bulanan.
+- Owner bisa verifikasi/koreksi data logbook sebelum honor difinalkan. Bonus bisa jadi komponen
+  terpisah yang hanya dikelola Owner.
+
+## Nilai Akhir & Sertifikat
+- Guru melakukan assessment (opsional membantu), Admin input nilai final ke sistem — guru TIDAK
+  wajib input nilai setiap selesai mengajar.
+- Sistem hitung nilai akhir sesuai formula yang dikonfigurasi, tentukan status Lulus/Tidak Lulus.
+- Setelah data final diverifikasi Owner/Admin → sertifikat otomatis dibuat dari template sesuai
+  program/level → siswa berstatus Graduated.
+- Orang Tua bisa melihat laporan akhir dan sertifikat setelah siswa Graduated.
+
+## Pengumuman
+- Owner dan Admin bisa buat pengumuman: judul, tanggal, deskripsi (rich text), poster/gambar
+  opsional, target (semua user / Guru / Orang Tua / kelas tertentu / program tertentu), status
+  Draft/Published/Archived.
+- Setelah Publish, muncul di dashboard/halaman pengumuman user yang jadi target, dengan indikator
+  "Baru".
+
+## Dashboard & Laporan
+- SEMUA angka dashboard (jumlah siswa aktif, jumlah guru/staff, jumlah kelas aktif, attendance
+  hari ini, unpaid fees, pendapatan bulanan, pengeluaran, teacher payroll) ditarik OTOMATIS dari
+  data transaksi — TIDAK ADA input manual ulang untuk angka dashboard.
+- Laporan mencakup: Laporan Siswa (aktif/baru/berhenti/per program/per level), Laporan Kehadiran
+  (siswa/guru/per bulan/per kelas), Laporan Keuangan (pendapatan/pembayaran/tunggakan/
+  pengeluaran/honor), Laporan Akhir per siswa (dasar sertifikat), Laporan Inventaris.
+- Laporan pembayaran menampilkan status granular (Paid/Partially Paid/Unpaid/Overdue) beserta
+  riwayat dan bukti pembayaran terverifikasi.
+- Pertimbangkan export ke Excel/PDF (prioritas rendah).
+
+## Modul Inventaris (Prioritas rendah, boleh dibangun belakangan)
+- Data: nama barang, kategori, jumlah, harga, tanggal pembelian, kondisi (Good/Damaged/Lost/
+  Under Repair), lokasi, penanggung jawab, foto, status.
+- Bisa dikaitkan dengan ruang/kelas tertentu.
+
+## Business Rules
+- Satu Orang Tua bisa terhubung ke lebih dari satu Siswa.
+- Satu Siswa maksimal ikut 2 Program.
+- Satu Guru bisa mengajar beberapa Kelas; satu Kelas bisa punya lebih dari satu Guru.
+- Maksimal 7 Siswa per Kelas/Batch — sistem mencegah (bukan cuma warning) jika sudah penuh.
+- Guru tidak boleh punya jadwal bentrok pada waktu yang sama (dicek sebelum simpan jadwal).
+- Reschedule tidak mengubah nomor pertemuan, hanya tanggal/jam aktual.
+- Hari libur tidak dihitung sebagai pertemuan.
+- Overdue baru muncul setelah jatuh tempo terlewati DAN tagihan belum lunas.
+- Honor dihitung dari jam mengajar (bukan hanya kehadiran/hari kerja).
+- Semua ID entitas utama unik dengan prefix (lihat bagian ID di bawah) dan TIDAK didaur ulang
+  meski data nonaktif.
+- Akun Admin/Guru/Orang Tua dibuat oleh Admin, bukan self-register.
+
+## Prefix ID Entitas
+- Owner: OWN-0001
+- Admin: ADM-0001
+- Guru: GUR-2026-0001
+- Orang Tua: PAR-2026-0001
+- Siswa: STD-2026-0001
+- Program: PRG-0001
+- Kelas: KLS-2026-0001
+- Tagihan (Invoice): INV-2026-000001
+- Pembayaran digital: PAY-2026-000001
+- Cash: CASH-2026-000001
+- Absensi: ATT-2026-000001
+- Sertifikat: CERT-2026-000001
+
+## Fitur yang SENGAJA TIDAK dibangun di versi ini
+- Akun login untuk Siswa.
+- Integrasi WhatsApp otomatis (reminder pembayaran/jadwal).
+- Skema pembayaran cicilan/bertahap kompleks.
+- Modul progress belajar rutin per pertemuan / raport rutin.
+
+## Hal yang Masih Perlu Dikunci (jadikan Settings, jangan hardcode)
+- Provider payment gateway final untuk VA/E-Wallet/QRIS & kemampuan webhook status otomatis.
+- Kategori merchant QRIS dan MDR final dari PJP.
+- Timing pembuatan tagihan per pertemuan: sebelum atau sesudah sesi.
+- Aturan sesi hangus untuk kelas grup vs kelas privat.
+- Formula honor: pembulatan durasi, overtime, komponen bonus.
+- Formula nilai akhir, bobot komponen, nilai minimum lulus, siapa final verifier sertifikat.
+- Template sertifikat per program/level jika desainnya berbeda-beda.
+- Apakah cash nominal besar butuh approval Owner atau cukup verifikasi Admin.
+- Frekuensi backup dan prosedur restore data.
+
+## Prioritas Build
+1. Auth + role-based routing & layout per role
+2. Data Siswa/Orang Tua/Guru/Program/Level/Kelas (CRUD dasar) + Enrollment
+3. Jadwal + calendar view + conflict detection + reschedule
+4. Absensi siswa & logbook guru
+5. Tagihan & Pembayaran (digital + cash, dengan flow konfirmasi)
+6. Honor guru (khusus Owner)
+7. Pengumuman
+8. Nilai akhir & Sertifikat
+9. Dashboard & Laporan
+10. Inventaris (jika ada waktu)
+
+## Panduan UI & Animasi
+- Mobile-first untuk Guru dan Orang Tua (kemungkinan besar akses dari HP); Owner/Admin
+  desktop-first tapi tetap responsif.
+- Badge status (tagihan, absensi, enrollment) pakai warna konsisten merah/kuning/hijau dengan
+  transisi warna halus, bukan ganti instan.
+- Kalender jadwal: drag-and-drop untuk reschedule, dengan validasi bentrok real-time (highlight
+  merah sebelum disimpan jika bentrok).
+- Dashboard Owner: angka statistik pakai count-up animation saat pertama load.
+- Loading state pakai skeleton screen sesuai bentuk konten asli, bukan spinner generik.
+- Modal konfirmasi untuk aksi penting (konfirmasi cash, generate sertifikat, publish pengumuman,
+  approve/reject enrollment) pakai scale-in + backdrop blur.
+
+## Instruksi Build
+Mulai dengan front-end + data dummy dulu mengikuti struktur role, data master, dan business rules
+di atas, sesuai urutan Prioritas Build. Semua item di bagian "Hal yang Masih Perlu Dikunci"
+dijadikan pengaturan (Settings) yang bisa diubah Owner, bukan nilai tetap di kode. Jangan bangun
+fitur di bagian "SENGAJA TIDAK dibangun" kecuali diminta ulang secara eksplisit.
