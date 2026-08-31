@@ -64,7 +64,7 @@ export default function OrangTuaPembayaranPage() {
       {/* ── HEADER & CHILD SELECTOR ─────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1f6d91] tracking-tight">Pembayaran</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#191c1e] tracking-tight">Pembayaran</h1>
         </div>
 
         {/* Child Selector Dropdown */}
@@ -152,7 +152,7 @@ export default function OrangTuaPembayaranPage() {
             </div>
           </div>
           <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-            <div className="bg-[#1f6d91] h-full w-1/2 rounded-full" />
+            <div className="bg-[#005474] h-full w-1/2 rounded-full" />
           </div>
         </div>
 
@@ -181,7 +181,7 @@ export default function OrangTuaPembayaranPage() {
           <div className="bg-white rounded-2xl p-6 shadow-xs border border-slate-100">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-bold text-[#191c1e]">Detail Program</h3>
-              <span className="bg-sky-100 text-[#1f6d91] px-3 py-1 rounded-full text-xs font-bold">
+              <span className="bg-sky-100 text-[#0284c7] px-3 py-1 rounded-full text-xs font-bold">
                 Aktif
               </span>
             </div>
@@ -231,7 +231,7 @@ export default function OrangTuaPembayaranPage() {
                     <h4 className="text-sm font-bold text-[#191c1e]">Pertemuan 6</h4>
                     <p className="text-xs text-[#70787e]">Hari ini • Phonics Review</p>
                   </div>
-                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded">
+                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded">
                     LUNAS
                   </span>
                 </div>
@@ -247,7 +247,7 @@ export default function OrangTuaPembayaranPage() {
                     <h4 className="text-sm font-bold text-[#191c1e]">Pertemuan 7</h4>
                     <p className="text-xs text-[#70787e]">2 Sept 2024</p>
                   </div>
-                  <span className="bg-[#ffdad6] text-[#ba1a1a] text-[10px] font-extrabold px-2 py-0.5 rounded">
+                  <span className="bg-[#ffdad6] text-[#ba1a1a] text-[10px] font-extrabold px-2.5 py-0.5 rounded uppercase">
                     BELUM DIBAYAR
                   </span>
                 </div>
@@ -263,7 +263,7 @@ export default function OrangTuaPembayaranPage() {
                     <h4 className="text-sm font-bold text-[#191c1e]">Pertemuan 8</h4>
                     <p className="text-xs text-[#70787e]">4 Sept 2024</p>
                   </div>
-                  <span className="bg-[#ffdad6] text-[#ba1a1a] text-[10px] font-extrabold px-2 py-0.5 rounded">
+                  <span className="bg-[#ffdad6] text-[#ba1a1a] text-[10px] font-extrabold px-2.5 py-0.5 rounded uppercase">
                     BELUM DIBAYAR
                   </span>
                 </div>
@@ -297,26 +297,26 @@ export default function OrangTuaPembayaranPage() {
               </span>
             </div>
 
-            <div className="bg-slate-100/70 p-4 rounded-xl space-y-2">
+            <div className="bg-[#f1f5f9] p-4 rounded-xl space-y-2">
               <div className="flex justify-between text-xs font-bold text-[#191c1e]">
                 <span>Pertemuan 7</span>
                 <span>Rp 50.000</span>
               </div>
-              <div className="flex justify-between text-xs font-bold text-[#191c1e] pb-2 border-b border-slate-200">
+              <div className="flex justify-between text-xs font-bold text-[#191c1e] pb-2 border-b border-slate-300/60">
                 <span>Pertemuan 8</span>
                 <span>Rp 50.000</span>
               </div>
               <div className="flex justify-between items-end pt-2">
-                <span className="text-xs text-[#70787e]">Total Dibayar</span>
-                <span className="text-xl font-extrabold text-[#ba1a1a]">Rp 100.000</span>
+                <span className="text-xs text-[#70787e] font-medium">Total Dibayar</span>
+                <span className="text-2xl font-extrabold text-[#ba1a1a]">Rp 100.000</span>
               </div>
             </div>
 
             <button
               onClick={() => handleOpenPayment("pertemuan")}
-              className="w-full bg-[#f2ab3b] hover:bg-[#e09b2b] text-white font-bold text-sm py-3 px-4 rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 active:scale-98"
+              className="w-full bg-[#f2ab3b] hover:bg-[#e09b2b] text-[#191c1e] font-extrabold text-sm py-3.5 px-4 rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 active:scale-98"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-[#191c1e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <rect x="2" y="5" width="20" height="14" rx="2" strokeWidth="2" />
                 <line x1="2" y1="10" x2="22" y2="10" strokeWidth="2" />
               </svg>
@@ -328,7 +328,7 @@ export default function OrangTuaPembayaranPage() {
           <div className="bg-gradient-to-br from-[#005474] to-[#1f6d91] rounded-2xl p-6 text-white shadow-md relative overflow-hidden space-y-4">
             <div className="relative z-10 flex items-start justify-between">
               <div>
-                <h4 className="text-base font-extrabold flex items-center gap-2">
+                <h4 className="text-base font-extrabold flex items-center gap-2 text-white">
                   <svg className="w-5 h-5 text-[#f2ab3b]" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                   </svg>
@@ -351,7 +351,7 @@ export default function OrangTuaPembayaranPage() {
 
             <button
               onClick={() => handleOpenPayment("paket")}
-              className="relative z-10 w-full bg-white hover:bg-slate-100 text-[#005474] font-bold text-sm py-3 px-4 rounded-xl shadow-xs transition-all text-center active:scale-98"
+              className="relative z-10 w-full bg-white hover:bg-slate-100 text-[#005474] font-extrabold text-sm py-3.5 px-4 rounded-xl shadow-xs transition-all text-center active:scale-98"
             >
               Lunasi Paket Sekarang
             </button>
@@ -395,7 +395,7 @@ export default function OrangTuaPembayaranPage() {
                 <td className="py-4 px-4 text-slate-600">Cash (Di Cabang)</td>
                 <td className="py-4 px-4 text-right font-extrabold text-[#191c1e]">Rp 50.000</td>
                 <td className="py-4 px-4">
-                  <span className="bg-[#fef3c7] text-[#92400e] text-[11px] font-bold px-3 py-1 rounded-md inline-flex items-center gap-1.5 border border-amber-200">
+                  <span className="bg-[#fef3c7] text-[#92400e] text-[11px] font-bold px-3 py-1.5 rounded-md inline-flex items-center gap-1.5 border border-amber-200">
                     <svg className="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -437,13 +437,9 @@ export default function OrangTuaPembayaranPage() {
       </div>
 
       {/* ── POLICY FOOTER CARD ─────────────────────────── */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-100 flex items-start gap-4 shadow-xs">
-        <div className="w-10 h-10 rounded-full bg-slate-100 text-[#1f6d91] flex items-center justify-center flex-shrink-0">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="10" strokeWidth="2" />
-            <line x1="12" y1="16" x2="12" y2="12" strokeWidth="2" />
-            <line x1="12" y1="8" x2="12.01" y2="8" strokeWidth="3" />
-          </svg>
+      <div className="bg-[#f1f5f9] rounded-2xl p-6 border border-slate-200/70 flex items-start gap-4 shadow-xs">
+        <div className="w-10 h-10 rounded-full bg-slate-200 text-[#1f6d91] flex items-center justify-center flex-shrink-0 font-bold">
+          ℹ
         </div>
         <div>
           <h4 className="text-sm font-bold text-[#191c1e] mb-1">Kebijakan Pembayaran & Kehadiran</h4>
@@ -473,7 +469,7 @@ export default function OrangTuaPembayaranPage() {
                 <p className="text-xs text-[#70787e]">Pilih metode pembayaran untuk melunasi tagihan pertemuan yang dipilih.</p>
 
                 {/* Ringkasan Tagihan Box */}
-                <div className="bg-slate-100 p-4 rounded-xl space-y-2">
+                <div className="bg-[#f1f5f9] p-4 rounded-xl space-y-2">
                   <p className="text-[10px] font-bold text-[#70787e] uppercase tracking-wider">RINGKASAN TAGIHAN</p>
                   {billBreakdown.map((item) => (
                     <div key={item.label} className="flex justify-between text-xs text-[#191c1e] font-medium">
@@ -507,7 +503,9 @@ export default function OrangTuaPembayaranPage() {
                         <p className="text-[11px] text-[#70787e]">Bayar melalui nomor Virtual Account</p>
                       </div>
                     </div>
-                    <div className={`w-4 h-4 rounded-full border-2 ${paymentMethod === "va" ? "border-[#1f6d91] bg-[#1f6d91]" : "border-slate-300"}`} />
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center p-0.5 ${paymentMethod === "va" ? "border-[#1f6d91]" : "border-slate-300"}`}>
+                      {paymentMethod === "va" && <div className="w-2.5 h-2.5 rounded-full bg-[#1f6d91]" />}
+                    </div>
                   </div>
 
                   {/* E-Wallet */}
@@ -529,7 +527,9 @@ export default function OrangTuaPembayaranPage() {
                         <p className="text-[11px] text-[#70787e]">Bayar menggunakan dompet digital</p>
                       </div>
                     </div>
-                    <div className={`w-4 h-4 rounded-full border-2 ${paymentMethod === "ewallet" ? "border-[#1f6d91] bg-[#1f6d91]" : "border-slate-300"}`} />
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center p-0.5 ${paymentMethod === "ewallet" ? "border-[#1f6d91]" : "border-slate-300"}`}>
+                      {paymentMethod === "ewallet" && <div className="w-2.5 h-2.5 rounded-full bg-[#1f6d91]" />}
+                    </div>
                   </div>
 
                   {/* QRIS */}
@@ -553,7 +553,9 @@ export default function OrangTuaPembayaranPage() {
                         <p className="text-[11px] text-[#70787e]">Scan QRIS menggunakan aplikasi pembayaran</p>
                       </div>
                     </div>
-                    <div className={`w-4 h-4 rounded-full border-2 ${paymentMethod === "qris" ? "border-[#1f6d91] bg-[#1f6d91]" : "border-slate-300"}`} />
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center p-0.5 ${paymentMethod === "qris" ? "border-[#1f6d91]" : "border-slate-300"}`}>
+                      {paymentMethod === "qris" && <div className="w-2.5 h-2.5 rounded-full bg-[#1f6d91]" />}
+                    </div>
                   </div>
 
                   {/* Cash */}
@@ -575,15 +577,17 @@ export default function OrangTuaPembayaranPage() {
                         <p className="text-[11px] text-[#70787e]">Bayar tunai melalui Admin</p>
                       </div>
                     </div>
-                    <div className={`w-4 h-4 rounded-full border-2 ${paymentMethod === "cash" ? "border-[#1f6d91] bg-[#1f6d91]" : "border-slate-300"}`} />
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center p-0.5 ${paymentMethod === "cash" ? "border-[#1f6d91]" : "border-slate-300"}`}>
+                      {paymentMethod === "cash" && <div className="w-2.5 h-2.5 rounded-full bg-[#1f6d91]" />}
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex gap-3 pt-2">
-                  <button onClick={() => setModalStep(null)} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50">
+                  <button onClick={() => setModalStep(null)} className="flex-1 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50">
                     Batal
                   </button>
-                  <button onClick={() => setModalStep("pay_details")} className="flex-1 py-2.5 rounded-xl bg-[#f2ab3b] hover:bg-[#e09b2b] text-xs font-bold text-white shadow-xs">
+                  <button onClick={() => setModalStep("pay_details")} className="flex-1 py-3 rounded-xl bg-[#f2ab3b] hover:bg-[#e09b2b] text-xs font-extrabold text-[#191c1e] shadow-xs">
                     Lanjutkan Pembayaran
                   </button>
                 </div>
@@ -605,10 +609,10 @@ export default function OrangTuaPembayaranPage() {
                   </button>
                 </div>
 
-                <p className="text-xs text-[#70787e]">Silakan selesaikan pembayaran sebelum batas waktu pembayaran.</p>
+                <p className="text-xs text-[#70787e]">Silakan selesaikan pembayaran menggunakan Virtual Account sebelum batas waktu pembayaran.</p>
 
                 {/* Ringkasan Pembayaran Box */}
-                <div className="bg-slate-100 p-4 rounded-xl space-y-2">
+                <div className="bg-[#f1f5f9] p-4 rounded-xl space-y-2">
                   <p className="text-[10px] font-bold text-[#70787e] uppercase tracking-wider">RINGKASAN PEMBAYARAN</p>
                   {billBreakdown.map((item) => (
                     <div key={item.label} className="flex justify-between text-xs text-[#191c1e] font-medium">
@@ -627,12 +631,12 @@ export default function OrangTuaPembayaranPage() {
                   <div className="space-y-4">
                     <div>
                       <p className="text-[10px] font-bold text-[#70787e] uppercase tracking-wider mb-2">PILIH BANK</p>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-3">
                         {(["BCA", "BNI", "Mandiri", "BRI"] as const).map((b) => (
                           <button
                             key={b}
                             onClick={() => setSelectedBank(b)}
-                            className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                            className={`py-2.5 px-3 rounded-xl border text-xs font-bold transition-all ${
                               selectedBank === b ? "border-2 border-[#1f6d91] bg-white text-[#1f6d91]" : "border-slate-200 text-slate-700 bg-white"
                             }`}
                           >
@@ -642,11 +646,11 @@ export default function OrangTuaPembayaranPage() {
                       </div>
                     </div>
 
-                    <div className="bg-slate-100 p-4 rounded-xl text-center space-y-2">
+                    <div className="bg-[#f1f5f9] p-4 rounded-xl text-center space-y-2">
                       <p className="text-[10px] font-bold text-[#70787e] uppercase tracking-wider">NOMOR VIRTUAL ACCOUNT</p>
                       <div className="flex items-center justify-center gap-2">
                         <span className="text-xl font-black text-[#1f6d91] tracking-wider">1234 5678 9012 3456</span>
-                        <button onClick={() => handleCopy("1234567890123456", "va")} className="text-slate-500 hover:text-[#1f6d91]">
+                        <button onClick={() => handleCopy("1234567890123456", "va")} className="text-slate-500 hover:text-[#1f6d91]" title="Salin Nomor VA">
                           📋
                         </button>
                       </div>
@@ -661,12 +665,12 @@ export default function OrangTuaPembayaranPage() {
                   <div className="space-y-4">
                     <div>
                       <p className="text-[10px] font-bold text-[#70787e] uppercase tracking-wider mb-2">PILIH E-WALLET</p>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-3">
                         {(["GoPay", "OVO", "Dana", "ShopeePay"] as const).map((ew) => (
                           <button
                             key={ew}
                             onClick={() => setSelectedEwallet(ew)}
-                            className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                            className={`py-2.5 px-3 rounded-xl border text-xs font-bold transition-all ${
                               selectedEwallet === ew ? "border-2 border-[#1f6d91] bg-white text-[#1f6d91]" : "border-slate-200 text-slate-700 bg-white"
                             }`}
                           >
@@ -676,7 +680,7 @@ export default function OrangTuaPembayaranPage() {
                       </div>
                     </div>
 
-                    <div className="bg-slate-100 p-4 rounded-xl space-y-2 text-center">
+                    <div className="bg-[#f1f5f9] p-4 rounded-xl space-y-2 text-center">
                       <p className="text-xs font-bold text-slate-800">Nomor Handphone Terdaftar:</p>
                       <input
                         type="text"
@@ -690,7 +694,7 @@ export default function OrangTuaPembayaranPage() {
 
                 {/* QRIS VIEW */}
                 {paymentMethod === "qris" && (
-                  <div className="bg-slate-100 p-4 rounded-xl text-center space-y-3 flex flex-col items-center">
+                  <div className="bg-[#f1f5f9] p-4 rounded-xl text-center space-y-3 flex flex-col items-center">
                     <p className="text-xs font-bold text-slate-800">BSD AFTER SCHOOL CLUB (NMID: ID1029384756)</p>
                     <div className="w-36 h-36 bg-white border border-slate-300 p-2 rounded-xl flex items-center justify-center">
                       <svg width={100} height={100} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
@@ -710,7 +714,7 @@ export default function OrangTuaPembayaranPage() {
 
                 {/* CASH VIEW */}
                 {paymentMethod === "cash" && (
-                  <div className="bg-slate-100 p-4 rounded-xl space-y-2 text-center">
+                  <div className="bg-[#f1f5f9] p-4 rounded-xl space-y-2 text-center">
                     <p className="text-xs font-bold text-slate-800">Kode Booking Cash:</p>
                     <p className="text-xl font-black text-[#1f6d91]">CASH-88921-08</p>
                     <p className="text-xs text-slate-500">Tunjukkan kode ini ke Admin cabang untuk verifikasi tunai.</p>
@@ -718,10 +722,10 @@ export default function OrangTuaPembayaranPage() {
                 )}
 
                 <div className="flex gap-3 pt-2">
-                  <button onClick={() => setModalStep("select_method")} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50">
+                  <button onClick={() => setModalStep("select_method")} className="flex-1 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50">
                     Kembali
                   </button>
-                  <button onClick={() => setModalStep("waiting_confirmation")} className="flex-1 py-2.5 rounded-xl bg-[#f2ab3b] hover:bg-[#e09b2b] text-xs font-bold text-white shadow-xs">
+                  <button onClick={() => setModalStep("waiting_confirmation")} className="flex-1 py-3 rounded-xl bg-[#f2ab3b] hover:bg-[#e09b2b] text-xs font-extrabold text-[#191c1e] shadow-xs">
                     Saya Sudah Melakukan Pembayaran
                   </button>
                 </div>
@@ -740,12 +744,12 @@ export default function OrangTuaPembayaranPage() {
 
                 {/* Animated Donut Spinner */}
                 <div className="py-4 text-center">
-                  <div className="w-14 h-14 border-4 border-slate-200 border-t-[#1f6d91] rounded-full animate-spin mx-auto mb-4" />
+                  <div className="w-16 h-16 border-[6px] border-slate-200 border-t-[#1f6d91] rounded-full animate-spin mx-auto mb-4" />
                   <p className="text-xs text-[#70787e]">Sistem sedang menunggu konfirmasi dari penyedia pembayaran.</p>
                 </div>
 
                 {/* Ringkasan Tagihan Box */}
-                <div className="bg-slate-100 p-4 rounded-xl space-y-2">
+                <div className="bg-[#f1f5f9] p-4 rounded-xl space-y-2">
                   <p className="text-[10px] font-bold text-[#70787e] uppercase tracking-wider">RINGKASAN TAGIHAN</p>
                   {billBreakdown.map((item) => (
                     <div key={item.label} className="flex justify-between text-xs text-[#191c1e] font-medium">
@@ -761,7 +765,7 @@ export default function OrangTuaPembayaranPage() {
 
                 <button
                   onClick={handleCheckStatus}
-                  className="w-full py-3 rounded-xl bg-[#f2ab3b] hover:bg-[#e09b2b] text-xs font-bold text-white shadow-xs transition-all text-center"
+                  className="w-full py-3.5 rounded-xl bg-[#f2ab3b] hover:bg-[#e09b2b] text-xs font-extrabold text-[#191c1e] shadow-xs transition-all text-center"
                 >
                   Cek Status Pembayaran
                 </button>
