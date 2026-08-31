@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import type { Metadata } from "next";
+import Link from "next/link";
 
 export default function OrangTuaDashboardPage() {
   const [cashModalOpen, setCashModalOpen] = useState(false);
@@ -34,8 +34,8 @@ export default function OrangTuaDashboardPage() {
           </p>
         </div>
         <div>
-          <a
-            href="#tagihan-aktif"
+          <Link
+            href="/orang-tua/pembayaran"
             className="btn btn-accent"
             style={{
               padding: "10px 22px",
@@ -43,10 +43,12 @@ export default function OrangTuaDashboardPage() {
               fontWeight: 700,
               boxShadow: "0 4px 12px rgba(245,158,11,0.4)",
               borderRadius: "var(--radius-md)",
+              textDecoration: "none",
+              display: "inline-block",
             }}
           >
             Bayar Sekarang
-          </a>
+          </Link>
         </div>
       </div>
 
@@ -379,13 +381,13 @@ export default function OrangTuaDashboardPage() {
               </div>
 
               {/* Action Buttons */}
-              <button
+              <Link
+                href="/orang-tua/pembayaran"
                 className="btn btn-accent"
-                style={{ width: "100%", justifyContent: "center", padding: "11px", fontWeight: 700 }}
-                onClick={() => alert("Mengarahkan ke gateway pembayaran...")}
+                style={{ width: "100%", justifyContent: "center", padding: "11px", fontWeight: 700, textDecoration: "none", textAlign: "center", display: "block" }}
               >
                 Bayar Sekarang
-              </button>
+              </Link>
 
               <button
                 className="btn btn-outline"

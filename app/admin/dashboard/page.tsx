@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Dashboard Admin — BSD After School Club",
@@ -406,14 +407,15 @@ export default function AdminDashboardPage() {
                 <div className="action-title">Verifikasi Pembayaran</div>
                 <div className="action-desc">8 Bukti transfer baru</div>
               </div>
-              <button
+              <Link
+                href="/orang-tua/pembayaran"
                 className="btn btn-ghost btn-sm"
                 id="btn-cek-pembayaran"
-                style={{ display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}
+                style={{ display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap", textDecoration: "none" }}
               >
                 Cek
                 <IconChevronRight size={13} />
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -422,13 +424,14 @@ export default function AdminDashboardPage() {
         <div className="card">
           <div className="card-header">
             <h2 className="card-title">Status Pembayaran (Menunggu Verifikasi)</h2>
-            <button
+            <Link
+              href="/orang-tua/pembayaran"
               className="link-text"
               id="btn-lihat-semua-pembayaran"
-              style={{ border: "none", background: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--color-primary)", whiteSpace: "nowrap" }}
+              style={{ border: "none", background: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--color-primary)", whiteSpace: "nowrap", textDecoration: "none" }}
             >
               Lihat Semua
-            </button>
+            </Link>
           </div>
           <div className="card-body" style={{ paddingTop: 0, overflowX: "auto" }}>
             <table className="data-table">

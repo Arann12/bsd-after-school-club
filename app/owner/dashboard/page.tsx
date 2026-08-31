@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Dashboard — BSD After School Club",
@@ -413,7 +414,7 @@ export default function OwnerDashboardPage() {
               <div className="action-content">
                 <div className="action-title">Tagihan Overdue</div>
                 <div className="action-desc">Rp 12.000.000 (3 Siswa)</div>
-                <span className="action-link" id="link-lihat-detail">Lihat Detail</span>
+                <Link href="/orang-tua/pembayaran" className="action-link" id="link-lihat-detail">Lihat Detail</Link>
               </div>
             </div>
 

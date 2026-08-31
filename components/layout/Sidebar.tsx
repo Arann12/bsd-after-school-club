@@ -209,9 +209,9 @@ export const ownerNav: NavSection[] = [
   {
     section: "FINANCE",
     items: [
-      { label: "Tagihan / Invoice", href: "/owner/tagihan", icon: "Invoice" },
-      { label: "Pembayaran", href: "/owner/pembayaran", icon: "CreditCard" },
-      { label: "Verifikasi Cash", href: "/owner/verifikasi", icon: "CheckCircle" },
+      { label: "Tagihan / Invoice", href: "/orang-tua/pembayaran", icon: "Invoice" },
+      { label: "Pembayaran", href: "/orang-tua/pembayaran", icon: "CreditCard" },
+      { label: "Verifikasi Cash", href: "/orang-tua/pembayaran", icon: "CheckCircle" },
       { label: "Honor Guru/Staff", href: "/owner/honor", icon: "DollarSign" },
     ],
   },
@@ -227,7 +227,7 @@ export const ownerNav: NavSection[] = [
     items: [
       { label: "Laporan Siswa", href: "/owner/laporan/siswa", icon: "BarChart2" },
       { label: "Laporan Kehadiran", href: "/owner/laporan/kehadiran", icon: "ClipboardCheck" },
-      { label: "Laporan Keuangan", href: "/owner/laporan/keuangan", icon: "BarChart2" },
+      { label: "Laporan Keuangan", href: "/orang-tua/pembayaran", icon: "BarChart2" },
       { label: "Laporan Akhir & Sertifikat", href: "/owner/laporan/akhir", icon: "Award" },
       { label: "Laporan Inventaris", href: "/owner/laporan/inventaris", icon: "FileText" },
     ],
@@ -268,9 +268,9 @@ export const adminNav: NavSection[] = [
   {
     section: "FINANCE",
     items: [
-      { label: "Tagihan / Invoice", href: "/admin/tagihan", icon: "Invoice" },
-      { label: "Pembayaran", href: "/admin/pembayaran", icon: "CreditCard" },
-      { label: "Verifikasi Cash", href: "/admin/verifikasi", icon: "CheckCircle" },
+      { label: "Tagihan / Invoice", href: "/orang-tua/pembayaran", icon: "Invoice" },
+      { label: "Pembayaran", href: "/orang-tua/pembayaran", icon: "CreditCard" },
+      { label: "Verifikasi Cash", href: "/orang-tua/pembayaran", icon: "CheckCircle" },
     ],
   },
   {
