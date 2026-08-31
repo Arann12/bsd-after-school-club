@@ -209,9 +209,9 @@ export const ownerNav: NavSection[] = [
   {
     section: "FINANCE",
     items: [
-      { label: "Tagihan / Invoice", href: "#", icon: "Invoice" },
-      { label: "Pembayaran", href: "#", icon: "CreditCard" },
-      { label: "Verifikasi Cash", href: "#", icon: "CheckCircle" },
+      { label: "Tagihan / Invoice", href: "/admin/tagihan", icon: "Invoice" },
+      { label: "Pembayaran", href: "/admin/tagihan", icon: "CreditCard" },
+      { label: "Verifikasi Cash", href: "/admin/tagihan", icon: "CheckCircle" },
       { label: "Honor Guru/Staff", href: "/owner/honor", icon: "DollarSign" },
     ],
   },
