@@ -254,7 +254,7 @@ export const adminNav: NavSection[] = [
     section: "ACADEMIC",
     items: [
       { label: "Pendaftaran / Enrollment", href: "/admin/pendaftaran", icon: "UserPlus" },
-      { label: "Siswa", href: "/admin/siswa", icon: "Users" },
+      { label: "Siswa", href: "/admin/students", icon: "Users" },
       { label: "Orang Tua", href: "/admin/orang-tua", icon: "Users" },
       { label: "Guru & Staff", href: "/admin/guru", icon: "GraduationCap" },
       { label: "Program", href: "/admin/program", icon: "BookOpen" },
