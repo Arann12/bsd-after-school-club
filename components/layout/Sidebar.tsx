@@ -268,9 +268,9 @@ export const adminNav: NavSection[] = [
   {
     section: "FINANCE",
     items: [
-      { label: "Tagihan / Invoice", href: "#", icon: "Invoice" },
-      { label: "Pembayaran", href: "#", icon: "CreditCard" },
-      { label: "Verifikasi Cash", href: "#", icon: "CheckCircle" },
+      { label: "Tagihan & Pembayaran", href: "/admin/tagihan", icon: "Invoice" },
+      { label: "Pembayaran", href: "/admin/tagihan", icon: "CreditCard" },
+      { label: "Verifikasi Cash", href: "/admin/tagihan", icon: "CheckCircle" },
     ],
   },
   {
@@ -311,8 +311,7 @@ export const guruNav: NavSection[] = [
     section: "KELAS SAYA",
     items: [
       { label: "Jadwal Mengajar", href: "/guru/jadwal", icon: "Calendar" },
-      { label: "Daftar Siswa per Kelas", href: "/guru/siswa", icon: "Users" },
-      { label: "Absensi Siswa", href: "/guru/absensi", icon: "UserCheck" },
+      { label: "Kelas & Absensi", href: "/guru/kelas", icon: "UserCheck" },
       { label: "Logbook Mengajar", href: "/guru/logbook", icon: "BookOpen" },
     ],
   },
