@@ -225,9 +225,9 @@ export const ownerNav: NavSection[] = [
   {
     section: "REPORTS",
     items: [
-      { label: "Laporan Siswa", href: "/owner/laporan/siswa", icon: "BarChart2" },
-      { label: "Laporan Kehadiran", href: "/owner/laporan/kehadiran", icon: "ClipboardCheck" },
-      { label: "Laporan Keuangan", href: "#", icon: "BarChart2" },
+      { label: "Laporan & Sertifikat", href: "/owner/laporan", icon: "BarChart2" },
+      { label: "Laporan Kehadiran", href: "/owner/laporan", icon: "ClipboardCheck" },
+      { label: "Laporan Keuangan", href: "/owner/laporan", icon: "BarChart2" },
       { label: "Laporan Akhir & Sertifikat", href: "/owner/laporan/akhir", icon: "Award" },
       { label: "Laporan Inventaris", href: "/owner/laporan/inventaris", icon: "FileText" },
     ],
@@ -262,7 +262,7 @@ export const adminNav: NavSection[] = [
       { label: "Kelas", href: "/admin/classes", icon: "Door" },
       { label: "Jadwal", href: "/admin/schedule", icon: "Calendar" },
       { label: "Absensi & Logbook Guru", href: "/admin/absensi", icon: "ClipboardCheck" },
-      { label: "Penilaian & Sertifikat", href: "/admin/penilaian", icon: "Award" },
+      { label: "Laporan & Sertifikat", href: "/admin/laporan", icon: "Award" },
     ],
   },
   {
@@ -294,7 +294,8 @@ export const orangTuaNav: NavSection[] = [
       { label: "Absensi", href: "/orang-tua/absensi", icon: "ClipboardCheck" },
       { label: "Kegiatan", href: "/orang-tua/kegiatan", icon: "Activity" },
       { label: "Pembayaran", href: "/orang-tua/pembayaran", icon: "CreditCard" },
-      { label: "Laporan", href: "/orang-tua/laporan", icon: "Lock", locked: true },
+      { label: "Pengumuman", href: "/orang-tua/pengumuman", icon: "Bell" },
+      { label: "Laporan Akhir & Sertifikat", href: "/orang-tua/laporan", icon: "Award" },
     ],
   },
 ];
@@ -312,7 +313,7 @@ export const guruNav: NavSection[] = [
     items: [
       { label: "Jadwal Mengajar", href: "/guru/jadwal", icon: "Calendar" },
       { label: "Kelas & Absensi", href: "/guru/kelas", icon: "UserCheck" },
-      { label: "Logbook Mengajar", href: "/guru/logbook", icon: "BookOpen" },
+      { label: "Pengumuman", href: "/guru/pengumuman", icon: "Bell" },
     ],
   },
 ];
