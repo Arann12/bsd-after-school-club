@@ -235,8 +235,7 @@ export const ownerNav: NavSection[] = [
   {
     section: "SYSTEM",
     items: [
-      { label: "User Management", href: "/owner/users", icon: "Users" },
-      { label: "Role & Permission", href: "/owner/roles", icon: "ShieldCheck" },
+      { label: "Pengaturan Sistem", href: "/settings", icon: "Settings" },
       { label: "Pengaturan Tarif Honor", href: "/owner/tarif", icon: "Settings" },
     ],
   },
