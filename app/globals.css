@@ -57,7 +57,7 @@
   --color-info-bg: #dbeafe;
 
   /* Sidebar */
-  --sidebar-width: 220px;
+  --sidebar-width: 236px;
   --sidebar-bg: #ffffff;
   --sidebar-text: #4a5568;
   --sidebar-active-bg: #1a5c8a;
@@ -1462,7 +1462,7 @@ html, body {
 
 @media (max-width: 768px) {
   :root { --sidebar-width: 0px; }
-  .sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-100%); width: 220px; }
+  .sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-100%); width: 240px; }
   .sidebar.open { transform: translateX(0); }
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
   .page-content { padding: var(--space-4); }

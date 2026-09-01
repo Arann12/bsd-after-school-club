@@ -194,7 +194,7 @@ export const ownerNav: NavSection[] = [
   {
     section: "ACADEMIC",
     items: [
-      { label: "Pendaftaran / Enrollment", href: "/owner/pendaftaran", icon: "UserPlus" },
+      { label: "Pendaftaran", href: "/owner/pendaftaran", icon: "UserPlus" },
       { label: "Siswa", href: "/owner/siswa", icon: "Users" },
       { label: "Orang Tua", href: "/owner/orang-tua", icon: "Users" },
       { label: "Guru & Staff", href: "/owner/guru", icon: "GraduationCap" },
@@ -202,7 +202,7 @@ export const ownerNav: NavSection[] = [
       { label: "Level", href: "/owner/level", icon: "Layers" },
       { label: "Kelas", href: "/owner/kelas", icon: "Door" },
       { label: "Jadwal", href: "/owner/jadwal", icon: "Calendar" },
-      { label: "Absensi & Logbook Guru", href: "/owner/absensi", icon: "ClipboardCheck" },
+      { label: "Absensi & Logbook", href: "/owner/absensi", icon: "ClipboardCheck" },
       { label: "Penilaian & Sertifikat", href: "/owner/penilaian", icon: "Award" },
     ],
   },
@@ -234,7 +234,7 @@ export const ownerNav: NavSection[] = [
     section: "SYSTEM",
     items: [
       { label: "Pengaturan Sistem", href: "/settings", icon: "Settings" },
-      { label: "Pengaturan Tarif Honor", href: "/owner/tarif", icon: "Settings" },
+      { label: "Pengaturan Honor", href: "/owner/tarif", icon: "Settings" },
     ],
   },
 ];
@@ -250,7 +250,7 @@ export const adminNav: NavSection[] = [
   {
     section: "ACADEMIC",
     items: [
-      { label: "Pendaftaran / Enrollment", href: "/admin/pendaftaran", icon: "UserPlus" },
+      { label: "Pendaftaran", href: "/admin/pendaftaran", icon: "UserPlus" },
       { label: "Siswa", href: "/admin/students", icon: "Users" },
       { label: "Orang Tua", href: "/admin/orang-tua", icon: "Users" },
       { label: "Guru & Staff", href: "/admin/guru", icon: "GraduationCap" },
@@ -258,7 +258,7 @@ export const adminNav: NavSection[] = [
       { label: "Level", href: "/admin/level", icon: "Layers" },
       { label: "Kelas", href: "/admin/classes", icon: "Door" },
       { label: "Jadwal", href: "/admin/schedule", icon: "Calendar" },
-      { label: "Absensi & Logbook Guru", href: "/admin/absensi", icon: "ClipboardCheck" },
+      { label: "Absensi & Logbook", href: "/admin/absensi", icon: "ClipboardCheck" },
       { label: "Sertifikat Kelulusan", href: "/admin/sertifikat", icon: "Award" },
     ],
   },
