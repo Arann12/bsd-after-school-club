@@ -21,11 +21,21 @@ const initialCashList: CashVerificationItem[] = [
 export default function AdminVerifikasiCashPage() {
   const [cashList, setCashList] = useState<CashVerificationItem[]>(initialCashList);
   const [selectedCash, setSelectedCash] = useState<CashVerificationItem | null>(null);
+  const [adminNoteInput, setAdminNoteInput] = useState<string>("");
 
   const [showNotification, setShowNotification] = useState(false);
 
+  const handleOpenModal = (item: CashVerificationItem) => {
+    setSelectedCash(item);
+    setAdminNoteInput(item.catatan || "");
+  };
+
   const handleApprove = (id: string) => {
-    setCashList(prev => prev.map(c => c.id === id ? { ...c, status: "Disetujui / Terverifikasi" } : c));
+    setCashList(prev => prev.map(c => c.id === id ? {
+      ...c,
+      status: "Disetujui / Terverifikasi",
+      catatan: adminNoteInput || c.catatan
+    } : c));
     setShowNotification(true);
     setTimeout(() => setShowNotification(false), 3000);
     setSelectedCash(null);
@@ -84,6 +94,7 @@ export default function AdminVerifikasiCashPage() {
                   <td style={{ padding: "14px 16px" }}>
                     <div style={{ fontWeight: 800, color: "var(--color-text-primary)" }}>{c.namaOrtu}</div>
                     <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>Siswa: {c.namaSiswa}</div>
+                    {c.catatan && <div style={{ fontSize: 11, color: "#64748b", fontStyle: "italic", marginTop: 2 }}>Catatan: "{c.catatan}"</div>}
                   </td>
                   <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 900, color: "#059669" }}>
                     Rp {c.jumlah.toLocaleString("id-ID")}
@@ -101,7 +112,7 @@ export default function AdminVerifikasiCashPage() {
                   </td>
                   <td style={{ padding: "14px 16px" }}>
                     {c.status === "Menunggu Verifikasi" ? (
-                      <button className="btn btn-accent btn-sm" onClick={() => setSelectedCash(c)}>
+                      <button className="btn btn-accent btn-sm" onClick={() => handleOpenModal(c)}>
                         ✓ Verifikasi Uang Cash
                       </button>
                     ) : (
@@ -118,14 +129,24 @@ export default function AdminVerifikasiCashPage() {
       {/* Modal Verifikasi Cash */}
       {selectedCash && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 480, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}>
+          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 500, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}>
             <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 12px" }}>Konfirmasi Terima Uang Tunai / Cash</h3>
             <p style={{ fontSize: 13, color: "var(--color-text-secondary)", lineHeight: 1.5 }}>
               Pastikan uang tunai sebesar <strong>Rp {selectedCash.jumlah.toLocaleString("id-ID")}</strong> dari <strong>{selectedCash.namaOrtu}</strong> untuk Invoice <strong>{selectedCash.invoiceId}</strong> telah berada di fisik kasir kantor.
             </p>
-            <div style={{ background: "var(--color-bg)", padding: 12, borderRadius: 8, fontSize: 12.5, color: "var(--color-text-muted)", marginTop: 10 }}>
-              Catatan Kasir: "{selectedCash.catatan}"
+            
+            <div className="form-group" style={{ marginTop: 14, marginBottom: 0 }}>
+              <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Catatan & Keterangan Admin (Internal)</label>
+              <textarea
+                className="form-input"
+                rows={3}
+                value={adminNoteInput}
+                onChange={e => setAdminNoteInput(e.target.value)}
+                placeholder="Tuliskan catatan khusus admin (misal: Uang fisik sesuai, pecahan 100rb, diserahkan Ibu Sari)..."
+                style={{ fontSize: 13, minHeight: 75 }}
+              />
             </div>
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 18 }}>
               <button className="btn btn-ghost" onClick={() => setSelectedCash(null)}>Batal</button>
               <button className="btn btn-accent" onClick={() => handleApprove(selectedCash.id)}>✓ Setujui & Verifikasi</button>
