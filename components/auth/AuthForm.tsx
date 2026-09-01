@@ -139,16 +139,8 @@ export default function AuthForm({
               </a>
 
               <button id="login-submit" type="submit" className="auth-submit">
-                Masuk ({role.toUpperCase()})
+                Masuk
               </button>
-
-              {role !== "orang-tua" && (
-                <div style={{ marginTop: 12, textAlign: "center" }}>
-                  <Link href="/daftar" style={{ fontSize: "0.825rem", color: "#3AABE3", textDecoration: "none", fontWeight: 600 }}>
-                    Calon Siswa? Form Pendaftaran Kursus Baru &rarr;
-                  </Link>
-                </div>
-              )}
             </form>
           )}
 
