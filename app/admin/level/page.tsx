@@ -102,7 +102,7 @@ export default function AdminLevelPage() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                 <div>
                   <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>
-                    📘 Program {progName}
+                    Program {progName}
                   </h2>
                   <span style={{ fontSize: 12.5, color: "var(--color-text-muted)" }}>
                     Total {levelsForProg.length} Tingkatan Level

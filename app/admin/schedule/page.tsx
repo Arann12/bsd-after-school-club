@@ -70,13 +70,13 @@ export default function AdminSchedulePage() {
               onClick={() => setViewMode("grid")}
               style={{ padding: "6px 14px", borderRadius: 6, border: "none", fontSize: 12.5, fontWeight: 700, cursor: "pointer", background: viewMode === "grid" ? "#fff" : "transparent", color: viewMode === "grid" ? "var(--color-primary)" : "var(--color-text-muted)" }}
             >
-              📅 Matriks Mingguan
+              Matriks Mingguan
             </button>
             <button
               onClick={() => setViewMode("list")}
               style={{ padding: "6px 14px", borderRadius: 6, border: "none", fontSize: 12.5, fontWeight: 700, cursor: "pointer", background: viewMode === "list" ? "#fff" : "transparent", color: viewMode === "list" ? "var(--color-primary)" : "var(--color-text-muted)" }}
             >
-              ☰ Daftar Sesi
+              Daftar Sesi
             </button>
           </div>
           <button className="btn btn-accent" onClick={() => setShowAddModal(true)}>
@@ -153,13 +153,13 @@ export default function AdminSchedulePage() {
                         }}
                       >
                         <div style={{ fontSize: 11, fontWeight: 800, color: s.warna, marginBottom: 2 }}>
-                          ⏰ {s.jamMulai} – {s.jamSelesai}
+                          {s.jamMulai} – {s.jamSelesai}
                         </div>
                         <div style={{ fontSize: 13, fontWeight: 800, color: "#0f172a" }}>{s.program} ({s.kelas})</div>
-                        <div style={{ fontSize: 11.5, color: "#475569", marginTop: 2 }}>👩‍🏫 {s.guru}</div>
+                        <div style={{ fontSize: 11.5, color: "#475569", marginTop: 2 }}>Guru: {s.guru}</div>
                         <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4, display: "flex", justifyContent: "space-between" }}>
-                          <span>📍 {s.ruangan}</span>
-                          <span>👥 {s.siswaCount} Siswa</span>
+                          <span>{s.ruangan}</span>
+                          <span>{s.siswaCount} Siswa</span>
                         </div>
                       </div>
                     ))
@@ -198,9 +198,9 @@ export default function AdminSchedulePage() {
                     <td style={{ padding: "14px 16px" }}>
                       <span style={{ background: "#e0f2fe", color: "#0369a1", fontSize: 11.5, fontWeight: 800, padding: "3px 10px", borderRadius: 6 }}>{s.kelas}</span>
                     </td>
-                    <td style={{ padding: "14px 16px", fontWeight: 700, fontSize: 13, color: "#1e293b" }}>👩‍🏫 {s.guru}</td>
-                    <td style={{ padding: "14px 16px", fontSize: 12.5, color: "var(--color-text-secondary)" }}>📍 {s.ruangan}</td>
-                    <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)" }}>👥 {s.siswaCount} Anak</td>
+                    <td style={{ padding: "14px 16px", fontWeight: 700, fontSize: 13, color: "#1e293b" }}>{s.guru}</td>
+                    <td style={{ padding: "14px 16px", fontSize: 12.5, color: "var(--color-text-secondary)" }}>{s.ruangan}</td>
+                    <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)" }}>{s.siswaCount} Anak</td>
                     <td style={{ padding: "14px 16px" }}>
                       <button className="btn btn-ghost btn-sm" onClick={() => setSelectedSession(s)}>Detail</button>
                     </td>
@@ -233,11 +233,11 @@ export default function AdminSchedulePage() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <div style={{ background: "#f8fafc", padding: 12, borderRadius: 8, border: "1px solid #e2e8f0" }}>
                   <div style={{ fontSize: 10, color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Guru Pengajar</div>
-                  <div style={{ fontSize: 13.5, fontWeight: 800, color: "#0f172a", marginTop: 2 }}>👩‍🏫 {selectedSession.guru}</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 800, color: "#0f172a", marginTop: 2 }}>{selectedSession.guru}</div>
                 </div>
                 <div style={{ background: "#f8fafc", padding: 12, borderRadius: 8, border: "1px solid #e2e8f0" }}>
                   <div style={{ fontSize: 10, color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Lokasi Ruangan</div>
-                  <div style={{ fontSize: 13.5, fontWeight: 800, color: "#0f172a", marginTop: 2 }}>📍 {selectedSession.ruangan}</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 800, color: "#0f172a", marginTop: 2 }}>{selectedSession.ruangan}</div>
                 </div>
               </div>
 

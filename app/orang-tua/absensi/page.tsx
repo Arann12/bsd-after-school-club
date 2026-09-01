@@ -85,7 +85,7 @@ export default function OrangTuaAbsensiKalenderPage() {
       {/* Card Info Anak */}
       <div className="card" style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: 16, background: "linear-gradient(135deg, #1e3a8a, #2563eb)", color: "#fff" }}>
         <div style={{ width: 46, height: 46, borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 18 }}>
-          👦
+          A
         </div>
         <div>
           <div style={{ fontSize: 16, fontWeight: 800 }}>Siswa: Andi Setiawan</div>
@@ -97,7 +97,7 @@ export default function OrangTuaAbsensiKalenderPage() {
       {!selectedGuru ? (
         <div>
           <h2 style={{ fontSize: 16, fontWeight: 800, color: "var(--color-text-primary)", marginBottom: 14 }}>
-            👨‍🏫 Daftar Guru Pengajar Kursus Anak Anda
+            Daftar Guru Pengajar Kursus Anak Anda
           </h2>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
@@ -130,7 +130,7 @@ export default function OrangTuaAbsensiKalenderPage() {
                 </div>
 
                 <button className="btn btn-accent" style={{ width: "100%", justifyContent: "center" }}>
-                  📅 Buka Kalender Absensi & Logbook &rarr;
+                  Buka Kalender Absensi & Logbook &rarr;
                 </button>
               </div>
             ))}
@@ -215,7 +215,7 @@ export default function OrangTuaAbsensiKalenderPage() {
                           {sesi.materi}
                         </div>
                         <div style={{ fontSize: 10, color: "var(--color-primary)", fontWeight: 700, marginTop: 4 }}>
-                          📖 Buka Logbook &rarr;
+                          Buka Logbook &rarr;
                         </div>
                       </div>
                     ) : (
@@ -279,7 +279,7 @@ export default function OrangTuaAbsensiKalenderPage() {
 
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 12, padding: "14px 16px" }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: "#0369a1" }}>📅 {selectedLogbook.tglDisplay} ({selectedLogbook.jam})</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "#0369a1" }}>{selectedLogbook.tglDisplay} ({selectedLogbook.jam})</div>
                 <div style={{ fontSize: 16, fontWeight: 800, color: "#0c4a6e", marginTop: 4 }}>{selectedLogbook.materi}</div>
                 <span style={{ background: selectedLogbook.status === "Hadir" ? "#d1fae5" : "#fef3c7", color: selectedLogbook.status === "Hadir" ? "#059669" : "#b45309", fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 999, marginTop: 8, display: "inline-block" }}>
                   Status: {selectedLogbook.status}

@@ -228,7 +228,7 @@ export default function AdminGuruPage() {
               {/* Data Rekening & Honor */}
               <div style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 12, padding: "16px 18px" }}>
                 <div style={{ fontSize: 12, fontWeight: 800, color: "#334155", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
-                  🏦 Informasi Bank Rekening & Honor
+                  Informasi Bank Rekening & Honor
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <div>
@@ -278,10 +278,10 @@ export default function AdminGuruPage() {
               {/* SHORTCUT TOMBOL KE ABSENSI DAN LOGBOOK GURU (Requirement #4) */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
                 <Link href={`/owner/absensi?guru=${encodeURIComponent(selectedGuru.nama)}`} className="btn btn-outline" style={{ textDecoration: "none", textAlign: "center" }}>
-                  📋 Ke Absensi & Logbook
+                  Ke Absensi & Logbook
                 </Link>
                 <a href={`https://wa.me/62${selectedGuru.hp.replace(/^0/, "")}`} target="_blank" rel="noopener noreferrer" className="btn btn-accent" style={{ textDecoration: "none", textAlign: "center" }}>
-                  💬 Hubungi via WhatsApp
+                  Hubungi via WhatsApp
                 </a>
               </div>
             </div>

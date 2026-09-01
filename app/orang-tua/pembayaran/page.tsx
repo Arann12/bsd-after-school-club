@@ -41,7 +41,7 @@ export default function PembayaranPage() {
       keterangan: "Pertemuan 6",
       metode: "Cash (Di Cabang)",
       jumlah: "Rp 50.000",
-      status: "Menunggu Verifikasi Admin",
+      status: "Menunggu Verifikasi",
     },
     {
       id: "#INV-08-001",
@@ -116,7 +116,7 @@ export default function PembayaranPage() {
         keterangan: itemDescription,
         metode: methodText,
         jumlah: totalAmount,
-        status: selectedMethod === "cash" ? "Menunggu Verifikasi Admin" : "Selesai",
+        status: selectedMethod === "cash" ? "Menunggu Verifikasi" : "Selesai",
       },
       ...historyList,
     ]);
@@ -743,12 +743,12 @@ export default function PembayaranPage() {
                   <td style={{ padding: "16px 20px", fontSize: 13, color: "#475569" }}>{row.metode}</td>
                   <td style={{ padding: "16px 20px", fontSize: 14, fontWeight: 800, color: "#1e293b" }}>{row.jumlah}</td>
                   <td style={{ padding: "16px 20px" }}>
-                    {row.status === "Menunggu Verifikasi Admin" ? (
+                    {row.status === "Menunggu Verifikasi" ? (
                       <span style={{ background: "#fef3c7", color: "#b45309", fontSize: 11.5, fontWeight: 700, padding: "5px 12px", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 6 }}>
                         <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
                           <path d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
                         </svg>
-                        Menunggu Verifikasi Admin
+                        Menunggu Verifikasi
                       </span>
                     ) : (
                       <span style={{ background: "#dcfce7", color: "#16a34a", fontSize: 11.5, fontWeight: 700, padding: "5px 12px", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 6 }}>

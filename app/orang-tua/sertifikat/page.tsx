@@ -16,8 +16,8 @@ export default function OrangTuaSertifikatPage() {
       <div className="card" style={{ padding: 24 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#dbeafe", color: "#1d4ed8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 900 }}>
-              🎓
+            <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#dbeafe", color: "#1d4ed8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 900 }}>
+              CERT
             </div>
             <div>
               <div style={{ fontSize: 11, fontFamily: "monospace", color: "var(--color-primary)", fontWeight: 700 }}>BSD/CERT/2026/001</div>
@@ -26,7 +26,7 @@ export default function OrangTuaSertifikatPage() {
             </div>
           </div>
           <button className="btn btn-accent" onClick={() => setSelectedCert(true)}>
-            📜 Lihat & Unduh Sertifikat (PDF)
+            Lihat & Unduh Sertifikat (PDF)
           </button>
         </div>
       </div>
@@ -53,7 +53,7 @@ export default function OrangTuaSertifikatPage() {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 20 }}>
               <button className="btn btn-ghost" onClick={() => setSelectedCert(false)}>Tutup</button>
-              <button className="btn btn-accent" onClick={() => alert("Mengunduh Sertifikat PDF...")}>📥 Cetak / Unduh PDF</button>
+              <button className="btn btn-accent" onClick={() => alert("Mengunduh Sertifikat PDF...")}>Cetak / Unduh PDF</button>
             </div>
           </div>
         </div>

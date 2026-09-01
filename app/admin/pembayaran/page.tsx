@@ -115,7 +115,7 @@ export default function FinancePembayaranPage() {
                   </td>
                   <td style={{ padding: "14px 16px" }}>
                     <button className="btn btn-ghost btn-sm" onClick={() => alert(`Mencetak Kwitansi untuk ${p.id}...`)}>
-                      🧾 Kwitansi
+                      Kwitansi
                     </button>
                   </td>
                 </tr>

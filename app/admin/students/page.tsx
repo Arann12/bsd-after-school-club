@@ -306,19 +306,19 @@ export default function AdminStudentsPage() {
                 {/* SHORTCUT MENU AKSI KE HALAMAN LAIN (Requirement #2) */}
                 <div style={{ background: "#f0f9ff", border: "1.5px solid #bae6fd", borderRadius: 12, padding: "16px 18px" }}>
                   <div style={{ fontSize: 12, fontWeight: 800, color: "#0369a1", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
-                    ⚡ Shortcut Aksi Siswa
+                    Shortcut Aksi Siswa
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
                     <button className="btn btn-outline" style={{ background: "#fff", fontSize: 12, padding: "8px 10px" }}
                       onClick={() => { setTargetProgram(selectedStudent.program); setShowPindahProgram(true); }}>
-                      🔄 Memindahkan Program
+                      Memindahkan Program
                     </button>
                     <button className="btn btn-outline" style={{ background: "#fff", fontSize: 12, padding: "8px 10px" }}
                       onClick={() => { setTargetLevel(selectedStudent.level); setShowNaikLevel(true); }}>
-                      ⬆️ Menaikkan Level
+                      Menaikkan Level
                     </button>
                     <Link href={`/owner/absensi?siswa=${encodeURIComponent(selectedStudent.name)}`} className="btn btn-outline" style={{ background: "#fff", fontSize: 12, padding: "8px 10px", textAlign: "center", textDecoration: "none" }}>
-                      📅 Lihat Absensi
+                      Lihat Absensi
                     </Link>
                   </div>
                 </div>

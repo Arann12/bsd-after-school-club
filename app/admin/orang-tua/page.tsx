@@ -254,7 +254,7 @@ export default function AdminOrangTuaPage() {
               {/* Rincian Biaya & Periode Pembayaran */}
               <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 12, padding: "16px 18px" }}>
                 <div style={{ fontSize: 12, fontWeight: 800, color: "#166534", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
-                  💳 Informasi Biaya & Tagihan
+                  Informasi Biaya & Tagihan
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <div>
@@ -305,7 +305,7 @@ export default function AdminOrangTuaPage() {
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {selectedOrangTua.anak.map(a => (
                     <span key={a} style={{ background: "#e0f2fe", color: "#0369a1", fontSize: 13, fontWeight: 700, padding: "6px 14px", borderRadius: 8 }}>
-                      👦 {a}
+                      {a}
                     </span>
                   ))}
                 </div>
@@ -315,7 +315,7 @@ export default function AdminOrangTuaPage() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 6 }}>
                 <button className="btn btn-ghost" onClick={() => setSelectedOrangTua(null)}>Tutup</button>
                 <a href={`https://wa.me/62${selectedOrangTua.hp.replace(/^0/, "")}`} target="_blank" rel="noopener noreferrer" className="btn btn-accent" style={{ textAlign: "center", textDecoration: "none" }}>
-                  📱 Hubungi via WhatsApp
+                  Hubungi via WhatsApp
                 </a>
               </div>
             </div>

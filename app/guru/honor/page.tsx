@@ -39,7 +39,7 @@ export default function GuruHonorJamPage() {
 
       {/* Info Banner Kebijakan Kerahasiaan Honor */}
       <div style={{ background: "#eff6ff", border: "1.5px solid #bfdbfe", borderRadius: 12, padding: "14px 18px", color: "#1e40af", fontSize: 13, lineHeight: 1.5 }}>
-        <strong>🔒 Kebijakan Privasi Honorarium:</strong> Pembayaran honorarium diproses secara privat dan langsung ditransfer oleh Owner/Pimpinan Bimbel. Halaman ini dikhususkan bagi Anda untuk memantau dan mencocokkan total durasi jam mengajar harian, mingguan, dan bulanan.
+        <strong>Kebijakan Privasi Honorarium:</strong> Pembayaran honorarium diproses secara privat dan langsung ditransfer oleh Owner/Pimpinan Bimbel. Halaman ini dikhususkan bagi Anda untuk memantau dan mencocokkan total durasi jam mengajar harian, mingguan, dan bulanan.
       </div>
 
       {/* Stats Cards (HANYA FOKUS JAM & SESI) */}
@@ -93,10 +93,10 @@ export default function GuruHonorJamPage() {
                 <tr key={l.id} style={{ borderBottom: i < logs.length - 1 ? "1px solid var(--color-border-light)" : "none" }}>
                   <td style={{ padding: "14px 16px", fontFamily: "monospace", color: "var(--color-text-muted)", fontWeight: 700 }}>{l.id}</td>
                   <td style={{ padding: "14px 16px", fontWeight: 700, color: "var(--color-text-primary)" }}>{l.tanggal}</td>
-                  <td style={{ padding: "14px 16px" }}>⏰ {l.jamMulai} – {l.jamSelesai} WIB</td>
+                  <td style={{ padding: "14px 16px" }}>{l.jamMulai} – {l.jamSelesai} WIB</td>
                   <td style={{ padding: "14px 16px" }}>
                     <span style={{ background: "#dbeafe", color: "#1d4ed8", fontSize: 12.5, fontWeight: 800, padding: "4px 12px", borderRadius: 999 }}>
-                      ⏱️ {l.durasiJam} Jam Mengajar
+                      {l.durasiJam} Jam Mengajar
                     </span>
                   </td>
                   <td style={{ padding: "14px 16px" }}>

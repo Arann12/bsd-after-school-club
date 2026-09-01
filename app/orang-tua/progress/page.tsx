@@ -15,7 +15,7 @@ export default function OrangTuaProgressPage() {
       {/* Card Info Anak */}
       <div className="card" style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: 16, background: "linear-gradient(135deg, #1e3a8a, #2563eb)", color: "#fff" }}>
         <div style={{ width: 46, height: 46, borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 18 }}>
-          👦
+          A
         </div>
         <div>
           <div style={{ fontSize: 16, fontWeight: 800 }}>Siswa: Andi Setiawan</div>

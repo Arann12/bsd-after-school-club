@@ -214,7 +214,7 @@ export default function AdminProgramsPage() {
               <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Guru Pengajar</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {p.teachers.map(t => (
-                  <span key={t} style={{ background: "#ede9fe", color: "#6d28d9", fontSize: 11.5, fontWeight: 700, padding: "3px 10px", borderRadius: 999 }}>👩‍🏫 {t}</span>
+                  <span key={t} style={{ background: "#ede9fe", color: "#6d28d9", fontSize: 11.5, fontWeight: 700, padding: "3px 10px", borderRadius: 999 }}>{t}</span>
                 ))}
               </div>
             </div>
@@ -230,7 +230,7 @@ export default function AdminProgramsPage() {
 
             {isEditMode && (
               <div style={{ background: "#ea580c", color: "#fff", padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 700, textAlign: "center" }}>
-                ✏️ Klik Card Ini untuk Edit Program
+                Klik Card Ini untuk Edit Program
               </div>
             )}
           </div>
@@ -275,7 +275,7 @@ export default function AdminProgramsPage() {
               {/* GURU YANG MENGAJAR (Requirement #5) */}
               <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 12, padding: "16px 18px" }}>
                 <div style={{ fontSize: 12, fontWeight: 800, color: "#166534", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
-                  👩‍🏫 Guru / Tenaga Pengajar Program Ini
+                  Guru / Tenaga Pengajar Program Ini
                 </div>
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                   {selectedProgram.teachers.map(t => (
@@ -306,7 +306,7 @@ export default function AdminProgramsPage() {
                   style={{ width: "100%", justifyContent: "center", fontWeight: 700 }}
                   onClick={() => setShowStudentsTab(!showStudentsTab)}
                 >
-                  👨‍🎓 {showStudentsTab ? "Sembunyikan Daftar Siswa" : `Lihat Siswa Program Ini (${selectedProgram.studentList.length})`}
+                  {showStudentsTab ? "Sembunyikan Daftar Siswa" : `Lihat Siswa Program Ini (${selectedProgram.studentList.length})`}
                 </button>
 
                 {showStudentsTab && (

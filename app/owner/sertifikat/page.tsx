@@ -109,7 +109,7 @@ export default function SertifikatPage() {
                   </td>
                   <td style={{ padding: "14px 16px" }}>
                     <button className="btn btn-outline btn-sm" onClick={() => setSelectedCert(c)}>
-                      📜 Lihat / Cetak Sertifikat
+                      Lihat / Cetak Sertifikat
                     </button>
                   </td>
                 </tr>
@@ -155,7 +155,7 @@ export default function SertifikatPage() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 24 }}>
               <button className="btn btn-ghost" onClick={() => setSelectedCert(null)}>Tutup Pratinjau</button>
               <button className="btn btn-accent" onClick={() => alert("Mengunduh Sertifikat PDF...")}>
-                📥 Unduh Sertifikat (PDF)
+                Unduh Sertifikat (PDF)
               </button>
             </div>
           </div>
