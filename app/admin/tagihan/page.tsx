@@ -307,7 +307,7 @@ export default function AdminTagihanPage() {
 
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Catatan Pembayaran (Opsional)</label>
-                <input className="form-input" value={cashNote} onChange={e => setCashNote(e.target.value)} placeholder="Contoh: Diterima tunai oleh Kasir Front Office" />
+                <input className="form-input" value={cashNote} onChange={e => setCashNote(e.target.value)} placeholder="Contoh: Diterima tunai oleh Kasir Admin" />
               </div>
 
               <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 10, padding: "12px 14px", fontSize: 12, color: "#0369a1" }}>

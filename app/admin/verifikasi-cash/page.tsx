@@ -14,8 +14,8 @@ export interface CashVerificationItem {
 }
 
 const initialCashList: CashVerificationItem[] = [
-  { id: "CSH-001", invoiceId: "INV-2026-09-004", namaOrtu: "Sari Pratama", namaSiswa: "Dian Pratama", jumlah: 500000, penerimaKasir: "Admin Front Office", tglTerima: "04 Sep 2026, 16:00 WIB", catatan: "Pembayaran tunai SPP Phonics bulan September di front desk.", status: "Menunggu Verifikasi" },
-  { id: "CSH-002", invoiceId: "INV-2026-08-012", namaOrtu: "Siska Pertiwi", namaSiswa: "Hana Pertiwi", jumlah: 500000, penerimaKasir: "Admin Front Office", tglTerima: "28 Agt 2026, 11:30 WIB", catatan: "Pembayaran cash pendaftaran awal.", status: "Disetujui / Terverifikasi" },
+  { id: "CSH-001", invoiceId: "INV-2026-09-004", namaOrtu: "Sari Pratama", namaSiswa: "Dian Pratama", jumlah: 500000, penerimaKasir: "Admin Kasir", tglTerima: "04 Sep 2026, 16:00 WIB", catatan: "Pembayaran tunai SPP Phonics bulan September.", status: "Menunggu Verifikasi" },
+  { id: "CSH-002", invoiceId: "INV-2026-08-012", namaOrtu: "Siska Pertiwi", namaSiswa: "Hana Pertiwi", jumlah: 500000, penerimaKasir: "Admin Kasir", tglTerima: "28 Agt 2026, 11:30 WIB", catatan: "Pembayaran cash pendaftaran awal.", status: "Disetujui / Terverifikasi" },
 ];
 
 export default function AdminVerifikasiCashPage() {
@@ -37,7 +37,7 @@ export default function AdminVerifikasiCashPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Verifikasi Pembayaran Cash (Tunai)</h1>
-          <p className="page-subtitle">Persetujuan & konfirmasi fisik atas uang tunai yang diterima oleh Kasir / Admin Front Office.</p>
+          <p className="page-subtitle">Persetujuan & konfirmasi fisik atas uang tunai yang diterima oleh Kasir / Admin.</p>
         </div>
       </div>
 

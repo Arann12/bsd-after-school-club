@@ -16,9 +16,9 @@ export interface ItemInventaris {
 }
 
 const daftarInventaris: ItemInventaris[] = [
-  { id: "INV-001", nama: "Modul Belajar Calistung L1", kategori: "Buku / Modul", jumlah: 45, kondisi: "Baik", lokasi: "Lemari A1", hargaSatuan: 25000, tglPengadaan: "15 Jan 2026", noSerial: "MOD-CAL-001", keterangan: "Modul cetak kertas HVS 80gr full color untuk siswa kelas Calistung Level 1.", pjBarang: "Admin Front Office" },
+  { id: "INV-001", nama: "Modul Belajar Calistung L1", kategori: "Buku / Modul", jumlah: 45, kondisi: "Baik", lokasi: "Lemari A1", hargaSatuan: 25000, tglPengadaan: "15 Jan 2026", noSerial: "MOD-CAL-001", keterangan: "Modul cetak kertas HVS 80gr full color untuk siswa kelas Calistung Level 1.", pjBarang: "Admin Operasional" },
   { id: "INV-002", nama: "Flashcard Angka & Abjad", kategori: "Alat Peraga", jumlah: 20, kondisi: "Baik", lokasi: "Rak B2", hargaSatuan: 45000, tglPengadaan: "10 Feb 2026", noSerial: "FCD-NUM-002", keterangan: "Kartu ilustrasi edukatif terlaminasi anti air.", pjBarang: "Ms. Sarah" },
-  { id: "INV-003", nama: "Spidol Whiteboard (Hitam & Biru)", kategori: "ATK", jumlah: 50, kondisi: "Baik", lokasi: "Laci Admin", hargaSatuan: 8500, tglPengadaan: "01 Agt 2026", noSerial: "ATK-SPD-003", keterangan: "Stok spidol isi ulang papan tulis kelas.", pjBarang: "Admin Front Office" },
+  { id: "INV-003", nama: "Spidol Whiteboard (Hitam & Biru)", kategori: "ATK", jumlah: 50, kondisi: "Baik", lokasi: "Laci Admin", hargaSatuan: 8500, tglPengadaan: "01 Agt 2026", noSerial: "ATK-SPD-003", keterangan: "Stok spidol isi ulang papan tulis kelas.", pjBarang: "Admin Operasional" },
   { id: "INV-004", nama: "Papan Tulis Portable Mini", kategori: "Fasilitas Kelas", jumlah: 12, kondisi: "Perlu Perbaikan", lokasi: "Ruang 2", hargaSatuan: 150000, tglPengadaan: "20 Des 2025", noSerial: "FAS-BRD-004", keterangan: "Papan magnetik portable 60x40 cm, 2 unit engsel perlu pengetatan.", pjBarang: "Mr. Andi" },
 ];
 

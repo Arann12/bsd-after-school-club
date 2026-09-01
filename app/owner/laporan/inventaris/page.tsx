@@ -3,9 +3,9 @@ import { useState } from "react";
 import Link from "next/link";
 
 const dataLaporanInventaris = [
-  { id: "REP-INV-001", bulan: "Agustus 2026", totalBarang: 127, kondisiBaik: 120, perluPerbaikan: 7, totalNilaiAset: "Rp 18.500.000", pj: "Admin Front Office" },
-  { id: "REP-INV-002", bulan: "Juli 2026", totalBarang: 125, kondisiBaik: 122, perluPerbaikan: 3, totalNilaiAset: "Rp 17.800.000", pj: "Admin Front Office" },
-  { id: "REP-INV-003", bulan: "Juni 2026", totalBarang: 110, kondisiBaik: 108, perluPerbaikan: 2, totalNilaiAset: "Rp 15.200.000", pj: "Admin Front Office" },
+  { id: "REP-INV-001", bulan: "Agustus 2026", totalBarang: 127, kondisiBaik: 120, perluPerbaikan: 7, totalNilaiAset: "Rp 18.500.000", pj: "Admin Operasional" },
+  { id: "REP-INV-002", bulan: "Juli 2026", totalBarang: 125, kondisiBaik: 122, perluPerbaikan: 3, totalNilaiAset: "Rp 17.800.000", pj: "Admin Operasional" },
+  { id: "REP-INV-003", bulan: "Juni 2026", totalBarang: 110, kondisiBaik: 108, perluPerbaikan: 2, totalNilaiAset: "Rp 15.200.000", pj: "Admin Operasional" },
 ];
 
 export default function OwnerLaporanInventarisPage() {
