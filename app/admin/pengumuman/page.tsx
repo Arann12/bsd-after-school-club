@@ -246,9 +246,9 @@ export default function PengumumanPage({ peran = "admin" }: Props) {
                   style={{ minHeight: 130, resize: "vertical", fontFamily: "inherit" }} />
               </div>
 
-              {/* Pilih Target */}
+              {/* Pilih Target (Requirement #13) */}
               <div>
-                <label className="form-label" style={{ marginBottom: 8, display: "block" }}>Target Penerima</label>
+                <label className="form-label" style={{ marginBottom: 8, display: "block" }}>Target Penerima Pengumuman</label>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {["Semua", "Guru", "Orang Tua", "Kelas Tertentu", "Program Tertentu"].map(t => (
                     <button key={t} type="button" onClick={() => {
@@ -265,9 +265,35 @@ export default function PengumumanPage({ peran = "admin" }: Props) {
                       }}>{t}</button>
                   ))}
                 </div>
-                {(target.includes("Kelas Tertentu") || target.includes("Program Tertentu")) && (
-                  <div className="form-group" style={{ marginTop: 10, marginBottom: 0 }}>
-                    <input className="form-input" placeholder={target.includes("Kelas Tertentu") ? "Contoh: KLS-A, KLS-B" : "Contoh: Calistung Level 1"} />
+
+                {/* Dropdown Pilihan Kelas Tertentu (Requirement #13) */}
+                {target.includes("Kelas Tertentu") && (
+                  <div className="form-group" style={{ marginTop: 12, marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: 12 }}>Pilih Kelas Tujuan (Dropdown)</label>
+                    <select className="form-input" style={{ fontSize: 13.5 }}>
+                      <option value="">-- Pilih Kelas Spesifik --</option>
+                      <option value="KLS-A">KLS-A — Calistung Basic (Ms. Sarah)</option>
+                      <option value="KLS-B">KLS-B — English Intermediate (Mr. Andi)</option>
+                      <option value="KLS-C">KLS-C — Math Advance (Ms. Nina)</option>
+                      <option value="KLS-D">KLS-D — Phonics Starter (Ms. Sarah)</option>
+                      <option value="KLS-E">KLS-E — Calistung Level 2 (Mr. Budi)</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* Dropdown Pilihan Program Tertentu (Requirement #13) */}
+                {target.includes("Program Tertentu") && (
+                  <div className="form-group" style={{ marginTop: 12, marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: 12 }}>Pilih Program Tujuan (Dropdown)</label>
+                    <select className="form-input" style={{ fontSize: 13.5 }}>
+                      <option value="">-- Pilih Program Spesifik --</option>
+                      <option value="Calistung">Calistung (Membaca, Menulis, Berhitung)</option>
+                      <option value="English">English Communicative</option>
+                      <option value="Math">Math Advance & Nalar</option>
+                      <option value="Phonics">Phonics Sound & Reading</option>
+                      <option value="Bimbingan Belajar">Bimbingan Belajar SD</option>
+                      <option value="Coding Junior">Coding & Robotics Junior</option>
+                    </select>
                   </div>
                 )}
               </div>

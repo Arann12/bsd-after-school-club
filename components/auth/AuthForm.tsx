@@ -55,14 +55,16 @@ export default function AuthForm({
           >
             Login
           </button>
-          <button
-            id="tab-daftar"
-            className={`auth-tab ${activeTab === "daftar" ? "active" : ""}`}
-            onClick={() => setActiveTab("daftar")}
-          >
-            Daftar
-          </button>
-          <div className="tab-indicator" data-active={activeTab} />
+          {role === "orang-tua" && (
+            <button
+              id="tab-daftar"
+              className={`auth-tab ${activeTab === "daftar" ? "active" : ""}`}
+              onClick={() => setActiveTab("daftar")}
+            >
+              Daftar Kursus Baru
+            </button>
+          )}
+          {role === "orang-tua" && <div className="tab-indicator" data-active={activeTab} />}
         </div>
 
         {/* Form Body */}
@@ -79,6 +81,15 @@ export default function AuthForm({
               priority
             />
           </div>
+
+          {role !== "orang-tua" && (
+            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "10px 14px", marginBottom: 16, fontSize: "0.8rem", color: "#64748b", textAlign: "center" }}>
+              Portal {role.toUpperCase()} BSD After School Club.<br />
+              <span style={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+                {role === "owner" ? "Akun Owner dikelola oleh Developer." : role === "admin" ? "Akun Admin dibuat oleh Owner." : "Akun Guru dibuat oleh Owner & Admin."}
+              </span>
+            </div>
+          )}
 
           {/* Login Form */}
           {activeTab === "login" && (
@@ -128,261 +139,184 @@ export default function AuthForm({
               </a>
 
               <button id="login-submit" type="submit" className="auth-submit">
-                Masuk
+                Masuk ({role.toUpperCase()})
               </button>
+
+              {role !== "orang-tua" && (
+                <div style={{ marginTop: 12, textAlign: "center" }}>
+                  <Link href="/daftar" style={{ fontSize: "0.825rem", color: "#3AABE3", textDecoration: "none", fontWeight: 600 }}>
+                    Calon Siswa? Form Pendaftaran Kursus Baru &rarr;
+                  </Link>
+                </div>
+              )}
             </form>
           )}
 
-          {/* Register Form */}
-          {activeTab === "daftar" && (
+          {/* Register Form (Khusus Orang Tua / Pendaftaran Kursus Siswa Baru) */}
+          {activeTab === "daftar" && role === "orang-tua" && (
             <form
               key="daftar"
               className="form-panel"
               onSubmit={handleRegisterSubmit}
             >
-              {role === "orang-tua" ? (
-                <>
-                  <div className="form-group">
-                    <label htmlFor="register-nama-siswa" className="form-label">
-                      Nama Lengkap Siswa
-                    </label>
-                    <input
-                      id="register-nama-siswa"
-                      type="text"
-                      className="form-input"
-                      placeholder="Masukan nama lengkap siswa"
-                      value={registerData.namaSiswa}
-                      onChange={(e) =>
-                        setRegisterData({
-                          ...registerData,
-                          namaSiswa: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
+              <div style={{ background: "#e0f2fe", border: "1px solid #7dd3fc", borderRadius: 8, padding: "10px 12px", marginBottom: 14, fontSize: "0.8rem", color: "#0369a1" }}>
+                <strong>Form Pendaftaran Siswa Baru</strong><br />
+                Akun Orang Tua & Siswa akan digenerate otomatis setelah pendaftaran disetujui oleh Owner/Admin.
+              </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                    <div className="form-group">
-                      <label htmlFor="register-usia" className="form-label">
-                        Usia
-                      </label>
-                      <input
-                        id="register-usia"
-                        type="text"
-                        className="form-input"
-                        placeholder="Contoh: 7 Tahun"
-                        value={registerData.usia}
-                        onChange={(e) =>
-                          setRegisterData({
-                            ...registerData,
-                            usia: e.target.value,
-                          })
-                        }
-                        required
-                      />
-                    </div>
+              <div className="form-group">
+                <label htmlFor="register-nama-siswa" className="form-label">
+                  Nama Lengkap Siswa
+                </label>
+                <input
+                  id="register-nama-siswa"
+                  type="text"
+                  className="form-input"
+                  placeholder="Masukan nama lengkap siswa"
+                  value={registerData.namaSiswa}
+                  onChange={(e) =>
+                    setRegisterData({
+                      ...registerData,
+                      namaSiswa: e.target.value,
+                    })
+                  }
+                  required
+                />
+              </div>
 
-                    <div className="form-group">
-                      <label htmlFor="register-kelas" className="form-label">
-                        Kelas
-                      </label>
-                      <input
-                        id="register-kelas"
-                        type="text"
-                        className="form-input"
-                        placeholder="Contoh: Kelas 2 SD"
-                        value={registerData.kelas}
-                        onChange={(e) =>
-                          setRegisterData({
-                            ...registerData,
-                            kelas: e.target.value,
-                          })
-                        }
-                        required
-                      />
-                    </div>
-                  </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div className="form-group">
+                  <label htmlFor="register-usia" className="form-label">
+                    Usia / Tgl Lahir
+                  </label>
+                  <input
+                    id="register-usia"
+                    type="text"
+                    className="form-input"
+                    placeholder="Contoh: 7 Tahun"
+                    value={registerData.usia}
+                    onChange={(e) =>
+                      setRegisterData({
+                        ...registerData,
+                        usia: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </div>
 
-                  <div className="form-group">
-                    <label htmlFor="register-sekolah" className="form-label">
-                      Sekolah
-                    </label>
-                    <input
-                      id="register-sekolah"
-                      type="text"
-                      className="form-input"
-                      placeholder="Masukan nama sekolah"
-                      value={registerData.sekolah}
-                      onChange={(e) =>
-                        setRegisterData({
-                          ...registerData,
-                          sekolah: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
+                <div className="form-group">
+                  <label htmlFor="register-kelas" className="form-label">
+                    Kelas Sekolah
+                  </label>
+                  <input
+                    id="register-kelas"
+                    type="text"
+                    className="form-input"
+                    placeholder="Contoh: Kelas 2 SD"
+                    value={registerData.kelas}
+                    onChange={(e) =>
+                      setRegisterData({
+                        ...registerData,
+                        kelas: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </div>
+              </div>
 
-                  <div className="form-group">
-                    <label htmlFor="register-program" className="form-label">
-                      Program
-                    </label>
-                    <select
-                      id="register-program"
-                      className="form-input"
-                      value={registerData.program}
-                      onChange={(e) =>
-                        setRegisterData({
-                          ...registerData,
-                          program: e.target.value,
-                        })
-                      }
-                      required
-                    >
-                      <option value="">-- Pilih Program --</option>
-                      <option value="Calistung">Calistung</option>
-                      <option value="Phonics">Phonics</option>
-                      <option value="English">English</option>
-                      <option value="Math">Math</option>
-                      <option value="Bimbingan Belajar">Bimbingan Belajar</option>
-                    </select>
-                  </div>
+              <div className="form-group">
+                <label htmlFor="register-sekolah" className="form-label">
+                  Sekolah Asal
+                </label>
+                <input
+                  id="register-sekolah"
+                  type="text"
+                  className="form-input"
+                  placeholder="Masukan nama sekolah asal"
+                  value={registerData.sekolah}
+                  onChange={(e) =>
+                    setRegisterData({
+                      ...registerData,
+                      sekolah: e.target.value,
+                    })
+                  }
+                  required
+                />
+              </div>
 
-                  <div className="form-group">
-                    <label htmlFor="register-nowa" className="form-label">
-                      No WA
-                    </label>
-                    <input
-                      id="register-nowa"
-                      type="tel"
-                      className="form-input"
-                      placeholder="Masukan nomor WhatsApp (08...)"
-                      value={registerData.noWa}
-                      onChange={(e) =>
-                        setRegisterData({
-                          ...registerData,
-                          noWa: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
+              <div className="form-group">
+                <label htmlFor="register-program" className="form-label">
+                  Pilih Program Kursus
+                </label>
+                <select
+                  id="register-program"
+                  className="form-input"
+                  value={registerData.program}
+                  onChange={(e) =>
+                    setRegisterData({
+                      ...registerData,
+                      program: e.target.value,
+                    })
+                  }
+                  required
+                >
+                  <option value="">-- Pilih Program Kursus --</option>
+                  <option value="Calistung Level 1">Calistung (Membaca, Menulis, Berhitung)</option>
+                  <option value="Phonics Starter">Phonics</option>
+                  <option value="English B1">English</option>
+                  <option value="Math Advance">Math</option>
+                  <option value="Bimbingan Belajar">Bimbingan Belajar</option>
+                </select>
+              </div>
 
-                  <div className="form-group">
-                    <label htmlFor="register-password-siswa" className="form-label">
-                      Password
-                    </label>
-                    <input
-                      id="register-password-siswa"
-                      type="password"
-                      className="form-input"
-                      placeholder="Masukan Password"
-                      value={registerData.password}
-                      onChange={(e) =>
-                        setRegisterData({
-                          ...registerData,
-                          password: e.target.value,
-                        })
-                      }
-                      autoComplete="new-password"
-                      required
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="form-group">
-                    <label htmlFor="register-username" className="form-label">
-                      Username
-                    </label>
-                    <input
-                      id="register-username"
-                      type="text"
-                      className="form-input"
-                      placeholder="Masukan Username"
-                      value={registerData.username}
-                      onChange={(e) =>
-                        setRegisterData({
-                          ...registerData,
-                          username: e.target.value,
-                        })
-                      }
-                      autoComplete="username"
-                      required
-                    />
-                  </div>
+              <div className="form-group">
+                <label htmlFor="register-nowa" className="form-label">
+                  No WA Orang Tua / Wali
+                </label>
+                <input
+                  id="register-nowa"
+                  type="tel"
+                  className="form-input"
+                  placeholder="08xxxxxxxxxx (untuk terima konfirmasi & kredensial)"
+                  value={registerData.noWa}
+                  onChange={(e) =>
+                    setRegisterData({
+                      ...registerData,
+                      noWa: e.target.value,
+                    })
+                  }
+                  required
+                />
+              </div>
 
-                  <div className="form-group">
-                    <label htmlFor="register-email" className="form-label">
-                      Email
-                    </label>
-                    <input
-                      id="register-email"
-                      type="email"
-                      className="form-input"
-                      placeholder="Masukan Email"
-                      value={registerData.email}
-                      onChange={(e) =>
-                        setRegisterData({
-                          ...registerData,
-                          email: e.target.value,
-                        })
-                      }
-                      autoComplete="email"
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="register-nowa-general" className="form-label">
-                      No WA
-                    </label>
-                    <input
-                      id="register-nowa-general"
-                      type="tel"
-                      className="form-input"
-                      placeholder="Masukan nomor WhatsApp (08...)"
-                      value={registerData.noWa}
-                      onChange={(e) =>
-                        setRegisterData({
-                          ...registerData,
-                          noWa: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="register-password" className="form-label">
-                      Password
-                    </label>
-                    <input
-                      id="register-password"
-                      type="password"
-                      className="form-input"
-                      placeholder="Masukan Password"
-                      value={registerData.password}
-                      onChange={(e) =>
-                        setRegisterData({
-                          ...registerData,
-                          password: e.target.value,
-                        })
-                      }
-                      autoComplete="new-password"
-                      required
-                    />
-                  </div>
-                </>
-              )}
+              <div className="form-group">
+                <label htmlFor="register-email" className="form-label">
+                  Email Orang Tua / Wali
+                </label>
+                <input
+                  id="register-email"
+                  type="email"
+                  className="form-input"
+                  placeholder="email@domain.com"
+                  value={registerData.email}
+                  onChange={(e) =>
+                    setRegisterData({
+                      ...registerData,
+                      email: e.target.value,
+                    })
+                  }
+                  required
+                />
+              </div>
 
               <button
                 id="register-submit"
                 type="submit"
                 className="auth-submit"
               >
-                Daftar
+                Kirim Pendaftaran Kursus
               </button>
             </form>
           )}

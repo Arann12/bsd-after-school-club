@@ -209,9 +209,9 @@ export const ownerNav: NavSection[] = [
   {
     section: "FINANCE",
     items: [
-      { label: "Tagihan / Invoice", href: "/admin/tagihan", icon: "Invoice" },
-      { label: "Pembayaran", href: "/admin/tagihan", icon: "CreditCard" },
-      { label: "Verifikasi Cash", href: "/admin/tagihan", icon: "CheckCircle" },
+      { label: "Tagihan / Invoice", href: "/owner/tagihan", icon: "Invoice" },
+      { label: "Pembayaran", href: "/owner/pembayaran", icon: "CreditCard" },
+      { label: "Verifikasi Cash", href: "/owner/verifikasi-cash", icon: "CheckCircle" },
       { label: "Honor Guru/Staff", href: "/owner/honor", icon: "DollarSign" },
     ],
   },
@@ -223,12 +223,12 @@ export const ownerNav: NavSection[] = [
     ],
   },
   {
-    section: "REPORTS",
+    section: "REPORTS & SERTIFIKAT",
     items: [
+      { label: "Modul Sertifikat", href: "/owner/sertifikat", icon: "Award" },
       { label: "Laporan & Sertifikat", href: "/owner/laporan", icon: "BarChart2" },
       { label: "Laporan Kehadiran", href: "/owner/laporan", icon: "ClipboardCheck" },
       { label: "Laporan Keuangan", href: "/owner/laporan", icon: "BarChart2" },
-      { label: "Laporan Akhir & Sertifikat", href: "/owner/laporan/akhir", icon: "Award" },
       { label: "Laporan Inventaris", href: "/owner/laporan/inventaris", icon: "FileText" },
     ],
   },
@@ -261,15 +261,15 @@ export const adminNav: NavSection[] = [
       { label: "Kelas", href: "/admin/classes", icon: "Door" },
       { label: "Jadwal", href: "/admin/schedule", icon: "Calendar" },
       { label: "Absensi & Logbook Guru", href: "/admin/absensi", icon: "ClipboardCheck" },
-      { label: "Laporan & Sertifikat", href: "/admin/laporan", icon: "Award" },
+      { label: "Sertifikat Kelulusan", href: "/admin/sertifikat", icon: "Award" },
     ],
   },
   {
     section: "FINANCE",
     items: [
-      { label: "Tagihan & Pembayaran", href: "/admin/tagihan", icon: "Invoice" },
-      { label: "Pembayaran", href: "/admin/tagihan", icon: "CreditCard" },
-      { label: "Verifikasi Cash", href: "/admin/tagihan", icon: "CheckCircle" },
+      { label: "Tagihan / Invoice", href: "/admin/tagihan", icon: "Invoice" },
+      { label: "Pembayaran", href: "/admin/pembayaran", icon: "CreditCard" },
+      { label: "Verifikasi Cash", href: "/admin/verifikasi-cash", icon: "CheckCircle" },
     ],
   },
   {

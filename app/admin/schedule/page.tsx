@@ -1,342 +1,295 @@
 "use client";
 import { useState } from "react";
 
-const HARI = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
-const JAM  = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
+export interface ScheduleSession {
+  id: string;
+  hari: "Senin" | "Selasa" | "Rabu" | "Kamis" | "Jumat" | "Sabtu";
+  jamMulai: string;
+  jamSelesai: string;
+  program: string;
+  kelas: string;
+  level: string;
+  guru: string;
+  ruangan: string;
+  siswaCount: number;
+  warna: string;
+}
 
-const sesiList = [
-  { id: "SES-001", kelas: "KLS-A", program: "Calistung L1", guru: "Ms. Sarah", day: 0, hour: 14, durasi: 1, room: "Ruang 1", pertemuan: 7, status: "Terjadwal", color: "#1a5c8a" },
-  { id: "SES-002", kelas: "KLS-B", program: "English B1", guru: "Mr. Andi", day: 1, hour: 15, durasi: 1, room: "Ruang 2", pertemuan: 4, status: "Terjadwal", color: "#7c3aed" },
-  { id: "SES-003", kelas: "KLS-C", program: "Math Advance", guru: "Ms. Nina", day: 2, hour: 16, durasi: 1, room: "Ruang 3", pertemuan: 9, status: "Berlangsung", color: "#059669" },
-  { id: "SES-004", kelas: "KLS-D", program: "Phonics Starter", guru: "Ms. Sarah", day: 3, hour: 13, durasi: 1, room: "Ruang 1", pertemuan: 3, status: "Terjadwal", color: "#d97706" },
-  { id: "SES-005", kelas: "KLS-E", program: "Calistung L2", guru: "Mr. Budi", day: 4, hour: 14, durasi: 1, room: "Ruang 2", pertemuan: 11, status: "Terjadwal", color: "#0891b2" },
-  { id: "SES-006", kelas: "KLS-B", program: "English B1", guru: "Mr. Andi", day: 3, hour: 15, durasi: 1, room: "Ruang 2", pertemuan: 5, status: "Terjadwal", color: "#7c3aed" },
-  { id: "SES-007", kelas: "KLS-A", program: "Calistung L1", guru: "Ms. Sarah", day: 2, hour: 14, durasi: 1, room: "Ruang 1", pertemuan: 8, status: "Terjadwal", color: "#1a5c8a" },
-  { id: "SES-008", kelas: "KLS-F", program: "English Adv", guru: "Mr. Andi", day: 5, hour: 9, durasi: 2, room: "Ruang 3", pertemuan: 1, status: "Terjadwal", color: "#dc2626" },
+const initialSchedule: ScheduleSession[] = [
+  { id: "SCH-001", hari: "Senin", jamMulai: "14:00", jamSelesai: "15:00", program: "Calistung", kelas: "KLS-A", level: "Level 1", guru: "Ms. Sarah", ruangan: "Ruang A (Lt 1)", siswaCount: 8, warna: "#0284c7" },
+  { id: "SCH-002", hari: "Senin", jamMulai: "15:30", jamSelesai: "16:30", program: "English", kelas: "KLS-B", level: "Level 2 (B1)", guru: "Mr. Andi", ruangan: "Ruang B (Lt 1)", siswaCount: 6, warna: "#7c3aed" },
+  { id: "SCH-003", hari: "Selasa", jamMulai: "14:00", jamSelesai: "15:00", program: "Calistung", kelas: "KLS-E", level: "Level 2", guru: "Mr. Budi", ruangan: "Ruang A (Lt 1)", siswaCount: 5, warna: "#0284c7" },
+  { id: "SCH-004", hari: "Selasa", jamMulai: "15:30", jamSelesai: "16:30", program: "English", kelas: "KLS-B", level: "Level 2 (B1)", guru: "Mr. Andi", ruangan: "Ruang B (Lt 1)", siswaCount: 6, warna: "#7c3aed" },
+  { id: "SCH-005", hari: "Rabu", jamMulai: "14:00", jamSelesai: "15:00", program: "Calistung", kelas: "KLS-A", level: "Level 1", guru: "Ms. Sarah", ruangan: "Ruang A (Lt 1)", siswaCount: 8, warna: "#0284c7" },
+  { id: "SCH-006", hari: "Rabu", jamMulai: "16:00", jamSelesai: "17:00", program: "Math", kelas: "KLS-C", level: "Level 3 (Advance)", guru: "Ms. Nina", ruangan: "Ruang Lab Math", siswaCount: 7, warna: "#059669" },
+  { id: "SCH-007", hari: "Kamis", jamMulai: "14:00", jamSelesai: "15:00", program: "Calistung", kelas: "KLS-E", level: "Level 2", guru: "Mr. Budi", ruangan: "Ruang A (Lt 1)", siswaCount: 5, warna: "#0284c7" },
+  { id: "SCH-008", hari: "Kamis", jamMulai: "15:30", jamSelesai: "16:30", program: "Phonics", kelas: "KLS-D", level: "Level 1", guru: "Ms. Sarah", ruangan: "Ruang Phonics", siswaCount: 6, warna: "#ea580c" },
+  { id: "SCH-009", hari: "Jumat", jamMulai: "16:00", jamSelesai: "17:00", program: "Math", kelas: "KLS-C", level: "Level 3 (Advance)", guru: "Ms. Nina", ruangan: "Ruang Lab Math", siswaCount: 7, warna: "#059669" },
+  { id: "SCH-010", hari: "Sabtu", jamMulai: "10:00", jamSelesai: "11:30", program: "Phonics", kelas: "KLS-D", level: "Level 1", guru: "Ms. Sarah", ruangan: "Ruang Phonics", siswaCount: 8, warna: "#ea580c" },
 ];
 
-const daftarHarian = [
-  { date: "Senin, 2 Sept 2026", items: [
-    { time: "13:00â€“14:00", kelas: "KLS-D", program: "Phonics Starter", guru: "Ms. Sarah", room: "Ruang 1", pertemuan: 3, status: "Terjadwal" },
-    { time: "14:00â€“15:00", kelas: "KLS-A", program: "Calistung L1", guru: "Ms. Sarah", room: "Ruang 1", pertemuan: 7, status: "Terjadwal" },
-  ]},
-  { date: "Selasa, 3 Sept 2026", items: [
-    { time: "15:00â€“16:00", kelas: "KLS-B", program: "English B1", guru: "Mr. Andi", room: "Ruang 2", pertemuan: 4, status: "Terjadwal" },
-  ]},
-  { date: "Rabu, 4 Sept 2026", items: [
-    { time: "14:00â€“15:00", kelas: "KLS-A", program: "Calistung L1", guru: "Ms. Sarah", room: "Ruang 1", pertemuan: 8, status: "Berlangsung" },
-    { time: "16:00â€“17:00", kelas: "KLS-C", program: "Math Advance", guru: "Ms. Nina", room: "Ruang 3", pertemuan: 9, status: "Terjadwal" },
-  ]},
-];
+const hariList: ("Senin" | "Selasa" | "Rabu" | "Kamis" | "Jumat" | "Sabtu")[] = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+const timeSlots = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
 
 export default function AdminSchedulePage() {
-  const [tampilan, setTampilan] = useState<"tabel" | "daftar">("tabel");
-  const [sesiDipilih, setSelectedSes] = useState<typeof sesiList[0] | null>(null);
-  const [showJadwalUlang, setShowReschedule] = useState(false);
-  const [showTambah, setShowTambah] = useState(false);
+  const [schedules, setSchedules] = useState<ScheduleSession[]>(initialSchedule);
+  const [filterGuru, setFilterGuru] = useState("Semua");
+  const [filterProgram, setFilterProgram] = useState("Semua");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  // Form Tambah Sesi & Conflict Detection
-  const [inputHari, setInputHari] = useState(0);
-  const [inputJam, setInputJam] = useState(14);
-  const [inputGuru, setInputGuru] = useState("Ms. Sarah");
-  const [inputRuang, setInputRuang] = useState("Ruang 1");
-  const [inputKelas, setInputKelas] = useState("KLS-A");
+  const [selectedSession, setSelectedSession] = useState<ScheduleSession | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
 
-  // Conflict Detection Logic
-  const bentrokGuru = sesiList.find(s => s.day === inputHari && s.hour === inputJam && s.guru === inputGuru);
-  const bentrokRuang = sesiList.find(s => s.day === inputHari && s.hour === inputJam && s.room === inputRuang);
-  const adaBentrok = Boolean(bentrokGuru || bentrokRuang);
+  const gurus = ["Semua", ...Array.from(new Set(schedules.map(s => s.guru)))];
+  const programs = ["Semua", ...Array.from(new Set(schedules.map(s => s.program)))];
 
-  const statusCol: Record<string, string> = {
-    Terjadwal: "#1a5c8a",
-    Berlangsung: "#059669",
-    Selesai: "#64748b",
-    Dibatalkan: "#dc2626",
-  };
+  const filtered = schedules.filter(s => {
+    const matchGuru = filterGuru === "Semua" || s.guru === filterGuru;
+    const matchProg = filterProgram === "Semua" || s.program === filterProgram;
+    return matchGuru && matchProg;
+  });
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
-        @keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-        .ses-card:hover{opacity:.85;cursor:pointer}
-        .ses-card{transition:opacity .15s}
+        @keyframes modalIn { from { opacity:0; transform:translateY(16px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+        @keyframes fadeIn  { from { opacity:0; } to { opacity:1; } }
+        .schedule-card { transition: all 0.15s ease; }
+        .schedule-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
       `}</style>
 
       {/* Header */}
       <div className="page-header">
-        <div><h1 className="page-title">Jadwal</h1><p className="page-subtitle">Kalender jadwal sesi kelas mingguan.</p></div>
-        <div className="page-header-actions">
-          {/* tampilan Toggle */}
-          <div style={{ display:"flex", background:"var(--color-bg)", border:"1px solid var(--color-border)", borderRadius:"var(--radius-md)", overflow:"hidden" }}>
-            {(["tabel","daftar"] as const).map(v => (
-              <button key={v} onClick={()=>setTampilan(v)}
-                style={{ padding:"7px 16px", border:"none", background: tampilan===v ? "var(--color-primary)" : "transparent", color: tampilan===v ? "#fff" : "var(--color-text-secondary)", fontWeight:600, fontSize:13, cursor:"pointer", transition:"all .15s" }}>
-                {v === "tabel" ? "Tabel" : "Daftar"}
-              </button>
-            ))}
+        <div>
+          <h1 className="page-title">Jadwal Kelas & Sesi Pembelajaran</h1>
+          <p className="page-subtitle">Kalender jadwal mingguan interaktif. Filter berdasarkan guru pengajar atau program kursus.</p>
+        </div>
+        <div className="page-header-actions" style={{ display: "flex", gap: 10 }}>
+          <div style={{ display: "flex", background: "#f1f5f9", padding: 3, borderRadius: 8 }}>
+            <button
+              onClick={() => setViewMode("grid")}
+              style={{ padding: "6px 14px", borderRadius: 6, border: "none", fontSize: 12.5, fontWeight: 700, cursor: "pointer", background: viewMode === "grid" ? "#fff" : "transparent", color: viewMode === "grid" ? "var(--color-primary)" : "var(--color-text-muted)" }}
+            >
+              📅 Matriks Mingguan
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              style={{ padding: "6px 14px", borderRadius: 6, border: "none", fontSize: 12.5, fontWeight: 700, cursor: "pointer", background: viewMode === "list" ? "#fff" : "transparent", color: viewMode === "list" ? "var(--color-primary)" : "var(--color-text-muted)" }}
+            >
+              ☰ Daftar Sesi
+            </button>
           </div>
-          <button className="btn btn-accent" onClick={() => setShowTambah(true)}>+ Tambah Sesi</button>
+          <button className="btn btn-accent" onClick={() => setShowAddModal(true)}>
+            + Tambah Sesi Jadwal
+          </button>
         </div>
       </div>
 
-      {/* Stat Strip */}
-      <div style={{ display:"tabel", gridTemplateColumns:"repeat(4,1fr)", gap:14 }}>
-        {[
-          { label:"Sesi Minggu Ini", value:sesiList.length, color:"#1d4ed8", bg:"#dbeafe" },
-          { label:"Berlangsung", value:sesiList.filter(s=>s.status==="Berlangsung").length, color:"#059669", bg:"#d1fae5" },
-          { label:"Guru Bertugas", value:new Set(sesiList.map(s=>s.guru)).size, color:"#7c3aed", bg:"#ede9fe" },
-          { label:"Ruang Terpakai", value:new Set(sesiList.map(s=>s.room)).size, color:"#d97706", bg:"#fef3c7" },
-        ].map(s=>(
-          <div key={s.label} className="stat-card" style={{gap:8}}>
-            <span className="stat-card-label">{s.label}</span>
-            <div className="stat-card-value" style={{fontSize:28,color:s.color}}>{s.value}</div>
+      {/* Filter Bar Controls */}
+      <div className="card">
+        <div className="card-body" style={{ padding: "14px 20px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", display: "block", marginBottom: 2 }}>FILTER GURU</label>
+              <select className="select-control" value={filterGuru} onChange={e => setFilterGuru(e.target.value)} style={{ padding: "8px 14px", fontSize: 13 }}>
+                {gurus.map(g => <option key={g} value={g}>{g === "Semua" ? "Semua Guru" : `Guru: ${g}`}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", display: "block", marginBottom: 2 }}>FILTER PROGRAM</label>
+              <select className="select-control" value={filterProgram} onChange={e => setFilterProgram(e.target.value)} style={{ padding: "8px 14px", fontSize: 13 }}>
+                {programs.map(p => <option key={p} value={p}>{p === "Semua" ? "Semua Program" : `Program: ${p}`}</option>)}
+              </select>
+            </div>
+
+            <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#0284c7" }} />
+              <span style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>Calistung</span>
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#7c3aed" }} />
+              <span style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>English</span>
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#059669" }} />
+              <span style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>Math</span>
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#ea580c" }} />
+              <span style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>Phonics</span>
+            </div>
           </div>
-        ))}
+        </div>
       </div>
 
-      {/* GRID tampilan â€” Weekly Timetable */}
-      {tampilan === "tabel" && (
-        <div className="card" style={{ overflow:"hidden" }}>
-          <div className="card-header" style={{ paddingBottom:16 }}>
-            <h2 className="card-title">Minggu Ini â€” 2â€“7 September 2026</h2>
-            <div style={{ display:"flex", gap:8 }}>
-              <button className="btn btn-ghost btn-sm">â† Minggu Lalu</button>
-              <button className="btn btn-ghost btn-sm">Minggu Ini</button>
-              <button className="btn btn-ghost btn-sm">Minggu Depan â†’</button>
-            </div>
-          </div>
-          <div className="card-body" style={{ paddingTop:0, overflowX:"auto" }}>
-            <div style={{ display:"tabel", gridTemplateColumns:`80px repeat(6,1fr)`, minWidth:700 }}>
-              {/* Header Row */}
-              <div style={{ padding:"8px 0", borderBottom:"1px solid var(--color-border)" }} />
-              {HARI.map((d,i) => (
-                <div key={d} style={{ padding:"8px 10px", borderBottom:"1px solid var(--color-border)", borderLeft:"1px solid var(--color-border-light)", textAlign:"center" }}>
-                  <div style={{ fontSize:11, fontWeight:700, color:"var(--color-text-muted)", textTransform:"uppercase" }}>{d}</div>
-                  <div style={{ fontSize:15, fontWeight:800, color: i===2 ? "var(--color-primary)" : "var(--color-text-primary)", marginTop:2 }}>{i+2}</div>
-                </div>
-              ))}
+      {/* VIEW MODE GRID MATRIKS MINGGUAN */}
+      {viewMode === "grid" && (
+        <div className="card" style={{ overflow: "hidden", padding: 18 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12 }}>
+            {hariList.map(hari => {
+              const sessionsHari = filtered.filter(s => s.hari === hari);
 
-              {/* Time Rows */}
-              {JAM.map(h => {
-                const hr = parseInt(h);
-                return (
-                  <>
-                    <div key={`h-${h}`} style={{ padding:"12px 10px", borderBottom:"1px solid var(--color-border-light)", fontSize:11.5, color:"var(--color-text-muted)", fontWeight:600, display:"flex", alignItems:"center" }}>{h}</div>
-                    {HARI.map((_d,di) => {
-                      const ses = sesiList.find(s => s.day===di && s.hour===hr);
-                      return (
-                        <div key={`${h}-${di}`} style={{ borderLeft:"1px solid var(--color-border-light)", borderBottom:"1px solid var(--color-border-light)", padding:4, minHeight:48, position:"relative" }}>
-                          {ses && (
-                            <div className="ses-card"
-                              onClick={()=>{ setSelectedSes(ses); }}
-                              style={{ background: ses.color, color:"#fff", borderRadius:8, padding:"6px 8px", fontSize:11, fontWeight:700, lineHeight:1.3, height:"100%", minHeight:40 }}>
-                              <div>{ses.kelas}</div>
-                              <div style={{ fontSize:10, opacity:.9 }}>{ses.guru}</div>
-                              <div style={{ fontSize:10, opacity:.85 }}>{ses.room}</div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </>
-                );
-              })}
-            </div>
-
-            {/* Legend */}
-            <div style={{ display:"flex", gap:16, padding:"14px 0 0", flexWrap:"wrap" }}>
-              {[...new Set(sesiList.map(s=>s.program))].map((prog,i)=>{
-                const col = sesiList.find(s=>s.program===prog)?.color||"#64748b";
-                return (
-                  <div key={prog} style={{ display:"flex", alignItems:"center", gap:6, fontSize:12, color:"var(--color-text-secondary)" }}>
-                    <div style={{ width:10, height:10, borderRadius:3, background:col }} />
-                    {prog}
+              return (
+                <div key={hari} style={{ background: "#f8fafc", borderRadius: 12, padding: 12, border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", gap: 10, minHeight: 380 }}>
+                  <div style={{ paddingBottom: 8, borderBottom: "2px solid var(--color-primary)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: "var(--color-text-primary)" }}>{hari}</span>
+                    <span style={{ background: "var(--color-primary-bg)", color: "var(--color-primary)", fontSize: 11, fontWeight: 800, padding: "2px 6px", borderRadius: 999 }}>
+                      {sessionsHari.length} Sesi
+                    </span>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* LIST tampilan */}
-      {tampilan === "daftar" && (
-        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-          {daftarHarian.map(day => (
-            <div key={day.date} className="card">
-              <div className="card-header"><h2 className="card-title" style={{ fontSize:14 }}>{day.date}</h2></div>
-              <div className="card-body" style={{ paddingTop:0 }}>
-                {day.items.map((ses,i) => (
-                  <div key={i} style={{ display:"flex", alignItems:"center", gap:16, padding:"12px 0", borderBottom: i<day.items.length-1?"1px solid var(--color-border-light)":"none" }}>
-                    <div style={{ fontWeight:700, fontSize:13, color:"var(--color-text-muted)", minWidth:110 }}>{ses.time}</div>
-                    <div style={{ flex:1 }}>
-                      <div style={{ fontWeight:800, fontSize:14, color:"var(--color-text-primary)" }}>{ses.kelas} â€” {ses.program}</div>
-                      <div style={{ fontSize:12, color:"var(--color-text-muted)", marginTop:2 }}>{ses.guru} Â· {ses.room} Â· Pertemuan ke-{ses.pertemuan}</div>
+                  {sessionsHari.length === 0 ? (
+                    <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#cbd5e1", fontSize: 12, fontStyle: "italic", textAlign: "center" }}>
+                      Tidak ada kelas
                     </div>
-                    <span style={{ background: ses.status==="Berlangsung"?"#d1fae5":"#dbeafe", color: ses.status==="Berlangsung"?"#059669":"#1d4ed8", fontSize:11.5, fontWeight:700, padding:"3px 10px", borderRadius:999 }}>{ses.status}</span>
-                    <button className="btn btn-ghost btn-sm" onClick={()=>{ setSelectedSes(sesiList.find(s=>s.kelas===ses.kelas)||null); setShowReschedule(true); }}>Reschedule</button>
-                  </div>
+                  ) : (
+                    sessionsHari.map(s => (
+                      <div
+                        key={s.id}
+                        className="schedule-card"
+                        onClick={() => setSelectedSession(s)}
+                        style={{
+                          background: "#fff",
+                          borderLeft: `4px solid ${s.warna}`,
+                          borderRadius: 8,
+                          padding: "10px 12px",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <div style={{ fontSize: 11, fontWeight: 800, color: s.warna, marginBottom: 2 }}>
+                          ⏰ {s.jamMulai} – {s.jamSelesai}
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: "#0f172a" }}>{s.program} ({s.kelas})</div>
+                        <div style={{ fontSize: 11.5, color: "#475569", marginTop: 2 }}>👩‍🏫 {s.guru}</div>
+                        <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4, display: "flex", justifyContent: "space-between" }}>
+                          <span>📍 {s.ruangan}</span>
+                          <span>👥 {s.siswaCount} Siswa</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* VIEW MODE LIST DAFTAR SESI */}
+      {viewMode === "list" && (
+        <div className="card" style={{ overflow: "hidden" }}>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+              <thead>
+                <tr style={{ background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}>
+                  {["ID Sesi", "Hari & Jam", "Program & Level", "Kelas", "Guru Pengajar", "Ruangan", "Kapasitas Siswa", "Aksi"].map(h => (
+                    <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((s, i) => (
+                  <tr key={s.id} style={{ borderBottom: i < filtered.length - 1 ? "1px solid var(--color-border-light)" : "none" }}>
+                    <td style={{ padding: "14px 16px", fontFamily: "monospace", fontSize: 12, color: "var(--color-text-muted)" }}>{s.id}</td>
+                    <td style={{ padding: "14px 16px" }}>
+                      <strong style={{ color: "var(--color-text-primary)", fontSize: 13.5 }}>{s.hari}</strong>
+                      <div style={{ fontSize: 12, color: "var(--color-primary)", fontWeight: 700 }}>{s.jamMulai} – {s.jamSelesai} WIB</div>
+                    </td>
+                    <td style={{ padding: "14px 16px" }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: "#0f172a" }}>{s.program}</div>
+                      <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>{s.level}</div>
+                    </td>
+                    <td style={{ padding: "14px 16px" }}>
+                      <span style={{ background: "#e0f2fe", color: "#0369a1", fontSize: 11.5, fontWeight: 800, padding: "3px 10px", borderRadius: 6 }}>{s.kelas}</span>
+                    </td>
+                    <td style={{ padding: "14px 16px", fontWeight: 700, fontSize: 13, color: "#1e293b" }}>👩‍🏫 {s.guru}</td>
+                    <td style={{ padding: "14px 16px", fontSize: 12.5, color: "var(--color-text-secondary)" }}>📍 {s.ruangan}</td>
+                    <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)" }}>👥 {s.siswaCount} Anak</td>
+                    <td style={{ padding: "14px 16px" }}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => setSelectedSession(s)}>Detail</button>
+                    </td>
+                  </tr>
                 ))}
-              </div>
-            </div>
-          ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
-      {/* Session Detail Modal */}
-      {sesiDipilih && !showJadwalUlang && (
-        <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,0.55)",backdropFilter:"blur(4px)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:16,animation:"fadeIn 0.2s ease-out"}}>
-          <div style={{background:"#fff",borderRadius:18,maxWidth:460,width:"100%",padding:28,boxShadow:"0 25px 50px -12px rgba(0,0,0,0.25)",animation:"modalIn 0.25s cubic-bezier(0.16,1,0.3,1)"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-              <h2 style={{fontSize:18,fontWeight:800,color:"var(--color-text-primary)",margin:0}}>Detail Sesi</h2>
-              <button onClick={()=>setSelectedSes(null)} style={{background:"transparent",border:"none",cursor:"pointer",color:"var(--color-text-muted)"}}>
+      {/* MODAL DETAIL SESI */}
+      {selectedSession && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease-out" }}>
+          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 500, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Detail Sesi Jadwal</h2>
+              <button onClick={() => setSelectedSession(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
                 <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
-            {/* Session color banner */}
-            <div style={{background:sesiDipilih.color,borderRadius:12,padding:"14px 18px",color:"#fff",marginBottom:18}}>
-              <div style={{fontSize:18,fontWeight:800}}>{sesiDipilih.kelas}</div>
-              <div style={{fontSize:13,opacity:.9}}>{sesiDipilih.program} Â· {sesiDipilih.guru}</div>
-              <div style={{fontSize:12,opacity:.85,marginTop:4}}>{sesiDipilih.room} Â· Pertemuan ke-{sesiDipilih.pertemuan}</div>
-            </div>
-            <div style={{display:"tabel",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
-              {[
-                {label:"Hari",value:HARI[sesiDipilih.day]},
-                {label:"Jam",value:`${sesiDipilih.hour}:00`},
-                {label:"Durasi",value:`${sesiDipilih.durasi} jam`},
-                {label:"Status",value:sesiDipilih.status},
-              ].map(f=>(
-                <div key={f.label} style={{background:"var(--color-bg)",borderRadius:10,padding:"10px 14px",border:"1px solid var(--color-border)"}}>
-                  <div style={{fontSize:10,fontWeight:700,color:"var(--color-text-muted)",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:3}}>{f.label}</div>
-                  <div style={{fontSize:14,fontWeight:700,color:"var(--color-text-primary)"}}>{f.value}</div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "16px 18px", borderLeft: `5px solid ${selectedSession.warna}` }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: selectedSession.warna }}>{selectedSession.hari}, {selectedSession.jamMulai} – {selectedSession.jamSelesai} WIB</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", marginTop: 2 }}>{selectedSession.program} — {selectedSession.kelas}</div>
+                <div style={{ fontSize: 12.5, color: "var(--color-text-muted)", marginTop: 2 }}>Tingkatan: {selectedSession.level}</div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div style={{ background: "#f8fafc", padding: 12, borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                  <div style={{ fontSize: 10, color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Guru Pengajar</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 800, color: "#0f172a", marginTop: 2 }}>👩‍🏫 {selectedSession.guru}</div>
                 </div>
-              ))}
-            </div>
-            <div style={{display:"tabel",gridTemplateColumns:"1fr 1fr",gap:10}}>
-              <button className="btn btn-ghost" onClick={()=>setSelectedSes(null)}>Tutup</button>
-              <button className="btn btn-outline" onClick={()=>setShowReschedule(true)}>
-                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                Reschedule
-              </button>
+                <div style={{ background: "#f8fafc", padding: 12, borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                  <div style={{ fontSize: 10, color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Lokasi Ruangan</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 800, color: "#0f172a", marginTop: 2 }}>📍 {selectedSession.ruangan}</div>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
+                <button className="btn btn-ghost" onClick={() => setSelectedSession(null)}>Tutup</button>
+                <button className="btn btn-accent" onClick={() => { alert("Reschedule jadwal diproses"); setSelectedSession(null); }}>Reschedule Sesi</button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Reschedule Modal */}
-      {showJadwalUlang && sesiDipilih && (
-        <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,0.55)",backdropFilter:"blur(4px)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:16,animation:"fadeIn 0.2s ease-out"}}>
-          <div style={{background:"#fff",borderRadius:18,maxWidth:440,width:"100%",padding:28,boxShadow:"0 25px 50px -12px rgba(0,0,0,0.25)",animation:"modalIn 0.25s cubic-bezier(0.16,1,0.3,1)"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-              <h2 style={{fontSize:18,fontWeight:800,color:"var(--color-text-primary)",margin:0}}>Reschedule Sesi</h2>
-              <button onClick={()=>{setShowReschedule(false);setSelectedSes(null);}} style={{background:"transparent",border:"none",cursor:"pointer",color:"var(--color-text-muted)"}}>
+      {/* MODAL TAMBAH SESI */}
+      {showAddModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease-out" }}>
+          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 500, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Tambah Sesi Jadwal Baru</h2>
+              <button onClick={() => setShowAddModal(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
                 <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
-            <div style={{background:"var(--color-bg)",borderRadius:10,padding:"12px 16px",marginBottom:18,border:"1px solid var(--color-border)"}}>
-              <div style={{fontSize:12,color:"var(--color-text-muted)",marginBottom:2}}>Sesi yang di-reschedule</div>
-              <div style={{fontWeight:800,fontSize:14,color:"var(--color-text-primary)"}}>{sesiDipilih.kelas} â€” {sesiDipilih.program}</div>
-              <div style={{fontSize:12,color:"var(--color-text-secondary)"}}>{HARI[sesiDipilih.day]}, {sesiDipilih.hour}:00 Â· Pertemuan ke-{sesiDipilih.pertemuan}</div>
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:14}}>
-              <div className="form-group" style={{marginBottom:0}}>
-                <label className="form-label">Tanggal Baru</label>
-                <input className="form-input" type="date" />
-              </div>
-              <div className="form-group" style={{marginBottom:0}}>
-                <label className="form-label">Jam Mulai Baru</label>
-                <select className="form-input" style={{cursor:"pointer"}}>
-                  {JAM.map(h=><option key={h}>{h}</option>)}
-                </select>
-              </div>
-              <div className="form-group" style={{marginBottom:0}}>
-                <label className="form-label">Ruang</label>
-                <select className="form-input" style={{cursor:"pointer"}}>
-                  {["Ruang 1","Ruang 2","Ruang 3"].map(r=><option key={r}>{r}</option>)}
-                </select>
-              </div>
-              <div className="form-group" style={{marginBottom:0}}>
-                <label className="form-label">Alasan Reschedule</label>
-                <input className="form-input" placeholder="Contoh: Hari libur nasional" />
-              </div>
-              <div style={{background:"#fef3c7",border:"1px solid #fde68a",borderRadius:10,padding:"10px 14px",fontSize:12.5,color:"#92400e",lineHeight:1.4}}>
-                âš ï¸ Nomor pertemuan ke-{sesiDipilih.pertemuan} akan tetap sama. Hanya tanggal dan jam yang berubah. Riwayat reschedule akan tercatat.
-              </div>
-              <div style={{display:"tabel",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                <button className="btn btn-ghost" onClick={()=>{setShowReschedule(false);setSelectedSes(null);}}>Batal</button>
-                <button className="btn btn-primary" onClick={()=>{alert("Reschedule berhasil!");setShowReschedule(false);setSelectedSes(null);}}>Simpan Reschedule</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Modal Tambah Sesi dengan Conflict Detection */}
-      {showTambah && (
-        <div style={{position:"fixed",inset:0,background:"rgba(15,23,42,0.55)",backdropFilter:"blur(4px)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center",padding:16,animation:"fadeIn 0.2s ease-out"}}>
-          <div style={{background:"#fff",borderRadius:18,maxWidth:460,width:"100%",padding:28,boxShadow:"0 25px 50px -12px rgba(0,0,0,0.25)",animation:"modalIn 0.25s cubic-bezier(0.16,1,0.3,1)"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-              <h2 style={{fontSize:18,fontWeight:800,color:"var(--color-text-primary)",margin:0}}>Tambah Sesi & Cek Bentrok</h2>
-              <button onClick={()=>setShowTambah(false)} style={{background:"transparent",border:"none",cursor:"pointer",color:"var(--color-text-muted)"}}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:14}}>
-              <div className="form-group" style={{marginBottom:0}}>
-                <label className="form-label">Kelas</label>
-                <select className="form-input" value={inputKelas} onChange={e=>setInputKelas(e.target.value)}>
-                  {["KLS-A", "KLS-B", "KLS-C", "KLS-D", "KLS-E"].map(k=><option key={k}>{k}</option>)}
-                </select>
-              </div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                <div className="form-group" style={{marginBottom:0}}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Hari</label>
-                  <select className="form-input" value={inputHari} onChange={e=>setInputHari(Number(e.target.value))}>
-                    {HARI.map((h,i)=><option key={h} value={i}>{h}</option>)}
+                  <select className="form-input">
+                    {hariList.map(h => <option key={h}>{h}</option>)}
                   </select>
                 </div>
-                <div className="form-group" style={{marginBottom:0}}>
-                  <label className="form-label">Jam Mulai</label>
-                  <select className="form-input" value={inputJam} onChange={e=>setInputJam(Number(e.target.value))}>
-                    {JAM.map(h=><option key={h} value={parseInt(h)}>{h}</option>)}
-                  </select>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Jam (WIB)</label>
+                  <input className="form-input" placeholder="14:00 - 15:00" />
                 </div>
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                <div className="form-group" style={{marginBottom:0}}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Kelas & Program</label>
+                  <input className="form-input" placeholder="KLS-A (Calistung)" />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Guru Pengajar</label>
-                  <select className="form-input" value={inputGuru} onChange={e=>setInputGuru(e.target.value)}>
-                    {["Ms. Sarah", "Mr. Andi", "Ms. Nina", "Mr. Budi"].map(g=><option key={g}>{g}</option>)}
-                  </select>
-                </div>
-                <div className="form-group" style={{marginBottom:0}}>
-                  <label className="form-label">Ruang Kelas</label>
-                  <select className="form-input" value={inputRuang} onChange={e=>setInputRuang(e.target.value)}>
-                    {["Ruang 1", "Ruang 2", "Ruang 3"].map(r=><option key={r}>{r}</option>)}
-                  </select>
+                  <input className="form-input" placeholder="Ms. Sarah" />
                 </div>
               </div>
-
-              {/* Conflict Alert Banner */}
-              {adaBentrok ? (
-                <div style={{background:"#fee2e2",border:"1.5px solid #fca5a5",borderRadius:10,padding:"12px 14px",fontSize:12.5,color:"#991b1b",lineHeight:1.4}}>
-                  <strong>BENTROK JADWAL DETEKSI!</strong><br />
-                  {bentrokGuru && <div>• Guru <strong>{inputGuru}</strong> sudah mengajar {bentrokGuru.kelas} di jam tersebut!</div>}
-                  {bentrokRuang && <div>• <strong>{inputRuang}</strong> sedang dipakai {bentrokRuang.kelas} di jam tersebut!</div>}
-                  <div style={{marginTop:4,fontSize:11.5,color:"#b91c1c"}}>Ganti jam, guru, atau ruang untuk menyimpan.</div>
-                </div>
-              ) : (
-                <div style={{background:"#d1fae5",border:"1px solid #86efac",borderRadius:10,padding:"10px 14px",fontSize:12.5,color:"#15803d"}}>
-                  Jadwal aman! Tidak ada bentrok guru maupun ruang.
-                </div>
-              )}
-
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:4}}>
-                <button className="btn btn-ghost" onClick={()=>setShowTambah(false)}>Batal</button>
-                <button className="btn btn-accent" disabled={adaBentrok} style={{opacity: adaBentrok ? 0.5 : 1, cursor: adaBentrok ? "not-allowed" : "pointer"}}
-                  onClick={() => { alert("Sesi berhasil ditambahkan!"); setShowTambah(false); }}>
-                  {adaBentrok ? "Bentrok — Ganti Waktu" : "Simpan Sesi"}
-                </button>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Ruangan</label>
+                <input className="form-input" placeholder="Ruang A (Lt 1)" />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
+                <button className="btn btn-ghost" onClick={() => setShowAddModal(false)}>Batal</button>
+                <button className="btn btn-accent" onClick={() => { alert("Sesi jadwal ditambahkan!"); setShowAddModal(false); }}>Simpan Sesi</button>
               </div>
             </div>
           </div>
