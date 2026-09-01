@@ -209,7 +209,7 @@ export const ownerNav: NavSection[] = [
   {
     section: "FINANCE",
     items: [
-      { label: "Tagihan / Invoice", href: "/owner/tagihan", icon: "Invoice" },
+      { label: "Tagihan", href: "/owner/tagihan", icon: "Invoice" },
       { label: "Pembayaran", href: "/owner/pembayaran", icon: "CreditCard" },
       { label: "Verifikasi Cash", href: "/owner/verifikasi-cash", icon: "CheckCircle" },
       { label: "Honor Guru/Staff", href: "/owner/honor", icon: "DollarSign" },
@@ -265,7 +265,7 @@ export const adminNav: NavSection[] = [
   {
     section: "FINANCE",
     items: [
-      { label: "Tagihan / Invoice", href: "/admin/tagihan", icon: "Invoice" },
+      { label: "Tagihan", href: "/admin/tagihan", icon: "Invoice" },
       { label: "Pembayaran", href: "/admin/pembayaran", icon: "CreditCard" },
       { label: "Verifikasi Cash", href: "/admin/verifikasi-cash", icon: "CheckCircle" },
     ],
@@ -289,7 +289,6 @@ export const orangTuaNav: NavSection[] = [
       { label: "Beranda", href: "/orang-tua/dashboard", icon: "Dashboard" },
       { label: "Anak Saya", href: "/orang-tua/anak", icon: "Users" },
       { label: "Jadwal", href: "/orang-tua/jadwal", icon: "Calendar" },
-      { label: "Progress Belajar", href: "/orang-tua/progress", icon: "Activity" },
       { label: "Pembayaran", href: "/orang-tua/pembayaran", icon: "CreditCard" },
       { label: "Pengumuman", href: "/orang-tua/pengumuman", icon: "Bell" },
       { label: "Sertifikat Kelulusan", href: "/orang-tua/sertifikat", icon: "Award" },
@@ -310,7 +309,6 @@ export const guruNav: NavSection[] = [
     items: [
       { label: "Jadwal Mengajar", href: "/guru/jadwal", icon: "Calendar" },
       { label: "Kelas & Absensi", href: "/guru/kelas", icon: "UserCheck" },
-      { label: "Progress Belajar Siswa", href: "/guru/progress", icon: "Activity" },
       { label: "Pengumuman", href: "/guru/pengumuman", icon: "Bell" },
     ],
   },
