@@ -318,9 +318,9 @@ export const guruNav: NavSection[] = [
     ],
   },
   {
-    section: "HONORARIUM",
+    section: "REKAP MENGAJAR",
     items: [
-      { label: "Honor Saya", href: "/guru/honor", icon: "DollarSign" },
+      { label: "Jam Mengajar Saya", href: "/guru/honor", icon: "Clock" },
     ],
   },
 ];
