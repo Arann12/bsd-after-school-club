@@ -223,12 +223,10 @@ export const ownerNav: NavSection[] = [
     ],
   },
   {
-    section: "REPORTS & SERTIFIKAT",
+    section: "LAPORAN",
     items: [
-      { label: "Modul Sertifikat", href: "/owner/sertifikat", icon: "Award" },
-      { label: "Laporan & Sertifikat", href: "/owner/laporan", icon: "BarChart2" },
-      { label: "Laporan Kehadiran", href: "/owner/laporan", icon: "ClipboardCheck" },
       { label: "Laporan Keuangan", href: "/owner/laporan", icon: "BarChart2" },
+      { label: "Laporan Kehadiran", href: "/owner/laporan", icon: "ClipboardCheck" },
       { label: "Laporan Inventaris", href: "/owner/laporan/inventaris", icon: "FileText" },
     ],
   },
@@ -291,7 +289,6 @@ export const orangTuaNav: NavSection[] = [
       { label: "Beranda", href: "/orang-tua/dashboard", icon: "Dashboard" },
       { label: "Anak Saya", href: "/orang-tua/anak", icon: "Users" },
       { label: "Jadwal", href: "/orang-tua/jadwal", icon: "Calendar" },
-      { label: "Absensi & Logbook", href: "/orang-tua/absensi", icon: "ClipboardCheck" },
       { label: "Progress Belajar", href: "/orang-tua/progress", icon: "Activity" },
       { label: "Pembayaran", href: "/orang-tua/pembayaran", icon: "CreditCard" },
       { label: "Pengumuman", href: "/orang-tua/pengumuman", icon: "Bell" },

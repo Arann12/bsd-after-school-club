@@ -27,6 +27,10 @@ export default function AdminTagihanPage() {
   const [dipilih, setDipilih] = useState<typeof daftarTagihan[0] | null>(null);
   const [showKonfirmasi, setShowKonfirmasi] = useState(false);
   const [sudahKonfirmasi, setSudahKonfirmasi] = useState<string[]>([]);
+  const [showInputCashModal, setShowInputCashModal] = useState(false);
+  const [selectedParentChild, setSelectedParentChild] = useState("Budi Setiawan — Andi Setiawan (Calistung Level 1)");
+  const [cashAmount, setCashAmount] = useState(100000);
+  const [cashNote, setCashNote] = useState("");
 
   const daftarStatus = ["Semua", "Lunas", "Menunggu Konfirmasi", "Partially Paid", "Belum Bayar", "Overdue"];
 
@@ -44,6 +48,12 @@ export default function AdminTagihanPage() {
 
   const getStatus = (t: typeof daftarTagihan[0]) =>
     sudahKonfirmasi.includes(t.id) ? "Lunas" : t.status;
+
+  const handleSaveCashManual = () => {
+    alert(`Pembayaran Cash Manual Rp ${cashAmount.toLocaleString("id-ID")} berhasil diinput!`);
+    setShowInputCashModal(false);
+    setCashNote("");
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -64,7 +74,7 @@ export default function AdminTagihanPage() {
             <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             Ekspor
           </button>
-          <button className="btn btn-accent" onClick={() => alert("Form input cash manual")}>+ Input Cash Manual</button>
+          <button className="btn btn-accent" onClick={() => setShowInputCashModal(true)}>+ Input Cash Manual</button>
         </div>
       </div>
 
@@ -246,6 +256,50 @@ export default function AdminTagihanPage() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <button className="btn btn-ghost" onClick={() => { setShowKonfirmasi(false); setDipilih(null); }}>Batal</button>
                 <button className="btn btn-accent" onClick={() => konfirmasi(dipilih.id)}>Konfirmasi Lunas</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal Input Cash Manual (Requirement #3) */}
+      {showInputCashModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 120, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn .2s ease-out" }}>
+          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 500, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,.25)", animation: "modalIn .25s cubic-bezier(0.16,1,0.3,1)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Input Pembayaran Cash Manual</h2>
+              <button onClick={() => setShowInputCashModal(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
+                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Pilih Orang Tua / Anak</label>
+                <select className="select-control" style={{ width: "100%" }} value={selectedParentChild} onChange={e => setSelectedParentChild(e.target.value)}>
+                  <option value="Budi Setiawan — Andi Setiawan (Calistung Level 1)">Budi Setiawan — Parent of Andi Setiawan (Calistung Level 1)</option>
+                  <option value="Joko Santoso — Budi Santoso (English B1)">Joko Santoso — Parent of Budi Santoso (English B1)</option>
+                  <option value="Dewi Kirana — Citra Kirana (Math Advance)">Dewi Kirana — Parent of Citra Kirana (Math Advance)</option>
+                  <option value="Sari Pratama — Dian Pratama (Phonics Starter)">Sari Pratama — Parent of Dian Pratama (Phonics Starter)</option>
+                </select>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Jumlah Uang Yang Dibayar (Rp)</label>
+                <input className="form-input" type="number" value={cashAmount} onChange={e => setCashAmount(Number(e.target.value))} placeholder="100000" />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Catatan Pembayaran (Opsional)</label>
+                <input className="form-input" value={cashNote} onChange={e => setCashNote(e.target.value)} placeholder="Contoh: Diterima tunai oleh Kasir Front Office" />
+              </div>
+
+              <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 10, padding: "12px 14px", fontSize: 12, color: "#0369a1" }}>
+                Pembayaran tunai ini akan dicatat langsung sebagai transaksi <strong>Lunas (via Admin)</strong> dan masuk ke laporan keuangan.
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
+                <button className="btn btn-ghost" onClick={() => setShowInputCashModal(false)}>Batal</button>
+                <button className="btn btn-accent" onClick={handleSaveCashManual}>Simpan Cash Manual</button>
               </div>
             </div>
           </div>

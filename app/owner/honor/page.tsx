@@ -1,14 +1,30 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
 
-const periodePilihan = ["Agustus 2026", "Juli 2026", "Juni 2026"];
+const periodePilihan = ["September 2026", "Agustus 2026", "Juli 2026"];
 
-const dataGuru = [
-  { id: "GUR-2026-0001", nama: "Ms. Sarah", spesialisasi: "Calistung & Phonics", sesiSelesai: 18, totalJam: 18.0, tarifPerJam: 75000, bonus: 100000, status: "Belum Dibayar" },
-  { id: "GUR-2026-0002", nama: "Mr. Andi",  spesialisasi: "English",            sesiSelesai: 14, totalJam: 14.0, tarifPerJam: 80000, bonus: 0,      status: "Sudah Dibayar" },
-  { id: "GUR-2026-0003", nama: "Ms. Nina",  spesialisasi: "Matematika",          sesiSelesai: 10, totalJam: 10.5, tarifPerJam: 80000, bonus: 50000, status: "Belum Dibayar" },
-  { id: "GUR-2026-0004", nama: "Mr. Budi",  spesialisasi: "Calistung Lanjut",   sesiSelesai: 12, totalJam: 12.0, tarifPerJam: 75000, bonus: 0,      status: "Sudah Dibayar" },
+interface BonusRecord {
+  jumlah: number;
+  catatan: string;
+  tanggal: string;
+}
+
+interface GuruHonorData {
+  id: string;
+  nama: string;
+  spesialisasi: string;
+  sesiSelesai: number;
+  totalJam: number;
+  tarifPerJam: number;
+  bonusList: BonusRecord[];
+  status: "Belum Dibayar" | "Sudah Dibayar" | "Sebagian";
+}
+
+const initialDataGuru: GuruHonorData[] = [
+  { id: "GUR-2026-0001", nama: "Ms. Sarah", spesialisasi: "Calistung & Phonics", sesiSelesai: 18, totalJam: 18.0, tarifPerJam: 75000, bonusList: [{ jumlah: 100000, catatan: "Bonus Kerajinan & Presensi Sempurna", tanggal: "01 Sep 2026" }], status: "Belum Dibayar" },
+  { id: "GUR-2026-0002", nama: "Mr. Andi",  spesialisasi: "English & Coding",  sesiSelesai: 14, totalJam: 14.0, tarifPerJam: 80000, bonusList: [], status: "Sudah Dibayar" },
+  { id: "GUR-2026-0003", nama: "Ms. Nina",  spesialisasi: "Matematika",          sesiSelesai: 10, totalJam: 10.5, tarifPerJam: 80000, bonusList: [{ jumlah: 50000, catatan: "Bonus Pengisian Logbook Cepat", tanggal: "28 Agt 2026" }], status: "Belum Dibayar" },
+  { id: "GUR-2026-0004", nama: "Mr. Budi",  spesialisasi: "Calistung Lanjut",   sesiSelesai: 12, totalJam: 12.0, tarifPerJam: 75000, bonusList: [], status: "Sudah Dibayar" },
 ];
 
 const warnaStatus: Record<string, { bg: string; color: string }> = {
@@ -19,22 +35,41 @@ const warnaStatus: Record<string, { bg: string; color: string }> = {
 
 export default function OwnerHonorPage() {
   const [periode, setPeriode] = useState(periodePilihan[0]);
-  const [dipilih, setDipilih] = useState<typeof dataGuru[0] | null>(null);
-  const [sudahBayar, setSudahBayar] = useState<string[]>(["GUR-2026-002", "GUR-2026-004"]);
+  const [listGuru, setListGuru] = useState<GuruHonorData[]>(initialDataGuru);
+  const [dipilih, setDipilih] = useState<GuruHonorData | null>(null);
+  const [showBonusModal, setShowBonusModal] = useState(false);
+  const [guruTargetBonus, setGuruTargetBonus] = useState<GuruHonorData | null>(null);
+  const [inputBonusNominal, setInputBonusNominal] = useState(50000);
+  const [inputBonusCatatan, setInputBonusCatatan] = useState("");
+  const [inputBonusTanggal, setInputBonusTanggal] = useState("2026-09-01");
 
-  const getStatus = (g: typeof dataGuru[0]) =>
-    sudahBayar.includes(g.id) ? "Sudah Dibayar" : g.status;
+  const totalBonusGuru = (g: GuruHonorData) => g.bonusList.reduce((acc, b) => acc + b.jumlah, 0);
+  const hitungHonor = (g: GuruHonorData) => Math.round(g.totalJam * g.tarifPerJam) + totalBonusGuru(g);
 
-  // Honor = totalJam × tarifPerJam + bonus (sesuai PRD: jam mengajar, bukan jumlah sesi)
-  const hitungHonor = (g: typeof dataGuru[0]) => Math.round(g.totalJam * g.tarifPerJam) + g.bonus;
-
-  const totalHonor = dataGuru.reduce((a, g) => a + hitungHonor(g), 0);
-  const sudahCair  = dataGuru.filter(g => sudahBayar.includes(g.id)).reduce((a, g) => a + hitungHonor(g), 0);
+  const totalHonor = listGuru.reduce((a, g) => a + hitungHonor(g), 0);
+  const sudahCair  = listGuru.filter(g => g.status === "Sudah Dibayar").reduce((a, g) => a + hitungHonor(g), 0);
   const belumCair  = totalHonor - sudahCair;
 
   const bayarHonor = (id: string) => {
-    setSudahBayar(prev => [...prev, id]);
+    setListGuru(prev => prev.map(g => g.id === id ? { ...g, status: "Sudah Dibayar" } : g));
     setDipilih(null);
+  };
+
+  const handleTambahBonusSubmit = () => {
+    if (!guruTargetBonus) return;
+    const newBonusRecord: BonusRecord = {
+      jumlah: Number(inputBonusNominal),
+      catatan: inputBonusCatatan || "Bonus Tambahan Owner",
+      tanggal: inputBonusTanggal,
+    };
+
+    setListGuru(prev =>
+      prev.map(g => (g.id === guruTargetBonus.id ? { ...g, bonusList: [...g.bonusList, newBonusRecord] } : g))
+    );
+
+    setShowBonusModal(false);
+    setInputBonusCatatan("");
+    alert(`Bonus Rp ${Number(inputBonusNominal).toLocaleString("id")} berhasil ditambahkan untuk ${guruTargetBonus.nama}!`);
   };
 
   return (
@@ -48,8 +83,8 @@ export default function OwnerHonorPage() {
       {/* Kepala Halaman */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">Honor Guru</h1>
-          <p className="page-subtitle">Kalkulasi dan pencairan honor mengajar per periode.</p>
+          <h1 className="page-title">Honor Guru & Staff</h1>
+          <p className="page-subtitle">Kalkulasi, rincian bonus, dan pencairan honor mengajar per periode.</p>
         </div>
         <div className="page-header-actions">
           <select style={{ padding: "9px 14px", borderRadius: "var(--radius-md)", border: "1.5px solid var(--color-border)", fontSize: 13.5, fontWeight: 600, cursor: "pointer", background: "white", color: "var(--color-text-primary)" }}
@@ -63,22 +98,13 @@ export default function OwnerHonorPage() {
         </div>
       </div>
 
-      {/* Peringatan Khusus Owner */}
-      <div style={{ background: "linear-gradient(135deg, #1a5c8a 0%, #134570 100%)", borderRadius: "var(--radius-lg)", padding: "16px 20px", display: "flex", alignItems: "center", gap: 14 }}>
-        <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        <div>
-          <div style={{ fontWeight: 700, fontSize: 14, color: "white" }}>Data Konfidensial — Hanya Terlihat oleh Owner</div>
-          <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.75)", marginTop: 2 }}>Informasi honor guru tidak pernah ditampilkan ke Admin, Guru, atau Orang Tua.</div>
-        </div>
-      </div>
-
       {/* Kartu Statistik */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 }}>
         {[
           { label: "Total Honor Bulan Ini", value: `Rp ${totalHonor.toLocaleString("id")}`, warna: "#1d4ed8", bg: "#dbeafe", besar: true },
           { label: "Sudah Dicairkan", value: `Rp ${sudahCair.toLocaleString("id")}`, warna: "#059669", bg: "#d1fae5", besar: true },
           { label: "Belum Dicairkan", value: `Rp ${belumCair.toLocaleString("id")}`, warna: "#b45309", bg: "#fef3c7", besar: true },
-          { label: "Jumlah Guru", value: dataGuru.length, warna: "#7c3aed", bg: "#ede9fe", besar: false },
+          { label: "Jumlah Guru", value: listGuru.length, warna: "#7c3aed", bg: "#ede9fe", besar: false },
         ].map(k => (
           <div key={k.label} className="stat-card" style={{ gap: 8 }}>
             <span className="stat-card-label" style={{ fontSize: 11.5 }}>{k.label}</span>
@@ -87,33 +113,24 @@ export default function OwnerHonorPage() {
         ))}
       </div>
 
-      {/* Periode Info */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ height: 1, flex: 1, background: "var(--color-border)" }} />
-        <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--color-text-muted)", padding: "0 12px", background: "white", border: "1px solid var(--color-border)", borderRadius: 999 }}>
-          Periode: {periode}
-        </span>
-        <div style={{ height: 1, flex: 1, background: "var(--color-border)" }} />
-      </div>
-
       {/* Tabel Honor */}
       <div className="card" style={{ overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid var(--color-border)", background: "var(--color-bg)" }}>
-                {["ID Guru", "Nama Guru", "Spesialisasi", "Sesi Selesai", "Total Jam", "Tarif/Jam", "Bonus", "Total Honor", "Status", "Aksi"].map(h => (
+                {["ID Guru", "Nama Guru", "Spesialisasi", "Total Jam", "Tarif/Jam", "Total Bonus", "Total Honor", "Status", "Aksi Bonus", "Pencairan"].map(h => (
                   <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {dataGuru.map((g, i) => {
-                const statusAktif = getStatus(g);
+              {listGuru.map((g, i) => {
+                const totBonus = totalBonusGuru(g);
                 const totalHonorGuru = hitungHonor(g);
                 return (
                   <tr key={g.id} className="baris-honor"
-                    style={{ borderBottom: i < dataGuru.length - 1 ? "1px solid var(--color-border-light)" : "none", background: "#fff", transition: "background .15s" }}
+                    style={{ borderBottom: i < listGuru.length - 1 ? "1px solid var(--color-border-light)" : "none", background: "#fff", transition: "background .15s" }}
                     onClick={() => setDipilih(g)}>
                     <td style={{ padding: "14px 16px", fontFamily: "monospace", fontSize: 12, color: "var(--color-text-muted)", fontWeight: 600 }}>{g.id}</td>
                     <td style={{ padding: "14px 16px" }}>
@@ -123,82 +140,123 @@ export default function OwnerHonorPage() {
                       </div>
                     </td>
                     <td style={{ padding: "14px 16px", fontSize: 13, color: "var(--color-text-secondary)" }}>{g.spesialisasi}</td>
-                    <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 700, color: "var(--color-text-primary)", textAlign: "center" }}>{g.sesiSelesai}</td>
-                    <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 700, color: "var(--color-text-primary)", textAlign: "center" }}>{g.totalJam} jam</td>
+                    <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 700, color: "var(--color-text-primary)" }}>{g.totalJam} jam</td>
                     <td style={{ padding: "14px 16px", fontSize: 13, color: "var(--color-text-secondary)" }}>Rp {g.tarifPerJam.toLocaleString("id")}</td>
-                    <td style={{ padding: "14px 16px", fontSize: 13, color: g.bonus > 0 ? "#059669" : "var(--color-text-muted)", fontWeight: g.bonus > 0 ? 700 : 400 }}>
-                      {g.bonus > 0 ? `+Rp ${g.bonus.toLocaleString("id")}` : "–"}
+                    <td style={{ padding: "14px 16px", fontSize: 13, color: totBonus > 0 ? "#059669" : "var(--color-text-muted)", fontWeight: totBonus > 0 ? 800 : 400 }}>
+                      {totBonus > 0 ? `+Rp ${totBonus.toLocaleString("id")}` : "0"}
                     </td>
                     <td style={{ padding: "14px 16px", fontSize: 15, fontWeight: 800, color: "var(--color-primary)" }}>Rp {totalHonorGuru.toLocaleString("id")}</td>
                     <td style={{ padding: "14px 16px" }}>
-                      <span style={{ ...warnaStatus[statusAktif], fontSize: 11.5, fontWeight: 700, padding: "3px 10px", borderRadius: "var(--radius-sm)" }}>{statusAktif}</span>
+                      <span style={{ ...warnaStatus[g.status], fontSize: 11.5, fontWeight: 700, padding: "3px 10px", borderRadius: "var(--radius-sm)" }}>{g.status}</span>
                     </td>
                     <td style={{ padding: "14px 16px" }} onClick={e => e.stopPropagation()}>
-                      {statusAktif === "Belum Dibayar" ? (
+                      <button className="btn btn-outline btn-sm" onClick={() => { setGuruTargetBonus(g); setShowBonusModal(true); }}>
+                        + Tambah Bonus
+                      </button>
+                    </td>
+                    <td style={{ padding: "14px 16px" }} onClick={e => e.stopPropagation()}>
+                      {g.status === "Belum Dibayar" ? (
                         <button className="btn btn-accent btn-sm" onClick={() => { setDipilih(g); }}>Cairkan</button>
                       ) : (
-                        <button className="btn btn-ghost btn-sm" onClick={() => setDipilih(g)}>Riwayat</button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setDipilih(g)}>Rincian</button>
                       )}
                     </td>
                   </tr>
                 );
               })}
             </tbody>
-            {/* Footer Total */}
-            <tfoot>
-              <tr style={{ borderTop: "2px solid var(--color-border)", background: "var(--color-bg)" }}>
-                <td colSpan={7} style={{ padding: "14px 16px", fontSize: 13, fontWeight: 700, color: "var(--color-text-secondary)" }}>Total Honor {periode}</td>
-                <td style={{ padding: "14px 16px", fontSize: 16, fontWeight: 800, color: "var(--color-primary)" }}>Rp {totalHonor.toLocaleString("id")}</td>
-                <td colSpan={2} />
-              </tr>
-            </tfoot>
           </table>
         </div>
       </div>
 
-      {/* Modal Detail & Cairkan Honor */}
-      {dipilih && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn .2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 480, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,.25)", animation: "modalIn .25s cubic-bezier(0.16,1,0.3,1)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Rincian Honor — {dipilih.nama}</h2>
-              <button onClick={() => setDipilih(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
+      {/* MODAL TAMBAH BONUS (Requirement #9) */}
+      {showBonusModal && guruTargetBonus && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 110, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn .2s ease-out" }}>
+          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 460, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,.25)", animation: "modalIn .25s cubic-bezier(0.16,1,0.3,1)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Tambah Bonus — {guruTargetBonus.nama}</h2>
+              <button onClick={() => setShowBonusModal(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>✕</button>
             </div>
 
-            {/* Rincian Kalkulasi */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Nominal Bonus (Rp)</label>
+                <input className="form-input" type="number" value={inputBonusNominal} onChange={e => setInputBonusNominal(Number(e.target.value))} placeholder="50000" />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Catatan Alasan Bonus</label>
+                <input className="form-input" value={inputBonusCatatan} onChange={e => setInputBonusCatatan(e.target.value)} placeholder="Contoh: Performa mengajar luar biasa / Bonus lembur event" />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Tanggal Pemberian Bonus</label>
+                <input className="form-input" type="date" value={inputBonusTanggal} onChange={e => setInputBonusTanggal(e.target.value)} />
+              </div>
+
+              <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", padding: "10px 14px", borderRadius: 10, fontSize: 12, color: "#166534" }}>
+                Bonus ini akan otomatis menambahkan total honor akumulasi untuk periode berjalan.
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 6 }}>
+                <button className="btn btn-ghost" onClick={() => setShowBonusModal(false)}>Batal</button>
+                <button className="btn btn-accent" onClick={handleTambahBonusSubmit}>Simpan Bonus</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Detail & Rincian Honor Guru */}
+      {dipilih && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn .2s ease-out" }}>
+          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 500, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,.25)", animation: "modalIn .25s cubic-bezier(0.16,1,0.3,1)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Rincian Honor — {dipilih.nama}</h2>
+              <button onClick={() => setDipilih(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>✕</button>
+            </div>
+
             <div style={{ background: "linear-gradient(135deg, #1a5c8a, #2a7ab8)", borderRadius: 12, padding: "20px", color: "white", marginBottom: 18 }}>
               <div style={{ fontSize: 12, opacity: .8, marginBottom: 4 }}>{dipilih.id} · Periode {periode}</div>
-              <div style={{ fontSize: 22, fontWeight: 800 }}>Rp {hitungHonor(dipilih).toLocaleString("id")}</div>
+              <div style={{ fontSize: 24, fontWeight: 900 }}>Rp {hitungHonor(dipilih).toLocaleString("id")}</div>
               <div style={{ fontSize: 12, opacity: .85, marginTop: 4 }}>{dipilih.spesialisasi}</div>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 18 }}>
-              {[
-                { label: "Sesi Selesai", value: `${dipilih.sesiSelesai} sesi` },
-                { label: "Total Jam Mengajar", value: `${dipilih.totalJam} jam` },
-                { label: "Tarif per Jam", value: `Rp ${dipilih.tarifPerJam.toLocaleString("id")}` },
-                { label: "Honor Pokok", value: `Rp ${(dipilih.sesiSelesai * dipilih.tarifPerJam).toLocaleString("id")}` },
-                { label: "Bonus", value: dipilih.bonus > 0 ? `Rp ${dipilih.bonus.toLocaleString("id")}` : "–" },
-              ].map(f => (
-                <div key={f.label} style={{ display: "flex", justifyContent: "space-between", padding: "10px 14px", background: "var(--color-bg)", borderRadius: 10, border: "1px solid var(--color-border)" }}>
-                  <span style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>{f.label}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)" }}>{f.value}</span>
-                </div>
-              ))}
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 14px", background: "var(--color-primary-bg)", borderRadius: 10, border: "1.5px solid var(--color-primary)" }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: "var(--color-primary)" }}>Total Honor</span>
-                <span style={{ fontSize: 16, fontWeight: 800, color: "var(--color-primary)" }}>Rp {hitungHonor(dipilih).toLocaleString("id")}</span>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 14px", background: "var(--color-bg)", borderRadius: 10, border: "1px solid var(--color-border)" }}>
+                <span style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>Total Jam Mengajar</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)" }}>{dipilih.totalJam} jam</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 14px", background: "var(--color-bg)", borderRadius: 10, border: "1px solid var(--color-border)" }}>
+                <span style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>Tarif per Jam</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)" }}>Rp {dipilih.tarifPerJam.toLocaleString("id")}</span>
+              </div>
+
+              {/* Daftar Riwayat Bonus */}
+              <div style={{ background: "#f8fafc", borderRadius: 10, padding: "12px", border: "1px solid #e2e8f0" }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: "#64748b", textTransform: "uppercase", marginBottom: 6 }}>Riwayat Bonus Diberikan</div>
+                {dipilih.bonusList.length === 0 ? (
+                  <div style={{ fontSize: 12, color: "#94a3b8", fontStyle: "italic" }}>Belum ada bonus tambahan periode ini.</div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {dipilih.bonusList.map((b, idx) => (
+                      <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fff", padding: "8px 10px", borderRadius: 6, border: "1px solid #cbd5e1" }}>
+                        <div>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>{b.catatan}</div>
+                          <div style={{ fontSize: 10, color: "#64748b" }}>{b.tanggal}</div>
+                        </div>
+                        <span style={{ fontSize: 13, fontWeight: 800, color: "#059669" }}>+Rp {b.jumlah.toLocaleString("id")}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: getStatus(dipilih) === "Belum Dibayar" ? "1fr 1fr" : "1fr", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: dipilih.status === "Belum Dibayar" ? "1fr 1fr" : "1fr", gap: 10 }}>
               <button className="btn btn-ghost" onClick={() => setDipilih(null)}>Tutup</button>
-              {getStatus(dipilih) === "Belum Dibayar" && (
-                <button className="btn btn-accent" onClick={() => bayarHonor(dipilih.id)}>
-                  Cairkan Honor
-                </button>
+              {dipilih.status === "Belum Dibayar" && (
+                <button className="btn btn-accent" onClick={() => bayarHonor(dipilih.id)}>Cairkan Honor</button>
               )}
             </div>
           </div>
