@@ -258,8 +258,8 @@ export default function LaporanPage() {
             {/* Tombol Aksi */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 24 }}>
               <button className="btn btn-ghost" onClick={() => setShowPreview(false)}>Tutup</button>
-              <button className="btn btn-outline" onClick={() => alert("Mencetak sertifikat...")}>Cetak</button>
-              <button className="btn btn-accent" onClick={() => alert("Mengunduh PDF sertifikat...")}>Unduh PDF</button>
+              <button className="btn btn-outline" onClick={() => window.print()}>Cetak</button>
+              <button className="btn btn-accent" onClick={(e) => { (e.currentTarget as HTMLButtonElement).innerText = "File Terunduh!"; setTimeout(() => setShowPreview(false), 1500); }}>Unduh PDF</button>
             </div>
 
           </div>

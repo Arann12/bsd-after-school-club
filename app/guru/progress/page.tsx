@@ -42,6 +42,7 @@ export default function GuruProgressPage() {
   const [progressList, setProgressList] = useState<ProgressItem[]>(initialProgress);
   const [showInputModal, setShowInputModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<string>("Andi Setiawan");
+  const [notifToast, setNotifToast] = useState<string | null>(null);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -55,6 +56,16 @@ export default function GuruProgressPage() {
           + Input Progress Belajar Siswa
         </button>
       </div>
+
+      {/* Notification Toast Inline */}
+      {notifToast && (
+        <div style={{ background: "#d1fae5", border: "1.5px solid #6ee7b7", borderRadius: 12, padding: "12px 18px", color: "#047857", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}>
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          {notifToast}
+        </div>
+      )}
 
       {/* Rincian Progress Siswa */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 16 }}>
@@ -125,7 +136,7 @@ export default function GuruProgressPage() {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10 }}>
                 <button className="btn btn-ghost" onClick={() => setShowInputModal(false)}>Batal</button>
-                <button className="btn btn-accent" onClick={() => { alert("Progress belajar tersimpan!"); setShowInputModal(false); }}>Simpan Progress</button>
+                <button className="btn btn-accent" onClick={() => { setNotifToast("Progress belajar siswa berhasil tersimpan!"); setTimeout(() => setNotifToast(null), 3000); setShowInputModal(false); }}>Simpan Progress</button>
               </div>
             </div>
           </div>

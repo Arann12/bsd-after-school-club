@@ -30,6 +30,8 @@ export default function OwnerPenilaianSertifikatPage() {
   const [writingScore, setWritingScore] = useState(88);
   const [logicScore, setLogicScore] = useState(92);
 
+  const [notifToast, setNotifToast] = useState<string | null>(null);
+
   const handleGenerateCertificate = (siswa: StudentAssessment) => {
     const avgScore = Math.round((readingScore + writingScore + logicScore) / 3);
     const finalGrade = avgScore >= 90 ? "A (Dengan Pujian)" : avgScore >= 80 ? "B (Sangat Baik)" : "C (Baik)";
@@ -53,7 +55,8 @@ export default function OwnerPenilaianSertifikatPage() {
     );
 
     setSelectedStudent(null);
-    alert(`Sertifikat ${siswa.namaSiswa} berhasil digenerate dan sekarang dapat diunduh oleh Orang Tua!`);
+    setNotifToast(`Sertifikat ${siswa.namaSiswa} berhasil digenerate dan sekarang dapat diunduh oleh Orang Tua!`);
+    setTimeout(() => setNotifToast(null), 3000);
   };
 
   return (
@@ -68,6 +71,16 @@ export default function OwnerPenilaianSertifikatPage() {
           Modul Cetak Sertifikat &rarr;
         </Link>
       </div>
+
+      {/* Notification Toast Inline */}
+      {notifToast && (
+        <div style={{ background: "#d1fae5", border: "1.5px solid #6ee7b7", borderRadius: 12, padding: "12px 18px", color: "#047857", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}>
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          {notifToast}
+        </div>
+      )}
 
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>

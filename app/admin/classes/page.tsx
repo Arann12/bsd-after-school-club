@@ -308,7 +308,7 @@ export default function AdminClassesPage() {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
                 <button className="btn btn-ghost" onClick={() => setSelectedClass(null)}>Tutup</button>
-                <button className="btn btn-accent" onClick={() => alert(`Kelola anggota siswa kelas ${selectedClass.id}`)}>+ Masukkan Siswa</button>
+                <button className="btn btn-accent" onClick={() => setSelectedClass(null)}>+ Masukkan Siswa</button>
               </div>
             </div>
           </div>

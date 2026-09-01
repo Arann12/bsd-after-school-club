@@ -336,7 +336,7 @@ export default function AdminGuruPage() {
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
                 <button className="btn btn-ghost" onClick={() => setShowTambahModal(false)}>Batal</button>
-                <button className="btn btn-accent" onClick={() => { alert("Guru baru berhasil ditambahkan!"); setShowTambahModal(false); }}>Simpan Guru</button>
+                <button className="btn btn-accent" onClick={() => setShowTambahModal(false)}>Simpan Guru</button>
               </div>
             </div>
           </div>

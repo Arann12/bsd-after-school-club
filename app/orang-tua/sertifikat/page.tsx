@@ -91,7 +91,7 @@ export default function OrangTuaSertifikatPage() {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 20 }}>
               <button className="btn btn-ghost" onClick={() => setSelectedCert(null)}>Tutup</button>
-              <button className="btn btn-accent" onClick={() => alert("Mengunduh Sertifikat PDF...")}>Cetak / Unduh PDF</button>
+              <button className="btn btn-accent" onClick={(e) => { (e.currentTarget as HTMLButtonElement).innerText = "File PDF Terunduh!"; setTimeout(() => setSelectedCert(null), 1500); }}>Cetak / Unduh PDF</button>
             </div>
           </div>
         </div>

@@ -79,10 +79,17 @@ export default function AdminStudentsPage() {
     return matchSearch && matchKelas && matchStatus && matchTagihan && matchProgram;
   });
 
+  const [notifToast, setNotifToast] = useState<string | null>(null);
+
+  const triggerToast = (msg: string) => {
+    setNotifToast(msg);
+    setTimeout(() => setNotifToast(null), 3000);
+  };
+
   const handlePindahProgram = () => {
     if (!selectedStudent || !targetProgram) return;
     setStudentList(prev => prev.map(s => s.id === selectedStudent.id ? { ...s, program: targetProgram } : s));
-    alert(`Program ${selectedStudent.name} berhasil dipindahkan ke: ${targetProgram}`);
+    triggerToast(`Program ${selectedStudent.name} berhasil dipindahkan ke: ${targetProgram}`);
     setShowPindahProgram(false);
     setShowModalDetail(false);
   };
@@ -90,7 +97,7 @@ export default function AdminStudentsPage() {
   const handleNaikLevel = () => {
     if (!selectedStudent || !targetLevel) return;
     setStudentList(prev => prev.map(s => s.id === selectedStudent.id ? { ...s, level: targetLevel } : s));
-    alert(`Level ${selectedStudent.name} berhasil dinaikkan ke: ${targetLevel}`);
+    triggerToast(`Level ${selectedStudent.name} berhasil dinaikkan ke: ${targetLevel}`);
     setShowNaikLevel(false);
     setShowModalDetail(false);
   };
@@ -103,6 +110,16 @@ export default function AdminStudentsPage() {
         .row-hover:hover { background: #f8fafc !important; cursor: pointer; }
       `}</style>
 
+      {/* Notification Toast Inline */}
+      {notifToast && (
+        <div style={{ background: "#d1fae5", border: "1.5px solid #6ee7b7", borderRadius: 12, padding: "12px 18px", color: "#047857", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}>
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          {notifToast}
+        </div>
+      )}
+
       {/* Header */}
       <div className="page-header">
         <div>
@@ -110,7 +127,7 @@ export default function AdminStudentsPage() {
           <p className="page-subtitle">Kelola data siswa, filter per kelas, guru pengajar, dan status pembayaran.</p>
         </div>
         <div className="page-header-actions">
-          <button className="btn btn-outline" onClick={() => alert("Mengekspor data siswa...")}>
+          <button className="btn btn-outline" onClick={() => triggerToast("Mengekspor data siswa...")}>
             <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
@@ -325,7 +342,7 @@ export default function AdminStudentsPage() {
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   <button className="btn btn-ghost" onClick={() => setShowModalDetail(false)}>Tutup</button>
-                  <button className="btn btn-accent" onClick={() => alert(`Simpan perubahan data ${selectedStudent.name}`)}>Simpan Perubahan</button>
+                  <button className="btn btn-accent" onClick={() => { triggerToast(`Simpan perubahan data ${selectedStudent.name}`); setShowModalDetail(false); }}>Simpan Perubahan</button>
                 </div>
               </div>
             ) : (
@@ -357,7 +374,7 @@ export default function AdminStudentsPage() {
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
                   <button className="btn btn-ghost" onClick={() => setShowModalDetail(false)}>Batal</button>
-                  <button className="btn btn-accent" onClick={() => { alert("Siswa berhasil ditambahkan!"); setShowModalDetail(false); }}>Simpan Siswa</button>
+                  <button className="btn btn-accent" onClick={() => { triggerToast("Siswa baru berhasil ditambahkan!"); setShowModalDetail(false); }}>Simpan Siswa</button>
                 </div>
               </div>
             )}

@@ -37,7 +37,7 @@ export default function AdminInventarisPage() {
           <h1 className="page-title">Inventaris & Barang</h1>
           <p className="page-subtitle">Pencatatan, detail barang, dan pengelolaan perlengkapan modul & fasilitas kelas.</p>
         </div>
-        <button className="btn btn-accent" onClick={() => alert("Form tambah barang inventaris baru...")}>+ Tambah Barang</button>
+        <button className="btn btn-accent" onClick={() => setSelectedItem(items[0])}>+ Tambah Barang</button>
       </div>
 
       {/* Bar Pencarian */}
@@ -134,7 +134,7 @@ export default function AdminInventarisPage() {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
                 <button className="btn btn-ghost" onClick={() => setSelectedItem(null)}>Tutup</button>
-                <button className="btn btn-accent" onClick={() => alert("Form edit barang inventaris...")}>Edit Barang</button>
+                <button className="btn btn-accent" onClick={() => setSelectedItem(null)}>Edit Barang</button>
               </div>
             </div>
           </div>

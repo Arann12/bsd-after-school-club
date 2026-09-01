@@ -214,7 +214,7 @@ export default function PengumumanPage({ peran = "admin" }: Props) {
               <button className="btn btn-ghost" onClick={() => setDipilih(null)}>{bisaKelola ? "Tutup" : "Kembali"}</button>
               {bisaKelola && (
                 <>
-                  <button className="btn btn-outline" onClick={() => alert("Edit pengumuman...")}>Edit</button>
+                  <button className="btn btn-outline" onClick={() => setDipilih(null)}>Edit</button>
                   <button className="btn btn-ghost" style={{ color: "var(--color-danger)", borderColor: "var(--color-danger)" }} onClick={() => hapusPengumuman(dipilih.id)}>Hapus</button>
                 </>
               )}

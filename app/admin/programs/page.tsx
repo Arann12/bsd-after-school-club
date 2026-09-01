@@ -386,7 +386,7 @@ export default function AdminProgramsPage() {
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
                 <button className="btn btn-ghost" onClick={() => setShowEditModal(false)}>Batal</button>
-                <button className="btn btn-accent" onClick={() => { alert("Program berhasil disimpan!"); setShowEditModal(false); }}>Simpan Program</button>
+                <button className="btn btn-accent" onClick={() => setShowEditModal(false)}>Simpan Program</button>
               </div>
             </div>
           </div>

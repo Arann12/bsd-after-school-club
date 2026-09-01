@@ -208,7 +208,7 @@ export default function AdminLevelPage() {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
                 <button className="btn btn-ghost" onClick={() => setShowModal(false)}>Batal</button>
-                <button className="btn btn-accent" onClick={() => { alert("Tingkatan level disimpan!"); setShowModal(false); }}>Simpan Level</button>
+                <button className="btn btn-accent" onClick={() => setShowModal(false)}>Simpan Level</button>
               </div>
             </div>
           </div>

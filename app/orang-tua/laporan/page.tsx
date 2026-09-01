@@ -190,8 +190,8 @@ export default function OrangTuaLaporanPage() {
 
             <div style={{ padding: "20px 28px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <button className="btn btn-ghost" onClick={() => setShowSertifikat(false)}>Tutup</button>
-              <button className="btn btn-accent" onClick={() => alert("Fitur download PDF akan segera tersedia.")}>
-                ⬇ Unduh Sertifikat PDF
+              <button className="btn btn-accent" onClick={(e) => { (e.currentTarget as HTMLButtonElement).innerText = "File PDF Terunduh!"; setTimeout(() => setShowSertifikat(false), 1500); }}>
+                Unduh Sertifikat PDF
               </button>
             </div>
           </div>

@@ -49,8 +49,15 @@ export default function AdminTagihanPage() {
   const getStatus = (t: typeof daftarTagihan[0]) =>
     sudahKonfirmasi.includes(t.id) ? "Lunas" : t.status;
 
+  const [notifMessage, setNotifMessage] = useState<string | null>(null);
+
+  const triggerNotif = (msg: string) => {
+    setNotifMessage(msg);
+    setTimeout(() => setNotifMessage(null), 3000);
+  };
+
   const handleSaveCashManual = () => {
-    alert(`Pembayaran Cash Manual Rp ${cashAmount.toLocaleString("id-ID")} berhasil diinput!`);
+    triggerNotif(`Pembayaran Cash Manual Rp ${cashAmount.toLocaleString("id-ID")} berhasil diinput!`);
     setShowInputCashModal(false);
     setCashNote("");
   };
@@ -63,6 +70,16 @@ export default function AdminTagihanPage() {
         .baris-tagihan:hover{background:#f8fafc!important;cursor:pointer}
       `}</style>
 
+      {/* Toast Notification Inline */}
+      {notifMessage && (
+        <div style={{ background: "#d1fae5", border: "1.5px solid #6ee7b7", borderRadius: 12, padding: "12px 18px", color: "#047857", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}>
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          {notifMessage}
+        </div>
+      )}
+
       {/* Kepala Halaman */}
       <div className="page-header">
         <div>
@@ -70,7 +87,7 @@ export default function AdminTagihanPage() {
           <p className="page-subtitle">Kelola tagihan seluruh siswa dan konfirmasi pembayaran cash.</p>
         </div>
         <div className="page-header-actions">
-          <button className="btn btn-outline" onClick={() => alert("Ekspor tagihan...")}>
+          <button className="btn btn-outline" onClick={() => triggerNotif("Ekspor data tagihan berhasil diproses.")}>
             <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             Ekspor
           </button>

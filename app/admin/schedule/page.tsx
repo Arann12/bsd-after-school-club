@@ -243,7 +243,7 @@ export default function AdminSchedulePage() {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
                 <button className="btn btn-ghost" onClick={() => setSelectedSession(null)}>Tutup</button>
-                <button className="btn btn-accent" onClick={() => { alert("Reschedule jadwal diproses"); setSelectedSession(null); }}>Reschedule Sesi</button>
+                <button className="btn btn-accent" onClick={() => setSelectedSession(null)}>Reschedule Sesi</button>
               </div>
             </div>
           </div>
@@ -289,7 +289,7 @@ export default function AdminSchedulePage() {
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
                 <button className="btn btn-ghost" onClick={() => setShowAddModal(false)}>Batal</button>
-                <button className="btn btn-accent" onClick={() => { alert("Sesi jadwal ditambahkan!"); setShowAddModal(false); }}>Simpan Sesi</button>
+                <button className="btn btn-accent" onClick={() => setShowAddModal(false)}>Simpan Sesi</button>
               </div>
             </div>
           </div>

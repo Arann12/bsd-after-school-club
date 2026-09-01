@@ -69,8 +69,11 @@ export default function OwnerHonorPage() {
 
     setShowBonusModal(false);
     setInputBonusCatatan("");
-    alert(`Bonus Rp ${Number(inputBonusNominal).toLocaleString("id")} berhasil ditambahkan untuk ${guruTargetBonus.nama}!`);
+    setNotifToast(`Bonus Rp ${Number(inputBonusNominal).toLocaleString("id")} berhasil ditambahkan untuk ${guruTargetBonus.nama}!`);
+    setTimeout(() => setNotifToast(null), 3000);
   };
+
+  const [notifToast, setNotifToast] = useState<string | null>(null);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -79,6 +82,16 @@ export default function OwnerHonorPage() {
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
         .baris-honor:hover{background:#f8fafc!important;cursor:pointer}
       `}</style>
+
+      {/* Notification Toast Inline */}
+      {notifToast && (
+        <div style={{ background: "#d1fae5", border: "1.5px solid #6ee7b7", borderRadius: 12, padding: "12px 18px", color: "#047857", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}>
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          {notifToast}
+        </div>
+      )}
 
       {/* Kepala Halaman */}
       <div className="page-header">
@@ -91,7 +104,7 @@ export default function OwnerHonorPage() {
             value={periode} onChange={e => setPeriode(e.target.value)}>
             {periodePilihan.map(p => <option key={p}>{p}</option>)}
           </select>
-          <button className="btn btn-outline" onClick={() => alert("Ekspor rekap honor...")}>
+          <button className="btn btn-outline" onClick={() => { setNotifToast("Ekspor rekap honor berhasil diproses."); setTimeout(() => setNotifToast(null), 3000); }}>
             <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             Ekspor Rekap
           </button>

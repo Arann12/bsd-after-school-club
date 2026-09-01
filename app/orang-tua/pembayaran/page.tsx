@@ -700,7 +700,7 @@ export default function PembayaranPage() {
             Riwayat Pembayaran
           </h2>
           <button
-            onClick={() => alert("Mengunduh Laporan Pembayaran...")}
+            onClick={() => window.print()}
             style={{
               background: "transparent",
               border: "none",

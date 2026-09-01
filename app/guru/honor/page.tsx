@@ -146,9 +146,12 @@ export default function GuruHonorJamPage() {
   const totalJamBulanIni = filteredLogs.reduce((acc, l) => acc + l.durasiJam, 0);
   const totalSesi = filteredLogs.length;
 
+  const [notifToast, setNotifToast] = useState<string | null>(null);
+
   const handleAjukanKoreksi = (e: React.FormEvent) => {
     e.preventDefault();
-    alert(`Pengajuan koreksi jam mengajar tanggal ${koreksiTanggal} (${koreksiDurasi} Jam) telah terkirim ke Admin & Owner.`);
+    setNotifToast(`Pengajuan koreksi jam mengajar tanggal ${koreksiTanggal} (${koreksiDurasi} Jam) telah terkirim ke Admin & Owner.`);
+    setTimeout(() => setNotifToast(null), 3500);
     setShowKoreksiModal(false);
     setKoreksiTanggal("");
     setKoreksiAlasan("");
@@ -178,6 +181,16 @@ export default function GuruHonorJamPage() {
           </button>
         </div>
       </div>
+
+      {/* Notification Toast Inline */}
+      {notifToast && (
+        <div style={{ background: "#d1fae5", border: "1.5px solid #6ee7b7", borderRadius: 12, padding: "12px 18px", color: "#047857", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}>
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          {notifToast}
+        </div>
+      )}
 
       {/* Info Banner Kebijakan Kerahasiaan Honor */}
       <div style={{ background: "#eff6ff", border: "1.5px solid #bfdbfe", borderRadius: 12, padding: "14px 18px", color: "#1e40af", fontSize: 13, lineHeight: 1.5, display: "flex", alignItems: "center", gap: 12 }}>

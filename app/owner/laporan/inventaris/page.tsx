@@ -20,7 +20,7 @@ export default function OwnerLaporanInventarisPage() {
           <p className="page-subtitle">Laporan bulanan/tahunan kondisi fasilitas, alat peraga, dan aset BSD After School Club.</p>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
-          <button className="btn btn-outline" onClick={() => alert("Mengunduh laporan PDF...")}>Cetak PDF Laporan</button>
+          <button className="btn btn-outline" onClick={() => window.print()}>Cetak PDF Laporan</button>
           <Link href="/owner/inventaris" className="btn btn-accent">Ke Daftar Inventaris &rarr;</Link>
         </div>
       </div>
@@ -66,7 +66,7 @@ export default function OwnerLaporanInventarisPage() {
                 <td style={{ padding: "14px 16px", fontWeight: 800, color: "#1d4ed8", fontSize: 14 }}>{row.totalNilaiAset}</td>
                 <td style={{ padding: "14px 16px", fontSize: 12.5, color: "var(--color-text-muted)" }}>{row.pj}</td>
                 <td style={{ padding: "14px 16px" }}>
-                  <button className="btn btn-outline btn-sm" onClick={() => alert(`Membuka rincian PDF laporan ${row.bulan}`)}>Unduh PDF</button>
+                  <button className="btn btn-outline btn-sm" onClick={() => window.print()}>Unduh PDF</button>
                 </td>
               </tr>
             ))}

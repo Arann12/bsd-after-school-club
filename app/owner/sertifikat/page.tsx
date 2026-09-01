@@ -24,6 +24,7 @@ export default function SertifikatPage() {
   const [search, setSearch] = useState("");
   const [selectedCert, setSelectedCert] = useState<CertificateItem | null>(null);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [notifToast, setNotifToast] = useState<string | null>(null);
 
   const filtered = certList.filter(c =>
     c.namaSiswa.toLowerCase().includes(search.toLowerCase()) ||
@@ -48,6 +49,16 @@ export default function SertifikatPage() {
           + Terbitkan Sertifikat Baru
         </button>
       </div>
+
+      {/* Notification Toast Inline */}
+      {notifToast && (
+        <div style={{ background: "#d1fae5", border: "1.5px solid #6ee7b7", borderRadius: 12, padding: "12px 18px", color: "#047857", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}>
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          {notifToast}
+        </div>
+      )}
 
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
@@ -154,7 +165,7 @@ export default function SertifikatPage() {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 24 }}>
               <button className="btn btn-ghost" onClick={() => setSelectedCert(null)}>Tutup Pratinjau</button>
-              <button className="btn btn-accent" onClick={() => alert("Mengunduh Sertifikat PDF...")}>
+              <button className="btn btn-accent" onClick={() => { setNotifToast("Mengunduh file PDF sertifikat..."); setTimeout(() => setNotifToast(null), 3000); }}>
                 Unduh Sertifikat (PDF)
               </button>
             </div>
@@ -197,7 +208,7 @@ export default function SertifikatPage() {
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
                 <button className="btn btn-ghost" onClick={() => setShowGenerateModal(false)}>Batal</button>
-                <button className="btn btn-accent" onClick={() => { alert("Sertifikat berhasil diterbitkan!"); setShowGenerateModal(false); }}>Terbitkan Sertifikat</button>
+                <button className="btn btn-accent" onClick={() => { setNotifToast("Sertifikat berhasil diterbitkan!"); setTimeout(() => setNotifToast(null), 3000); setShowGenerateModal(false); }}>Terbitkan Sertifikat</button>
               </div>
             </div>
           </div>
