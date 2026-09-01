@@ -124,7 +124,7 @@ export default function SertifikatPage() {
         <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.65)", backdropFilter: "blur(6px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease-out" }}>
           <div style={{ background: "#fff", borderRadius: 20, maxWidth: 680, width: "100%", padding: 32, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.3)", animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1)", border: "8px double #cbd5e1" }}>
             <div style={{ textAlign: "center", borderBottom: "2px solid #e2e8f0", paddingBottom: 16, marginBottom: 20 }}>
-              <div style={{ fontSize: 12, tracking: "0.2em", fontWeight: 800, color: "var(--color-primary)", textTransform: "uppercase" }}>BSD AFTER SCHOOL CLUB</div>
+              <div style={{ fontSize: 12, letterSpacing: "0.2em", fontWeight: 800, color: "var(--color-primary)", textTransform: "uppercase" }}>BSD AFTER SCHOOL CLUB</div>
               <h1 style={{ fontSize: 24, fontFamily: "serif", fontWeight: 900, color: "#0f172a", margin: "6px 0 0" }}>SERTIFIKAT KELULUSAN</h1>
               <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 4 }}>Nomor: {selectedCert.nomorSertifikat}</div>
             </div>

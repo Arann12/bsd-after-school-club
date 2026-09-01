@@ -127,7 +127,7 @@ export default function AdminLevelPage() {
                       border: "1px solid var(--color-border)",
                       display: "flex",
                       flexDirection: "column",
-                      justify: "space-between",
+                      justifyContent: "space-between",
                       gap: 10,
                     }}
                   >
