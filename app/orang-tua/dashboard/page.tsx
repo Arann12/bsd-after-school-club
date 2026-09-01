@@ -26,7 +26,7 @@ export default function OrangTuaDashboardPage() {
           <Link href="/orang-tua/anak" className="btn btn-accent" style={{ textDecoration: "none" }}>
             Lihat Detail Progress
           </Link>
-          <Link href="/orang-tua/pembayaran" className="btn btn-outline" style={{ color: "white", borderColor: "white", textDecoration: "none" }}>
+          <Link href="/orang-tua/pembayaran" className="btn" style={{ background: "#2563eb", color: "#ffffff", border: "1px solid #3b82f6", fontWeight: 700, textDecoration: "none" }}>
             Status SPP
           </Link>
         </div>
