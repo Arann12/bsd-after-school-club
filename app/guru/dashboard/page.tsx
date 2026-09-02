@@ -2,11 +2,11 @@
 import Link from "next/link";
 
 const menuShortcutsGuru = [
+  { label: "Kalender & Logbook", sub: "Klik Tgl 1/5 untuk History", href: "/guru/logbook", color: "#059669", bg: "#d1fae5" },
   { label: "Jadwal Mengajar", sub: "2 Sesi Hari Ini", href: "/guru/jadwal", color: "#1d4ed8", bg: "#dbeafe" },
   { label: "Kelas & Absensi", sub: "Isi Logbook Sesi", href: "/guru/kelas", color: "#7c3aed", bg: "#ede9fe" },
   { label: "Jam Mengajar Saya", sub: "18 Jam Bulan Ini", href: "/guru/honor", color: "#0369a1", bg: "#e0f2fe" },
   { label: "Pengumuman", sub: "1 Pengumuman Baru", href: "/guru/pengumuman", color: "#b45309", bg: "#fef3c7" },
-  { label: "Logbook Lengkap", sub: "100% Terisi", href: "/guru/logbook", color: "#059669", bg: "#d1fae5" },
 ];
 
 // Siswa yang perlu diperhatikan (belum bayar / absensi sering kosong)
