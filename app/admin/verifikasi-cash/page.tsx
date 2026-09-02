@@ -51,13 +51,26 @@ export default function AdminVerifikasiCashPage() {
         </div>
       </div>
 
+      {/* Banner Aturan ACC Pembayaran */}
+      <div style={{ background: "#f0f9ff", border: "1.5px solid #bae6fd", borderRadius: 12, padding: "14px 18px", color: "#0369a1", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#e0f2fe", color: "#0284c7", fontWeight: 800, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          i
+        </div>
+        <div>
+          <div style={{ fontWeight: 800, color: "#0c4a6e", fontSize: 13.5 }}>Ketentuan ACC & Verifikasi Pembayaran</div>
+          <div style={{ fontSize: 12, color: "#0284c7", marginTop: 2 }}>
+            Sistem ACC / Verifikasi Pembayaran <strong>hanya diperuntukkan bagi pembayaran Cash (Tunai)</strong>. Pembayaran selain Cash (Virtual Account BCA/Mandiri, QRIS, E-Wallet, Transfer Bank) <strong>secara otomatis terverifikasi LUNAS</strong> oleh sistem Payment Gateway tanpa memerlukan ACC manual.
+          </div>
+        </div>
+      </div>
+
       {/* Notification Toast Inline */}
       {showNotification && (
         <div style={{ background: "#d1fae5", border: "1.5px solid #6ee7b7", borderRadius: 12, padding: "12px 18px", color: "#047857", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}>
           <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12" />
           </svg>
-          Pembayaran tunai / cash berhasil diverifikasi dan disetujui!
+          Pembayaran tunai / cash berhasil diverifikasi dan disetujui (ACC)!
         </div>
       )}
 
