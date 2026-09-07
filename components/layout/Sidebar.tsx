@@ -225,8 +225,8 @@ export const ownerNav: NavSection[] = [
   {
     section: "LAPORAN",
     items: [
-      { label: "Laporan Keuangan", href: "/owner/laporan", icon: "BarChart2" },
-      { label: "Laporan Kehadiran", href: "/owner/laporan", icon: "ClipboardCheck" },
+      { label: "Laporan Keuangan", href: "/owner/laporan/keuangan", icon: "BarChart2" },
+      { label: "Laporan Kehadiran", href: "/owner/laporan/kehadiran", icon: "ClipboardCheck" },
       { label: "Laporan Inventaris", href: "/owner/laporan/inventaris", icon: "FileText" },
     ],
   },
@@ -328,14 +328,12 @@ interface SidebarProps {
   nav: NavSection[];
   roleName: string;
   brandName?: string;
-  showLogout?: boolean;
 }
 
 function SidebarBase({
   nav,
   roleName,
   brandName = "BSD After School Club",
-  showLogout = true,
 }: SidebarProps) {
   const pathname = usePathname();
 
@@ -397,20 +395,6 @@ function SidebarBase({
           </div>
         ))}
       </nav>
-
-      {/* Bottom Logout Button */}
-      {showLogout && (
-        <div style={{ padding: "16px", borderTop: "1px solid var(--color-border-light)" }}>
-          <a
-            href="/"
-            className="sidebar-nav-item"
-            style={{ color: "var(--color-text-muted)", margin: 0 }}
-          >
-            <Icons.LogOut />
-            <span>Keluar</span>
-          </a>
-        </div>
-      )}
     </aside>
   );
 }
@@ -419,15 +403,15 @@ function SidebarBase({
 /* Role-specific exports                                               */
 /* ------------------------------------------------------------------ */
 export function OwnerSidebar() {
-  return <SidebarBase nav={ownerNav} roleName="Owner Dashboard" showLogout={true} />;
+  return <SidebarBase nav={ownerNav} roleName="Owner Dashboard" />;
 }
 
 export function AdminSidebar() {
-  return <SidebarBase nav={adminNav} roleName="Admin Dashboard" showLogout={true} />;
+  return <SidebarBase nav={adminNav} roleName="Admin Dashboard" />;
 }
 
 export function GuruSidebar() {
-  return <SidebarBase nav={guruNav} roleName="Panel Guru" showLogout={true} />;
+  return <SidebarBase nav={guruNav} roleName="Panel Guru" />;
 }
 
 export function OrangTuaSidebar() {
@@ -436,7 +420,6 @@ export function OrangTuaSidebar() {
       nav={orangTuaNav}
       roleName="Panel Orang Tua"
       brandName="KlubAnak"
-      showLogout={true}
     />
   );
 }

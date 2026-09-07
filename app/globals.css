@@ -1450,6 +1450,31 @@ html, body {
 /* ============================================================
    RESPONSIVE
    ============================================================ */
+.hamburger-btn {
+  display: none;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-primary);
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.hamburger-btn:hover { background: var(--color-bg); }
+
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  z-index: 35;
+  animation: fadeIn 0.2s ease-out;
+}
+
 @media (max-width: 1200px) {
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
   .grid-3-2 { grid-template-columns: 1fr; }
@@ -1467,6 +1492,8 @@ html, body {
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
   .page-content { padding: var(--space-4); }
   .header { padding: 0 var(--space-4); }
+  .hamburger-btn { display: flex; }
+  .sidebar-backdrop { display: block; }
 }
 
 @media (max-width: 480px) {
