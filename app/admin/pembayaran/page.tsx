@@ -44,6 +44,14 @@ export default function FinancePembayaranPage() {
         </div>
       </div>
 
+      {/* Info Banner Aturan ACC */}
+      <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 12, padding: "12px 18px", color: "#166534", fontSize: 12.5, fontWeight: 600, display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ fontSize: 16 }}>ℹ</span>
+        <span>
+          <strong>Aturan ACC Sistem:</strong> Pembayaran selain Cash (VA BCA, QRIS, Transfer Mandiri, E-Wallet) <strong>terverifikasi OTOMATIS LUNAS</strong> secara langsung. ACC manual hanya dilakukan untuk pembayaran <strong>Cash / Tunai</strong> pada menu Verifikasi Cash.
+        </span>
+      </div>
+
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
         {[

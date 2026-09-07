@@ -309,6 +309,7 @@ export const guruNav: NavSection[] = [
     items: [
       { label: "Jadwal Mengajar", href: "/guru/jadwal", icon: "Calendar" },
       { label: "Kelas & Absensi", href: "/guru/kelas", icon: "UserCheck" },
+      { label: "Kalender & Logbook", href: "/guru/logbook", icon: "ClipboardCheck" },
       { label: "Pengumuman", href: "/guru/pengumuman", icon: "Bell" },
     ],
   },

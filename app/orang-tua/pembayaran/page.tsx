@@ -777,7 +777,8 @@ export default function PembayaranPage() {
             <li>Pembayaran tagihan maksimal dilakukan sebelum pertemuan dimulai.</li>
             <li>Pertemuan yang jatuh pada hari libur nasional (tanggal merah) tidak dikenakan biaya dan jadwal akan digeser ke pertemuan berikutnya.</li>
             <li>Jika anak izin (dengan pemberitahuan maksimal H-1), pertemuan dapat di-reschedule tanpa biaya tambahan (maksimal 2x per bulan).</li>
-            <li>Pembayaran secara cash (tunai) di cabang wajib memberikan bukti struk kepada Admin untuk diverifikasi pada sistem.</li>
+            <li><strong>Pembayaran Non-Cash (VA, QRIS, E-Wallet):</strong> Terverifikasi <strong>OTOMATIS LUNAS</strong> secara instan oleh sistem payment gateway.</li>
+            <li><strong>Pembayaran Cash (Tunai):</strong> Menunggu proses <strong>ACC / Verifikasi Kasir Admin</strong> di cabang.</li>
           </ul>
         </div>
       </div>
@@ -1385,10 +1386,18 @@ export default function PembayaranPage() {
                 </div>
 
                 <h3 style={{ fontSize: 20, fontWeight: 800, color: "#1e293b", marginBottom: 6 }}>
-                  Pembayaran Berhasil!
+                  {selectedMethod === "cash" ? "Bukti Cash Terkirim!" : "Pembayaran Otomatis Lunas!"}
                 </h3>
-                <p style={{ fontSize: 13, color: "#64748b", marginBottom: 20, lineHeight: 1.4 }}>
-                  Transaksi pembayaran sebesar <strong>{totalAmount}</strong> untuk <strong>{selectedChild.name}</strong> telah berhasil dicatat. Status di riwayat telah diperbarui.
+                <p style={{ fontSize: 13, color: "#64748b", marginBottom: 20, lineHeight: 1.5 }}>
+                  {selectedMethod === "cash" ? (
+                    <>
+                      Bukti pembayaran tunai sebesar <strong>{totalAmount}</strong> untuk <strong>{selectedChild.name}</strong> telah berhasil terkirim. Status saat ini: <strong>Menunggu ACC / Verifikasi Kasir Admin</strong>.
+                    </>
+                  ) : (
+                    <>
+                      Transaksi sebesar <strong>{totalAmount}</strong> untuk <strong>{selectedChild.name}</strong> telah <strong>terverifikasi OTOMATIS LUNAS</strong> oleh sistem Payment Gateway.
+                    </>
+                  )}
                 </p>
 
                 <button
