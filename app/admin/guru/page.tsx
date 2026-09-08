@@ -112,9 +112,6 @@ export default function AdminGuruPage() {
           <h1 className="page-title">Guru & Staff Pengajar</h1>
           <p className="page-subtitle">Kelola data tenaga pengajar, rincian rekening, honor, kontak WhatsApp, dan absensi.</p>
         </div>
-        <button className="btn btn-accent" onClick={() => setShowTambahModal(true)}>
-          + Tambah Guru Baru
-        </button>
       </div>
 
       {/* Stats */}

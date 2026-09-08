@@ -231,9 +231,16 @@ export const ownerNav: NavSection[] = [
     ],
   },
   {
+    section: "KELOLA AKUN",
+    items: [
+      { label: "Akun Admin", href: "/owner/kelola-akun/admin", icon: "ShieldCheck" },
+      { label: "Akun Guru", href: "/owner/kelola-akun/guru", icon: "GraduationCap" },
+      { label: "Akun Orang Tua", href: "/owner/kelola-akun/orang-tua", icon: "Users" },
+    ],
+  },
+  {
     section: "SYSTEM",
     items: [
-      { label: "Pengaturan Sistem", href: "/settings", icon: "Settings" },
       { label: "Pengaturan Honor", href: "/owner/tarif", icon: "Settings" },
     ],
   },
@@ -275,6 +282,13 @@ export const adminNav: NavSection[] = [
     items: [
       { label: "Inventaris", href: "/admin/inventaris", icon: "Box" },
       { label: "Pengumuman", href: "/admin/pengumuman", icon: "Bell" },
+    ],
+  },
+  {
+    section: "KELOLA AKUN",
+    items: [
+      { label: "Akun Guru", href: "/admin/kelola-akun/guru", icon: "GraduationCap" },
+      { label: "Akun Orang Tua", href: "/admin/kelola-akun/orang-tua", icon: "Users" },
     ],
   },
 ];

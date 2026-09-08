@@ -1,16 +1,9 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { OrangTuaSidebar } from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 
 export default function OrangTuaLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-
-  if (pathname?.endsWith("/login")) {
-    return <>{children}</>;
-  }
-
   return (
     <div className="app-shell">
       <OrangTuaSidebar />

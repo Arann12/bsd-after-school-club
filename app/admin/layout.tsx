@@ -1,16 +1,9 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { AdminSidebar } from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-
-  if (pathname?.endsWith("/login")) {
-    return <>{children}</>;
-  }
-
   return (
     <div className="app-shell">
       <AdminSidebar />

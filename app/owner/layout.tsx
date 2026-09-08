@@ -1,16 +1,9 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { OwnerSidebar } from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 
 export default function OwnerLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-
-  if (pathname?.endsWith("/login")) {
-    return <>{children}</>;
-  }
-
   return (
     <div className="app-shell">
       <OwnerSidebar />

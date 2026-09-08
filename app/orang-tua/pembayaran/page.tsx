@@ -3,14 +3,7 @@
 import React, { useState } from "react";
 
 export default function PembayaranPage() {
-  // State for child selection
-  const [selectedChild, setSelectedChild] = useState({
-    name: "Merta",
-    level: "Phonics Level 2",
-    avatar: "M",
-    avatarColor: "#0284c7",
-  });
-  const [childDropdownOpen, setChildDropdownOpen] = useState(false);
+
 
   // Modal Flow state
   // Steps: null | 'select_method' | 'payment_detail' | 'waiting_confirm' | 'success'
@@ -60,11 +53,6 @@ export default function PembayaranPage() {
       status: "Selesai",
     },
   ]);
-
-  const childrenList = [
-    { name: "Merta", level: "Phonics Level 2", avatar: "M", avatarColor: "#0284c7" },
-    { name: "Budi", level: "Calistung Level 1", avatar: "B", avatarColor: "#d97706" },
-  ];
 
   // Helper bank numbers
   const vaNumbers: Record<string, string> = {
@@ -159,125 +147,6 @@ export default function PembayaranPage() {
           <h1 style={{ fontSize: 24, fontWeight: 800, color: "#1e293b", margin: 0, letterSpacing: "-0.02em" }}>
             Pembayaran
           </h1>
-        </div>
-
-        {/* Child Selector Dropdown */}
-        <div style={{ position: "relative" }}>
-          <button
-            onClick={() => setChildDropdownOpen(!childDropdownOpen)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              background: "#ffffff",
-              border: "1.5px solid #0284c7",
-              borderRadius: 12,
-              padding: "8px 16px 8px 12px",
-              cursor: "pointer",
-              boxShadow: "0 2px 8px rgba(2, 132, 199, 0.08)",
-              transition: "all 0.15s ease",
-            }}
-          >
-            <div
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: "50%",
-                background: "linear-gradient(135deg, #0284c7, #0369a1)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#ffffff",
-                fontWeight: 700,
-                fontSize: 14,
-                flexShrink: 0,
-              }}
-            >
-              {selectedChild.avatar}
-            </div>
-            <div style={{ textAlign: "left" }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#64748b", lineHeight: 1.1 }}>
-                Anak yang Dipilih:
-              </div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
-                <span>{selectedChild.name}</span>
-              </div>
-            </div>
-            <svg
-              width={16}
-              height={16}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#0284c7"
-              strokeWidth={2.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ marginLeft: 8, transform: childDropdownOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </button>
-
-          {childDropdownOpen && (
-            <div
-              style={{
-                position: "absolute",
-                top: "100%",
-                right: 0,
-                marginTop: 6,
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: 12,
-                boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)",
-                zIndex: 50,
-                minWidth: 220,
-                overflow: "hidden",
-              }}
-            >
-              <div style={{ padding: "8px 14px", fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: "1px solid #f1f5f9" }}>
-                Pilih Anak
-              </div>
-              {childrenList.map((child) => (
-                <div
-                  key={child.name}
-                  onClick={() => {
-                    setSelectedChild(child);
-                    setChildDropdownOpen(false);
-                  }}
-                  style={{
-                    padding: "10px 14px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    background: selectedChild.name === child.name ? "#f0f9ff" : "#ffffff",
-                    transition: "background 0.15s",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 30,
-                      height: 30,
-                      borderRadius: "50%",
-                      background: child.avatarColor,
-                      color: "#fff",
-                      fontWeight: 700,
-                      fontSize: 13,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    {child.avatar}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>{child.name}</div>
-                    <div style={{ fontSize: 11, color: "#64748b" }}>{child.level}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
