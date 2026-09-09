@@ -162,7 +162,7 @@ export default function AdminProgramsPage() {
       )}
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
         {[
           { label: "Total Program", value: programList.length, color: "#1d4ed8", bg: "#dbeafe" },
           { label: "Program Aktif", value: programList.filter(p => p.status === "Aktif").length, color: "#059669", bg: "#d1fae5" },
@@ -219,7 +219,7 @@ export default function AdminProgramsPage() {
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, borderTop: "1px solid var(--color-border-light)", paddingTop: 14 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, borderTop: "1px solid var(--color-border-light)", paddingTop: 14 }}>
               {[{ label: "Pertemuan", value: `${p.sessions}x` }, { label: "Harga/sesi", value: `Rp ${p.price.toLocaleString("id-ID")}` }, { label: "Siswa", value: `${p.students} Anak` }].map(s => (
                 <div key={s.label} style={{ textAlign: "center" }}>
                   <div style={{ fontSize: 14, fontWeight: 800, color: "var(--color-text-primary)" }}>{s.value}</div>
@@ -259,7 +259,7 @@ export default function AdminProgramsPage() {
               </div>
 
               {/* Grid Metrics */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                 {[
                   { label: "Jumlah Pertemuan", val: `${selectedProgram.sessions} Sesi` },
                   { label: "Biaya / Pertemuan", val: `Rp ${selectedProgram.price.toLocaleString("id-ID")}` },
@@ -337,7 +337,7 @@ export default function AdminProgramsPage() {
                 )}
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 6 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 6 }}>
                 <button className="btn btn-ghost" onClick={() => setShowDetailModal(false)}>Tutup</button>
                 <button className="btn btn-accent" onClick={() => { setShowDetailModal(false); setShowEditModal(true); }}>Edit Program Ini</button>
               </div>
@@ -367,7 +367,7 @@ export default function AdminProgramsPage() {
                 <label className="form-label">Deskripsi</label>
                 <textarea className="form-input" defaultValue={selectedProgram?.desc || ""} placeholder="Deskripsi program..." style={{ minHeight: 80 }} />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Harga Per Pertemuan (Rp)</label>
                   <input className="form-input" defaultValue={selectedProgram?.price.toString() || ""} placeholder="50000" />
@@ -384,7 +384,7 @@ export default function AdminProgramsPage() {
                   <option>Nonaktif</option>
                 </select>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 8 }}>
                 <button className="btn btn-ghost" onClick={() => setShowEditModal(false)}>Batal</button>
                 <button className="btn btn-accent" onClick={() => setShowEditModal(false)}>Simpan Program</button>
               </div>

@@ -99,7 +99,7 @@ export default function OwnerKelolaAkunAdminPage() {
         </button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
         <div className="stat-card" style={{ gap: 8 }}>
           <span className="stat-card-label">Total Akun Admin</span>
           <div className="stat-card-value" style={{ fontSize: 28, color: "#1d4ed8" }}>{listAdmin.length}</div>
@@ -188,7 +188,7 @@ export default function OwnerKelolaAkunAdminPage() {
                   <div style={{ fontSize: 12.5, color: "var(--color-text-muted)", marginTop: 2 }}>{selectedAdmin.id} · Sejak {selectedAdmin.tglDibuat}</div>
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                 {[
                   { label: "Username", value: selectedAdmin.username },
                   { label: "Status", value: selectedAdmin.status },
@@ -201,7 +201,7 @@ export default function OwnerKelolaAkunAdminPage() {
                   </div>
                 ))}
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginTop: 4 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 4 }}>
                 <button className="btn btn-ghost" onClick={() => setSelectedAdmin(null)}>Tutup</button>
                 <button className="btn btn-outline" onClick={() => openEdit(selectedAdmin)}>Edit</button>
                 <button className="btn" style={{ background: "#fee2e2", color: "#dc2626", fontWeight: 700 }} onClick={() => handleHapus(selectedAdmin.id)}>Hapus</button>
@@ -226,7 +226,7 @@ export default function OwnerKelolaAkunAdminPage() {
                 <label className="form-label">Nama Lengkap</label>
                 <input className="form-input" placeholder="Contoh: Rina Wulandari" value={form.nama} onChange={e => setForm({ ...form, nama: e.target.value })} />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Email</label>
                   <input className="form-input" type="email" placeholder="admin@bsdafterschool.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
@@ -236,7 +236,7 @@ export default function OwnerKelolaAkunAdminPage() {
                   <input className="form-input" placeholder="08xxxxxxxxxx" value={form.hp} onChange={e => setForm({ ...form, hp: e.target.value })} />
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Username</label>
                   <input className="form-input" placeholder="username_login" value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} />
@@ -246,7 +246,7 @@ export default function OwnerKelolaAkunAdminPage() {
                   <input className="form-input" type="password" placeholder="Masukan password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 8 }}>
                 <button className="btn btn-ghost" onClick={() => setShowTambahModal(false)}>Batal</button>
                 <button className="btn btn-accent" onClick={handleTambah}>Simpan Admin</button>
               </div>
@@ -270,7 +270,7 @@ export default function OwnerKelolaAkunAdminPage() {
                 <label className="form-label">Nama Lengkap</label>
                 <input className="form-input" value={editTarget.nama} onChange={e => setEditTarget({ ...editTarget, nama: e.target.value })} />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Email</label>
                   <input className="form-input" type="email" value={editTarget.email} onChange={e => setEditTarget({ ...editTarget, email: e.target.value })} />
@@ -280,7 +280,7 @@ export default function OwnerKelolaAkunAdminPage() {
                   <input className="form-input" value={editTarget.hp} onChange={e => setEditTarget({ ...editTarget, hp: e.target.value })} />
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Username</label>
                   <input className="form-input" value={editTarget.username} onChange={e => setEditTarget({ ...editTarget, username: e.target.value })} />
@@ -293,7 +293,7 @@ export default function OwnerKelolaAkunAdminPage() {
                   </select>
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 8 }}>
                 <button className="btn btn-ghost" onClick={() => setShowEditModal(false)}>Batal</button>
                 <button className="btn btn-accent" onClick={handleEdit}>Simpan Perubahan</button>
               </div>

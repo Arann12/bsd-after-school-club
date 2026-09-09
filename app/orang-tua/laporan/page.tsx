@@ -111,7 +111,7 @@ export default function OrangTuaLaporanPage() {
       </div>
 
       {/* Info Umum */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
         {[
           { label: "Tingkat Kehadiran", val: `${Math.round((dataLaporan.hadir/dataLaporan.totalSesi)*100)}%`, warna: "#059669" },
           { label: "Total Sesi Hadir",  val: `${dataLaporan.hadir}/${dataLaporan.totalSesi}`, warna: "#1d4ed8" },
@@ -188,7 +188,7 @@ export default function OrangTuaLaporanPage() {
               <div style={{ fontSize: 11, color: "rgba(255,255,255,.4)", marginTop: 24 }}>BSD After School Club · 2026</div>
             </div>
 
-            <div style={{ padding: "20px 28px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div style={{ padding: "20px 28px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
               <button className="btn btn-ghost" onClick={() => setShowSertifikat(false)}>Tutup</button>
               <button className="btn btn-accent" onClick={(e) => { (e.currentTarget as HTMLButtonElement).innerText = "File PDF Terunduh!"; setTimeout(() => setShowSertifikat(false), 1500); }}>
                 Unduh Sertifikat PDF

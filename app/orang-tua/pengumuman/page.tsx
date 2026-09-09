@@ -132,7 +132,7 @@ export default function OrangTuaPengumumanPage() {
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#fbbf24", marginTop: 4 }}>& Jadwal Kelas Pengganti</div>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 14 }}>
                     <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: 8, padding: "10px 12px" }}>
                       <div style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", fontWeight: 700 }}>TANGGAL LIBUR</div>
                       <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", marginTop: 2 }}>28 Sep – 6 Okt 2026</div>

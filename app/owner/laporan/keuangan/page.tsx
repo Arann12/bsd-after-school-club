@@ -148,7 +148,7 @@ export default function LaporanKeuanganPage() {
       </div>
 
       {/* Section A: KPI Utama */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
         {[
           { label: "Total Pendapatan", val: fmt(d.pendapatan), color: "#059669", sub: `${persenTarget}% dari target ${fmt(d.target)}`, progress: persenTarget },
           { label: "Total Pengeluaran", val: fmt(d.pengeluaran), color: "#dc2626", sub: `Termasuk honor guru ${fmt(d.honorTotal)}` },
@@ -167,7 +167,7 @@ export default function LaporanKeuanganPage() {
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
         {[
           { label: "Target Pendapatan", val: fmt(d.target), color: "#7c3aed", sub: `${d.target > d.pendapatan ? "Kurang " + fmt(d.target - d.pendapatan) : "Target tercapai!"}` },
           { label: "Total Honor Guru", val: fmt(d.honorTotal), color: "#b45309", sub: `${d.honorGuru.length} guru aktif mengajar` },
@@ -240,7 +240,7 @@ export default function LaporanKeuanganPage() {
       </div>
 
       {/* Section D: Metode Pembayaran */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14 }}>
         {[
           { label: "Digital (VA / QRIS / E-Wallet)", val: fmt(d.digital), p: pct(d.digital, d.pendapatan), color: "#1d4ed8", detail: "Virtual Account, QRIS, GoPay, ShopeePay" },
           { label: "Cash (Tunai)", val: fmt(d.cash), p: pct(d.cash, d.pendapatan), color: "#7c3aed", detail: "Pembayaran langsung di cabang" },

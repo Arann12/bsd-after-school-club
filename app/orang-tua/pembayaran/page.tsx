@@ -270,7 +270,7 @@ export default function PembayaranPage() {
       </div>
 
       {/* ── 3. MIDDLE SECTION: 2 COLUMNS ─────────────────────────────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
         {/* LEFT COLUMN: Detail Program & Progress Pertemuan */}
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {/* Card 1: Detail Program */}
@@ -301,7 +301,7 @@ export default function PembayaranPage() {
               </span>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
               <div>
                 <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, marginBottom: 2 }}>
                   Program
@@ -948,7 +948,7 @@ export default function PembayaranPage() {
                     </div>
 
                     {/* Bank Grid Selector */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 16 }}>
                       {(["BCA", "BNI", "Mandiri", "BRI"] as const).map((bank) => (
                         <button
                           key={bank}
@@ -1089,7 +1089,7 @@ export default function PembayaranPage() {
 
                 {/* ── DETAILS FOR E-WALLET ── */}
                 {selectedMethod === "ewallet" && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 20 }}>
                     {["GoPay", "OVO", "ShopeePay", "DANA"].map((ew) => (
                       <button
                         key={ew}

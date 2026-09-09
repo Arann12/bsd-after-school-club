@@ -25,7 +25,7 @@ export default function OwnerLaporanPage() {
       </div>
 
       {/* Navigation Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
         {/* Laporan Keuangan */}
         <Link href="/owner/laporan/keuangan" style={{ textDecoration: "none" }}>
           <div style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", padding: "28px 24px", boxShadow: "var(--shadow-sm)", cursor: "pointer", transition: "all 0.15s ease", height: "100%", display: "flex", flexDirection: "column" }}

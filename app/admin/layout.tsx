@@ -2,6 +2,7 @@
 
 import { AdminSidebar } from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
+import Breadcrumb from "@/components/ui/Breadcrumb";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -14,7 +15,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           userInitial="A"
           userColor="linear-gradient(135deg, #10b981, #059669)"
         />
-        <main className="page-content">{children}</main>
+        <main className="page-content">
+          <Breadcrumb />
+          {children}
+        </main>
       </div>
     </div>
   );

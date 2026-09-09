@@ -83,7 +83,7 @@ export default function OwnerPenilaianSertifikatPage() {
       )}
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
         {[
           { label: "Total Siswa Terdaftar", value: assessments.length, color: "#1d4ed8" },
           { label: "Sertifikat Sudah Digenerate (Terbuka)", value: assessments.filter(a => a.statusSertifikat === "Sudah Digenerate").length, color: "#059669" },

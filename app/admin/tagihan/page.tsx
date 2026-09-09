@@ -96,7 +96,7 @@ export default function AdminTagihanPage() {
       </div>
 
       {/* Kartu Statistik */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
         {[
           { label: "Total Tagihan",          value: daftarTagihan.length, warna: "#1d4ed8", bg: "#dbeafe" },
           { label: "Lunas",                  value: daftarTagihan.filter(t=>t.status==="Lunas").length + sudahKonfirmasi.length, warna: "#059669", bg: "#d1fae5" },
@@ -206,7 +206,7 @@ export default function AdminTagihanPage() {
             <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "10px 16px", marginBottom: 16, fontFamily: "monospace", fontSize: 13, color: "var(--color-text-muted)", fontWeight: 600 }}>{dipilih.id}</div>
 
             {/* Info Grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 16 }}>
               {[
                 { label: "Nama Siswa", value: dipilih.siswa },
                 { label: "Program", value: dipilih.program },
@@ -270,7 +270,7 @@ export default function AdminTagihanPage() {
               <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "10px 14px", fontSize: 12.5, color: "#166534" }}>
                 Setelah dikonfirmasi, status tagihan berubah menjadi <strong>Lunas</strong> dan nomor transaksi akan digenerate otomatis.
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
                 <button className="btn btn-ghost" onClick={() => { setShowKonfirmasi(false); setDipilih(null); }}>Batal</button>
                 <button className="btn btn-accent" onClick={() => konfirmasi(dipilih.id)}>Konfirmasi Lunas</button>
               </div>
@@ -314,7 +314,7 @@ export default function AdminTagihanPage() {
                 Pembayaran tunai ini akan dicatat langsung sebagai transaksi <strong>Lunas (via Admin)</strong> dan masuk ke laporan keuangan.
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 4 }}>
                 <button className="btn btn-ghost" onClick={() => setShowInputCashModal(false)}>Batal</button>
                 <button className="btn btn-accent" onClick={handleSaveCashManual}>Simpan Cash Manual</button>
               </div>

@@ -56,7 +56,7 @@ export default function GuruKelasListPage() {
       </div>
 
       {/* Stats Ringkasan */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
         <div className="stat-card">
           <span className="stat-card-label">Total Kelas Aktif</span>
           <div className="stat-card-value" style={{ fontSize: 28, color: "#1d4ed8" }}>{datakelas.length} Kelas</div>
@@ -143,7 +143,7 @@ export default function GuruKelasListPage() {
             </div>
 
             {/* Info Detail */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 20 }}>
               {[
                 { label: "Jadwal", val: dipilih.jadwal },
                 { label: "Ruangan", val: dipilih.ruang },
@@ -175,7 +175,7 @@ export default function GuruKelasListPage() {
             </div>
 
             {/* Tombol Aksi */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
               <button className="btn btn-ghost" onClick={() => setDipilih(null)}>Tutup</button>
               <Link href={`/guru/kelas/${dipilih.id}`} className="btn btn-accent" style={{ textDecoration: "none", textAlign: "center" }}>
                 ▶ Mulai Sesi Sekarang

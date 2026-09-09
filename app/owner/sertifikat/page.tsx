@@ -61,7 +61,7 @@ export default function SertifikatPage() {
       )}
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
         {[
           { label: "Total Sertifikat Diterbitkan", value: certList.length, color: "#1d4ed8", bg: "#dbeafe" },
           { label: "Predikat Cumlaude", value: certList.filter(c => c.predikat.includes("Cumlaude")).length, color: "#059669", bg: "#d1fae5" },
@@ -192,7 +192,7 @@ export default function SertifikatPage() {
                   <option>Citra Kirana (Math Level 3)</option>
                 </select>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Nilai Akhir (0-100)</label>
                   <input className="form-input" placeholder="95.0" />

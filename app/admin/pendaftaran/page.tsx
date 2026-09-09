@@ -116,7 +116,7 @@ export default function PendaftaranPage() {
       </div>
 
       {/* Stat Strip */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
         {[
           { label: "Menunggu Review", val: antrian.filter(a=>a.status==="Pending").length,   warna: "#b45309", bg: "#fef3c7" },
           { label: "Disetujui",       val: antrian.filter(a=>a.status==="Approved").length,  warna: "#059669", bg: "#d1fae5" },
@@ -201,7 +201,7 @@ export default function PendaftaranPage() {
                 </select>
               </div>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Nama Lengkap Orang Tua</label>
                   <input className="form-input" placeholder="Contoh: Rina Handayani" value={namaOrtuBaru} onChange={e => setNamaOrtuBaru(e.target.value)} required />
@@ -221,7 +221,7 @@ export default function PendaftaranPage() {
           {/* Data Siswa */}
           <div className="card" style={{ padding: 24 }}>
             <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--color-text-primary)", marginBottom: 16 }}>2. Data Siswa</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 14 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Nama Lengkap Siswa</label>
                 <input className="form-input" placeholder="Contoh: Anisa Putri" value={namaSiswa} onChange={e => setNamaSiswa(e.target.value)} required />
@@ -242,7 +242,7 @@ export default function PendaftaranPage() {
           {/* Program & Kelas */}
           <div className="card" style={{ padding: 24 }}>
             <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--color-text-primary)", marginBottom: 16 }}>3. Program & Penempatan Kelas</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14, marginBottom: 16 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Pilih Program</label>
                 <select className="form-input" value={selectedProgram} onChange={e => setSelectedProgram(e.target.value)}>
@@ -297,7 +297,7 @@ export default function PendaftaranPage() {
             </div>
 
             {/* Info */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 16 }}>
               {[
                 { label: "ID Enrollment", value: dipilih.id },
                 { label: "Status", value: dipilih.status },
@@ -320,7 +320,7 @@ export default function PendaftaranPage() {
                   <label className="form-label">Catatan Admin (opsional)</label>
                   <input className="form-input" placeholder="Contoh: Sudah konfirmasi via WA" value={catatanAdmin} onChange={e => setCatatanAdmin(e.target.value)} />
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
                   <button className="btn btn-ghost" onClick={() => setDipilih(null)}>Tutup</button>
                   <button className="btn btn-outline" style={{ color: "#dc2626", borderColor: "#fca5a5" }} onClick={() => setStatus(dipilih.id, "Rejected")}>Tolak</button>
                   <button className="btn btn-accent" onClick={() => setStatus(dipilih.id, "Approved")}>Setujui</button>

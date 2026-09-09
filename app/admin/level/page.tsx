@@ -187,7 +187,7 @@ export default function AdminLevelPage() {
                 <label className="form-label">Nama Level & Kode</label>
                 <input className="form-input" defaultValue={editingLevel?.levelName || ""} placeholder="Contoh: Calistung Level 1 (Mengenal Abjad)" />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Kode Level Singkat</label>
                   <input className="form-input" defaultValue={editingLevel?.levelCode || ""} placeholder="Level 1 / Starter" />
@@ -206,7 +206,7 @@ export default function AdminLevelPage() {
                 <textarea className="form-input" defaultValue={editingLevel?.kurikulum || ""} placeholder="Ringkasan materi pembelajaran..." style={{ minHeight: 80 }} />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 8 }}>
                 <button className="btn btn-ghost" onClick={() => setShowModal(false)}>Batal</button>
                 <button className="btn btn-accent" onClick={() => setShowModal(false)}>Simpan Level</button>
               </div>

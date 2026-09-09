@@ -204,7 +204,7 @@ export default function GuruHonorJamPage() {
       </div>
 
       {/* Statistik Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
         <div className="stat-card" style={{ gap: 6 }}>
           <span className="stat-card-label" style={{ fontSize: 11.5 }}>Total Jam Mengajar</span>
           <div style={{ fontSize: 30, fontWeight: 800, color: "#1d4ed8", lineHeight: 1.1 }}>
@@ -243,7 +243,7 @@ export default function GuruHonorJamPage() {
         <h3 style={{ fontSize: 14, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 14px" }}>
           Distribusi Jam Mengajar per Program Study
         </h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
           {[
             { program: "Calistung Level 1", jam: 6, sesi: 3, percent: 55, color: "#1d4ed8", bg: "#dbeafe" },
             { program: "Phonics Starter", jam: 3, sesi: 2, percent: 27, color: "#059669", bg: "#d1fae5" },
@@ -432,7 +432,7 @@ export default function GuruHonorJamPage() {
             </div>
 
             {/* Grid Metrics */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 16 }}>
               <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "12px 14px", border: "1px solid var(--color-border)" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Durasi Jam</div>
                 <div style={{ fontSize: 16, fontWeight: 800, color: "#1d4ed8", marginTop: 2 }}>{selectedDetailLog.durasiJam} Jam</div>
@@ -540,7 +540,7 @@ export default function GuruHonorJamPage() {
                 <textarea className="form-input" rows={3} placeholder="Contoh: Mengisi kelas pengganti KLS-B pada tanggal..." required value={koreksiAlasan} onChange={(e) => setKoreksiAlasan(e.target.value)} />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 10 }}>
                 <button type="button" className="btn btn-ghost" onClick={() => setShowKoreksiModal(false)}>Batal</button>
                 <button type="submit" className="btn btn-accent">Kirim Pengajuan</button>
               </div>

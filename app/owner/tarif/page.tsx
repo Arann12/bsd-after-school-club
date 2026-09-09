@@ -87,7 +87,7 @@ export default function OwnerTarifPage() {
 
             {editingId === g.id ? (
               /* Form Edit Mode */
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, borderTop: "1px solid var(--color-border-light)", paddingTop: 16, marginTop: 4 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14, borderTop: "1px solid var(--color-border-light)", paddingTop: 16, marginTop: 4 }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label" style={{ fontSize: 11, fontWeight: 700 }}>Tarif Dasar / Jam (Rp)</label>
                   <input
@@ -119,7 +119,7 @@ export default function OwnerTarifPage() {
               </div>
             ) : (
               /* Read-only View Mode */
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, borderTop: "1px solid var(--color-border-light)", paddingTop: 14, marginTop: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, borderTop: "1px solid var(--color-border-light)", paddingTop: 14, marginTop: 10 }}>
                 <div style={{ background: "var(--color-bg)", padding: "10px 14px", borderRadius: 8, border: "1px solid var(--color-border)" }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Tarif Dasar / Jam</div>
                   <div style={{ fontSize: 16, fontWeight: 800, color: "var(--color-primary)", marginTop: 2 }}>Rp {g.tarifPerJam.toLocaleString("id")}</div>

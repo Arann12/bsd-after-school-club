@@ -26,7 +26,7 @@ export default function OwnerLaporanInventarisPage() {
       </div>
 
       {/* Grid Stats Summary */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
         {[
           { label: "Total Nilai Aset Kursus", value: "Rp 18.500.000", color: "#1d4ed8" },
           { label: "Total Item Barang", value: "127 Unit", color: "#0f172a" },

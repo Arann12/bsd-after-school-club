@@ -153,7 +153,7 @@ export default function AdminOrangTuaPage() {
       </div>
 
       {/* Stat Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
         {[
           { label: "Total Akun Wali", value: daftarOrangTua.length, color: "#1d4ed8", bg: "#dbeafe" },
           { label: "Tagihan Lunas", value: daftarOrangTua.filter(o => o.statusTagihan === "Lunas").length, color: "#059669", bg: "#d1fae5" },
@@ -256,7 +256,7 @@ export default function AdminOrangTuaPage() {
                 <div style={{ fontSize: 12, fontWeight: 800, color: "#166534", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
                   Informasi Biaya & Tagihan
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                   <div>
                     <div style={{ fontSize: 11, color: "#166534", fontWeight: 600 }}>Biaya Harus Dibayar</div>
                     <div style={{ fontSize: 18, fontWeight: 900, color: "#15803d", marginTop: 2 }}>
@@ -285,7 +285,7 @@ export default function AdminOrangTuaPage() {
               </div>
 
               {/* Data Pribadi & Kontak */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                 {[
                   { label: "No. WhatsApp", value: selectedOrangTua.hp },
                   { label: "Email", value: selectedOrangTua.email },
@@ -312,7 +312,7 @@ export default function AdminOrangTuaPage() {
               </div>
 
               {/* Action Buttons */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 6 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 6 }}>
                 <button className="btn btn-ghost" onClick={() => setSelectedOrangTua(null)}>Tutup</button>
                 <a href={`https://wa.me/62${selectedOrangTua.hp.replace(/^0/, "")}`} target="_blank" rel="noopener noreferrer" className="btn btn-accent" style={{ textAlign: "center", textDecoration: "none" }}>
                   Hubungi via WhatsApp

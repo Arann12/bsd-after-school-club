@@ -112,7 +112,7 @@ export default function OwnerHonorPage() {
       </div>
 
       {/* Kartu Statistik */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
         {[
           { label: "Total Honor Bulan Ini", value: `Rp ${totalHonor.toLocaleString("id")}`, warna: "#1d4ed8", bg: "#dbeafe", besar: true },
           { label: "Sudah Dicairkan", value: `Rp ${sudahCair.toLocaleString("id")}`, warna: "#059669", bg: "#d1fae5", besar: true },

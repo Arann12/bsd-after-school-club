@@ -2,6 +2,7 @@
 
 import { OwnerSidebar } from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
+import Breadcrumb from "@/components/ui/Breadcrumb";
 
 export default function OwnerLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -9,7 +10,10 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
       <OwnerSidebar />
       <div className="main-area">
         <Header />
-        <main className="page-content">{children}</main>
+        <main className="page-content">
+          <Breadcrumb />
+          {children}
+        </main>
       </div>
     </div>
   );

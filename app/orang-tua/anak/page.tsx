@@ -53,7 +53,7 @@ export default function OrangTuaAnakPage() {
       </div>
 
       {/* Progress Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
         <div className="card" style={{ padding: 20 }}>
           <div style={{ fontSize: 12, color: "var(--color-text-muted)", fontWeight: 700, textTransform: "uppercase" }}>Progress Program</div>
           <div style={{ fontSize: 24, fontWeight: 900, color: "var(--color-primary)", margin: "8px 0" }}>{anak.pertemuan}/{anak.totalPertemuan} Sesi</div>

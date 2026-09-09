@@ -74,7 +74,7 @@ export default function GuruKelasPage({ params }: { params: { id: string } }) {
         <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 6 }}>{persenAbsen}% sudah diabsen</div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
         {/* Panel Absensi */}
         <div className="card">
           <div className="card-header"><h2 className="card-title">Daftar Kehadiran</h2></div>

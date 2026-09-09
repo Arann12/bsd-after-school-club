@@ -315,7 +315,7 @@ export default function LaporanKehadiranPage() {
       </div>
 
       {/* Section A: KPI Utama */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
         {[
           { label: "Total Pertemuan", val: `${d.totalPertemuan} Sesi`, color: "#1d4ed8", sub: "Sepanjang bulan" },
           { label: "Rata-rata Kehadiran", val: `${d.rataKehadiran}%`, color: d.rataKehadiran >= 80 ? "#059669" : "#b45309", sub: d.rataKehadiran >= 80 ? "Target ≥80% tercapai" : "Di bawah target 80%" },
@@ -459,7 +459,7 @@ export default function LaporanKehadiranPage() {
         <div className="card-header">
           <h2 className="card-title">Rekap Kehadiran per Guru</h2>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 14, padding: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14, padding: 20 }}>
           {d.perGuru.map((g, i) => {
             const badge = badgeKehadiran(g.rataKehadiran);
             return (
@@ -618,7 +618,7 @@ export default function LaporanKehadiranPage() {
                 const hadirPct = Math.round((siswa.hadir / siswa.total) * 100);
                 return (
                   <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 10 }}>
                       {[
                         { label: "Hadir", val: siswa.hadir, color: "#059669" },
                         { label: "Alpha", val: siswa.alpha, color: "#dc2626" },

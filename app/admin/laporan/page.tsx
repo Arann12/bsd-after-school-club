@@ -65,7 +65,7 @@ export default function LaporanPage() {
       {tab === "sertifikat" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {/* Stat Strip */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
             <div className="stat-card" style={{ gap: 8 }}>
               <span className="stat-card-label">Siswa Graduated</span>
               <div className="stat-card-value" style={{ fontSize: 28, color: "#059669" }}>{sertifikatSelesai.length}</div>
@@ -141,7 +141,7 @@ export default function LaporanPage() {
 
       {/* TAB 2: AKADEMIK */}
       {tab === "akademik" && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
           <div className="card" style={{ padding: 24 }}>
             <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>Rekap Kehadiran per Program</h3>
             {[
@@ -186,7 +186,7 @@ export default function LaporanPage() {
       {/* TAB 3: KEUANGAN */}
       {tab === "keuangan" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
             <div className="stat-card">
               <span className="stat-card-label">Total Pendapatan Bulan Ini</span>
               <div className="stat-card-value" style={{ fontSize: 24, color: "#059669" }}>Rp 18.450.000</div>
@@ -256,7 +256,7 @@ export default function LaporanPage() {
             </div>
 
             {/* Tombol Aksi */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginTop: 24 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginTop: 24 }}>
               <button className="btn btn-ghost" onClick={() => setShowPreview(false)}>Tutup</button>
               <button className="btn btn-outline" onClick={() => window.print()}>Cetak</button>
               <button className="btn btn-accent" onClick={(e) => { (e.currentTarget as HTMLButtonElement).innerText = "File Terunduh!"; setTimeout(() => setShowPreview(false), 1500); }}>Unduh PDF</button>

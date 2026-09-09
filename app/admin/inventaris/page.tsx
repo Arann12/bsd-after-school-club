@@ -107,7 +107,7 @@ export default function AdminInventarisPage() {
               </div>
 
               {/* Grid Metadata */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
                 <div style={{ background: "#f8fafc", padding: "10px 12px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
                   <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700 }}>Nomor Serial / SKU</div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", fontFamily: "monospace" }}>{selectedItem.noSerial}</div>
@@ -132,7 +132,7 @@ export default function AdminInventarisPage() {
                 <div style={{ fontSize: 13, color: "var(--color-text-primary)", lineHeight: 1.5 }}>{selectedItem.keterangan}</div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 4 }}>
                 <button className="btn btn-ghost" onClick={() => setSelectedItem(null)}>Tutup</button>
                 <button className="btn btn-accent" onClick={() => setSelectedItem(null)}>Edit Barang</button>
               </div>

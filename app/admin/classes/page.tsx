@@ -143,7 +143,7 @@ export default function AdminClassesPage() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
         {[
           { label: "Total Kelas", value: classesList.length, color: "#1d4ed8", bg: "#dbeafe" },
           { label: "Kelas Aktif", value: classesList.filter(c => c.status === "Aktif").length, color: "#059669", bg: "#d1fae5" },
@@ -200,7 +200,7 @@ export default function AdminClassesPage() {
             </div>
 
             {/* Program & Jadwal */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 8, fontSize: 12 }}>
               <div style={{ background: "var(--color-bg)", padding: 8, borderRadius: 6 }}>
                 <span style={{ color: "var(--color-text-muted)", display: "block", fontSize: 10 }}>Program & Level</span>
                 <strong style={{ color: "var(--color-text-primary)" }}>{c.program} — {c.level}</strong>
@@ -246,7 +246,7 @@ export default function AdminClassesPage() {
 
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {/* Header Info Guru & Jadwal */}
-              <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "16px 20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "16px 20px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
                 <div>
                   <div style={{ fontSize: 11, fontWeight: 800, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Guru Pengajar</div>
                   <div style={{ fontSize: 16, fontWeight: 800, color: "var(--color-primary)", marginTop: 2 }}>👩‍🏫 {selectedClass.guru}</div>
@@ -306,7 +306,7 @@ export default function AdminClassesPage() {
                 )}
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 8 }}>
                 <button className="btn btn-ghost" onClick={() => setSelectedClass(null)}>Tutup</button>
                 <button className="btn btn-accent" onClick={() => setSelectedClass(null)}>+ Masukkan Siswa</button>
               </div>

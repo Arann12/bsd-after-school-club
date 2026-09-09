@@ -115,7 +115,7 @@ export default function AdminGuruPage() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
         {[
           { label: "Total Guru & Staff", value: listGuru.length, color: "#1d4ed8", bg: "#dbeafe" },
           { label: "Guru Aktif", value: listGuru.filter(g => g.status === "Aktif").length, color: "#059669", bg: "#d1fae5" },
@@ -227,7 +227,7 @@ export default function AdminGuruPage() {
                 <div style={{ fontSize: 12, fontWeight: 800, color: "#334155", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
                   Informasi Bank Rekening & Honor
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                   <div>
                     <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>Bank & No. Rekening</div>
                     <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a", marginTop: 2 }}>
@@ -256,7 +256,7 @@ export default function AdminGuruPage() {
               </div>
 
               {/* Kontak & Alamat */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                 <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "12px 14px", border: "1px solid var(--color-border)" }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>No. WhatsApp</div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text-primary)" }}>{selectedGuru.hp}</div>
@@ -273,7 +273,7 @@ export default function AdminGuruPage() {
               </div>
 
               {/* SHORTCUT TOMBOL KE ABSENSI DAN LOGBOOK GURU (Requirement #4) */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 4 }}>
                 <Link href={`/owner/absensi?guru=${encodeURIComponent(selectedGuru.nama)}`} className="btn btn-outline" style={{ textDecoration: "none", textAlign: "center" }}>
                   Ke Absensi & Logbook
                 </Link>
@@ -301,7 +301,7 @@ export default function AdminGuruPage() {
                 <label className="form-label">Nama Lengkap Guru</label>
                 <input className="form-input" placeholder="Contoh: Ms. Clara" />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Spesialisasi Program</label>
                   <input className="form-input" placeholder="Contoh: English & Phonics" />
@@ -311,7 +311,7 @@ export default function AdminGuruPage() {
                   <input className="form-input" placeholder="08xxxxxxxxxx" />
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Email</label>
                   <input className="form-input" placeholder="guru@bsdclub.com" />
@@ -321,7 +321,7 @@ export default function AdminGuruPage() {
                   <input className="form-input" placeholder="75000" />
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Nama Bank</label>
                   <input className="form-input" placeholder="BCA / Mandiri" />
@@ -331,7 +331,7 @@ export default function AdminGuruPage() {
                   <input className="form-input" placeholder="1234567890" />
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 8 }}>
                 <button className="btn btn-ghost" onClick={() => setShowTambahModal(false)}>Batal</button>
                 <button className="btn btn-accent" onClick={() => setShowTambahModal(false)}>Simpan Guru</button>
               </div>

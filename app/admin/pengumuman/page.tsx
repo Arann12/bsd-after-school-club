@@ -117,7 +117,7 @@ export default function PengumumanPage({ peran = "admin" }: Props) {
 
       {/* Statistik (hanya admin/owner) */}
       {bisaKelola && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
           {[
             { label: "Total Pengumuman", value: daftar.length, warna: "#1d4ed8", bg: "#dbeafe" },
             { label: "Aktif / Dipublikasi", value: daftar.filter(p=>p.status==="Aktif").length, warna: "#059669", bg: "#d1fae5" },
@@ -313,7 +313,7 @@ export default function PengumumanPage({ peran = "admin" }: Props) {
                 </div>
               )}
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginTop: 4 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 4 }}>
                 <button className="btn btn-ghost" onClick={() => setShowForm(false)}>Batal</button>
                 <button className="btn btn-outline" disabled={!judul.trim() || !isi.trim() || target.length === 0}
                   onClick={() => buatPengumuman(false)} style={{ opacity: !judul.trim() || !isi.trim() || target.length === 0 ? .5 : 1 }}>
