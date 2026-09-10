@@ -7,6 +7,8 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import { useLoadingState } from "@/lib/hooks";
 import { SkeletonTable } from "@/components/ui/Skeleton";
 import PageHeader from "@/components/ui/PageHeader";
+import Toast, { useToast } from "@/components/ui/Toast";
+import Modal from "@/components/ui/Modal";
 
 const warnaStatus: Record<string, { bg: string; color: string }> = {
   Trial:     { bg: "#fef9c3", color: "#ca8a04" },
@@ -60,11 +62,10 @@ export default function AdminStudentsPage() {
     return matchSearch && matchKelas && matchStatus && matchTagihan && matchProgram;
   });
 
-  const [notifToast, setNotifToast] = useState<string | null>(null);
+  const { toast, showToast } = useToast();
 
   const triggerToast = (msg: string) => {
-    setNotifToast(msg);
-    setTimeout(() => setNotifToast(null), 3000);
+    showToast(msg);
   };
 
   const handlePindahProgram = () => {
@@ -88,20 +89,10 @@ export default function AdminStudentsPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
-        @keyframes modalIn { from { opacity:0; transform:translateY(16px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
-        @keyframes fadeIn  { from { opacity:0; } to { opacity:1; } }
         .row-hover:hover { background: #f8fafc !important; cursor: pointer; }
       `}</style>
 
-      {/* Notification Toast Inline */}
-      {notifToast && (
-        <div style={{ background: "var(--color-success-bg)", border: "1.5px solid #6ee7b7", borderRadius: 12, padding: "12px 18px", color: "#047857", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}>
-          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-          {notifToast}
-        </div>
-      )}
+      <Toast toast={toast} />
 
       {/* Header */}
       <PageHeader title="Data Siswa" subtitle="Kelola data siswa, filter per kelas, guru pengajar, dan status pembayaran."
@@ -249,17 +240,7 @@ export default function AdminStudentsPage() {
       </div>
 
       {/* Modal Detail & Shortcut Menu Siswa */}
-      {showModalDetail && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 620, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1)", maxHeight: "90vh", overflowY: "auto" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>
-                {selectedStudent ? `Detail Siswa — ${selectedStudent.name}` : "Tambah Siswa Baru"}
-              </h2>
-              <button onClick={() => setShowModalDetail(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
+      <Modal open={showModalDetail} onClose={() => setShowModalDetail(false)} title={selectedStudent ? `Detail Siswa — ${selectedStudent.name}` : "Tambah Siswa Baru"} maxWidth={620}>
 
             {selectedStudent ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
@@ -353,48 +334,36 @@ export default function AdminStudentsPage() {
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Modal Pindah Program */}
-      {showPindahProgram && selectedStudent && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 110, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-          <div style={{ background: "#fff", borderRadius: 16, maxWidth: 440, width: "100%", padding: 24 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>Pindahkan Program Kursus</h3>
-            <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 14 }}>Siswa: <strong>{selectedStudent.name}</strong> (Program Saat ini: {selectedStudent.program})</p>
-            <div className="form-group">
-              <label className="form-label">Pilih Program Baru</label>
-              <select className="form-input" value={targetProgram} onChange={e => setTargetProgram(e.target.value)}>
-                <option value="">-- Pilih Program --</option>
-                {programs.filter(p => p !== "Semua").map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 16 }}>
-              <button className="btn btn-ghost" onClick={() => setShowPindahProgram(false)}>Batal</button>
-              <button className="btn btn-accent" onClick={handlePindahProgram}>Konfirmasi Pindah</button>
-            </div>
-          </div>
+      <Modal open={showPindahProgram && !!selectedStudent} onClose={() => setShowPindahProgram(false)} title="Pindahkan Program Kursus" maxWidth={440}>
+        <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 14 }}>Siswa: <strong>{selectedStudent?.name}</strong> (Program Saat ini: {selectedStudent?.program})</p>
+        <div className="form-group">
+          <label className="form-label">Pilih Program Baru</label>
+          <select className="form-input" value={targetProgram} onChange={e => setTargetProgram(e.target.value)}>
+            <option value="">-- Pilih Program --</option>
+            {programs.filter(p => p !== "Semua").map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
         </div>
-      )}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 16 }}>
+          <button className="btn btn-ghost" onClick={() => setShowPindahProgram(false)}>Batal</button>
+          <button className="btn btn-accent" onClick={handlePindahProgram}>Konfirmasi Pindah</button>
+        </div>
+      </Modal>
 
       {/* Modal Naik Level */}
-      {showNaikLevel && selectedStudent && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 110, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-          <div style={{ background: "#fff", borderRadius: 16, maxWidth: 440, width: "100%", padding: 24 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>Naikkan Level Program</h3>
-            <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 14 }}>Siswa: <strong>{selectedStudent.name}</strong> (Level Saat ini: {selectedStudent.level})</p>
-            <div className="form-group">
-              <label className="form-label">Level Baru</label>
-              <input className="form-input" placeholder="Contoh: Level 2 / Advanced" value={targetLevel} onChange={e => setTargetLevel(e.target.value)} />
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 16 }}>
-              <button className="btn btn-ghost" onClick={() => setShowNaikLevel(false)}>Batal</button>
-              <button className="btn btn-accent" onClick={handleNaikLevel}>Konfirmasi Naik Level</button>
-            </div>
-          </div>
+      <Modal open={showNaikLevel && !!selectedStudent} onClose={() => setShowNaikLevel(false)} title="Naikkan Level Program" maxWidth={440}>
+        <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 14 }}>Siswa: <strong>{selectedStudent?.name}</strong> (Level Saat ini: {selectedStudent?.level})</p>
+        <div className="form-group">
+          <label className="form-label">Level Baru</label>
+          <input className="form-input" placeholder="Contoh: Level 2 / Advanced" value={targetLevel} onChange={e => setTargetLevel(e.target.value)} />
         </div>
-      )}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 16 }}>
+          <button className="btn btn-ghost" onClick={() => setShowNaikLevel(false)}>Batal</button>
+          <button className="btn btn-accent" onClick={handleNaikLevel}>Konfirmasi Naik Level</button>
+        </div>
+      </Modal>
     </div>
   );
 }

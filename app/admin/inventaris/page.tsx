@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Modal from "@/components/ui/Modal";
 
 export interface ItemInventaris {
   id: string;
@@ -76,17 +77,12 @@ export default function AdminInventarisPage() {
       </div>
 
       {/* MODAL DETAIL BARANG INVENTARIS (Requirement #5) */}
-      {selectedItem && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 540, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-              <div>
-                <span style={{ background: "var(--color-primary-bg)", color: "var(--color-primary)", fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 999 }}>
-                  {selectedItem.id}
-                </span>
-                <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: "4px 0 0" }}>{selectedItem.nama}</h2>
-              </div>
-              <button onClick={() => setSelectedItem(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>✕</button>
+      {selectedItem && (<Modal open onClose={() => setSelectedItem(null)} title="Detail Barang" maxWidth={540}>
+            <div>
+              <span style={{ background: "var(--color-primary-bg)", color: "var(--color-primary)", fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 999 }}>
+                {selectedItem.id}
+              </span>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: "4px 0 0" }}>{selectedItem.nama}</h2>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -137,9 +133,7 @@ export default function AdminInventarisPage() {
                 <button className="btn btn-accent" onClick={() => setSelectedItem(null)}>Edit Barang</button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>)}
     </div>
   );
 }

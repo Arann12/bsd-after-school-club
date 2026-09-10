@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Modal from "@/components/ui/Modal";
 
 export interface Admin {
   id: string;
@@ -84,8 +85,6 @@ export default function OwnerKelolaAkunAdminPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
-        @keyframes modalIn { from { opacity:0; transform:translateY(16px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
-        @keyframes fadeIn  { from { opacity:0; } to { opacity:1; } }
         .row-hover:hover { background: #f8fafc !important; cursor: pointer; }
       `}</style>
 
@@ -169,15 +168,7 @@ export default function OwnerKelolaAkunAdminPage() {
       </div>
 
       {/* Modal Detail */}
-      {selectedAdmin && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 480, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1)", maxHeight: "90vh", overflowY: "auto" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Detail Akun Admin</h2>
-              <button onClick={() => setSelectedAdmin(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
+      {selectedAdmin && (<Modal open onClose={() => setSelectedAdmin(null)} title="Detail Akun Admin" maxWidth={480}>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "16px 20px", display: "flex", alignItems: "center", gap: 14 }}>
                 <div style={{ width: 50, height: 50, borderRadius: "50%", background: "#1d4ed8", color: "#fff", fontWeight: 800, fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -207,20 +198,10 @@ export default function OwnerKelolaAkunAdminPage() {
                 <button className="btn" style={{ background: "#fee2e2", color: "#dc2626", fontWeight: 700 }} onClick={() => handleHapus(selectedAdmin.id)}>Hapus</button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>)}
 
       {/* Modal Tambah */}
-      {showTambahModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 480, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1)", maxHeight: "90vh", overflowY: "auto" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Tambah Admin Baru</h2>
-              <button onClick={() => setShowTambahModal(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
+      <Modal open={showTambahModal} onClose={() => setShowTambahModal(false)} title="Tambah Admin Baru" maxWidth={480}>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Nama Lengkap</label>
@@ -251,20 +232,10 @@ export default function OwnerKelolaAkunAdminPage() {
                 <button className="btn btn-accent" onClick={handleTambah}>Simpan Admin</button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Modal Edit */}
-      {showEditModal && editTarget && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 480, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1)", maxHeight: "90vh", overflowY: "auto" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Edit Akun Admin</h2>
-              <button onClick={() => setShowEditModal(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
+      {editTarget && (<Modal open={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Akun Admin" maxWidth={480}>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Nama Lengkap</label>
@@ -298,9 +269,7 @@ export default function OwnerKelolaAkunAdminPage() {
                 <button className="btn btn-accent" onClick={handleEdit}>Simpan Perubahan</button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>)}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Modal from "@/components/ui/Modal";
 
 const periodePilihan = ["September 2026", "Agustus 2026", "Juli 2026"];
 
@@ -78,8 +79,6 @@ export default function OwnerHonorPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
-        @keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
         .baris-honor:hover{background:#f8fafc!important;cursor:pointer}
       `}</style>
 
@@ -183,13 +182,7 @@ export default function OwnerHonorPage() {
       </div>
 
       {/* MODAL TAMBAH BONUS (Requirement #9) */}
-      {showBonusModal && guruTargetBonus && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 110, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn .2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 460, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,.25)", animation: "modalIn .25s cubic-bezier(0.16,1,0.3,1)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Tambah Bonus — {guruTargetBonus.nama}</h2>
-              <button onClick={() => setShowBonusModal(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>✕</button>
-            </div>
+      <Modal open={showBonusModal && !!guruTargetBonus} onClose={() => setShowBonusModal(false)} title={guruTargetBonus ? `Tambah Bonus — ${guruTargetBonus.nama}` : "Tambah Bonus"} maxWidth={460}>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
@@ -216,18 +209,10 @@ export default function OwnerHonorPage() {
                 <button className="btn btn-accent" onClick={handleTambahBonusSubmit}>Simpan Bonus</button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Modal Detail & Rincian Honor Guru */}
-      {dipilih && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn .2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 500, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,.25)", animation: "modalIn .25s cubic-bezier(0.16,1,0.3,1)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Rincian Honor — {dipilih.nama}</h2>
-              <button onClick={() => setDipilih(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>✕</button>
-            </div>
+      {dipilih && (<Modal open onClose={() => setDipilih(null)} title={`Rincian Honor — ${dipilih.nama}`} maxWidth={500}>
 
             <div style={{ background: "linear-gradient(135deg, #1a5c8a, #2a7ab8)", borderRadius: 12, padding: "20px", color: "white", marginBottom: 18 }}>
               <div style={{ fontSize: 12, opacity: .8, marginBottom: 4 }}>{dipilih.id} · Periode {periode}</div>
@@ -272,9 +257,7 @@ export default function OwnerHonorPage() {
                 <button className="btn btn-accent" onClick={() => bayarHonor(dipilih.id)}>Cairkan Honor</button>
               )}
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>)}
     </div>
   );
 }

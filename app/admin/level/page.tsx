@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Modal from "@/components/ui/Modal";
 
 export interface LevelItem {
   id: string;
@@ -50,10 +51,7 @@ export default function AdminLevelPage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <style>{`
-        @keyframes modalIn { from { opacity:0; transform:translateY(16px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
-        @keyframes fadeIn  { from { opacity:0; } to { opacity:1; } }
-      `}</style>
+
 
       {/* Header */}
       <div className="page-header">
@@ -72,18 +70,7 @@ export default function AdminLevelPage() {
           <button
             key={p}
             onClick={() => setSelectedProgramFilter(p)}
-            style={{
-              padding: "8px 18px",
-              borderRadius: 999,
-              border: "1.5px solid",
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: "pointer",
-              transition: "all .15s",
-              background: selectedProgramFilter === p ? "var(--color-primary)" : "#fff",
-              color: selectedProgramFilter === p ? "#fff" : "var(--color-text-secondary)",
-              borderColor: selectedProgramFilter === p ? "var(--color-primary)" : "var(--color-border)",
-            }}
+            className={`filter-chip${selectedProgramFilter === p ? " active" : ""}`}
           >
             {p === "Semua" ? "Semua Program" : `Program ${p}`}
           </button>
@@ -161,17 +148,12 @@ export default function AdminLevelPage() {
         })}
 
       {/* Modal Edit / Tambah Level */}
-      {showModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 480, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>
-                {editingLevel ? `Edit Level — ${editingLevel.levelCode}` : "Tambah Level Baru"}
-              </h2>
-              <button onClick={() => setShowModal(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
+      <Modal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        title={editingLevel ? `Edit Level — ${editingLevel.levelCode}` : "Tambah Level Baru"}
+        maxWidth={480}
+      >
 
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
@@ -211,9 +193,7 @@ export default function AdminLevelPage() {
                 <button className="btn btn-accent" onClick={() => setShowModal(false)}>Simpan Level</button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

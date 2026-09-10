@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { notifications } from "@/lib/data";
+import { notificationsByRole } from "@/lib/data";
 
-export default function NotificationDropdown() {
+type NotificationRole = "owner" | "admin" | "guru" | "orangTua";
+
+export default function NotificationDropdown({ role = "owner" }: { role?: NotificationRole }) {
   const [open, setOpen] = useState(false);
+  const notifications = notificationsByRole[role] || notificationsByRole.owner;
   const unread = notifications.filter(n => !n.read).length;
 
   return (

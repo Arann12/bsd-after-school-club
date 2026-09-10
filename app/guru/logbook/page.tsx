@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Modal from "@/components/ui/Modal";
 
 export interface SiswaAbsenItem {
   nama: string;
@@ -132,8 +133,6 @@ export default function GuruKalenderLogbookPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
-        @keyframes modalIn { from { opacity:0; transform:translateY(16px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
-        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
         @keyframes toastIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
 
         .cal-cell {
@@ -283,41 +282,27 @@ export default function GuruKalenderLogbookPage() {
 
       {/* MODAL: Detail Logbook */}
       {selectedLogbook && (
-        <div style={{
-          position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)",
-          zIndex: 150, display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
-          animation: "fadeIn 0.2s ease-out",
-        }}>
-          <div style={{
-            background: "#fff", borderRadius: 20, maxWidth: 600, width: "100%", padding: 28,
-            boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1)",
-            maxHeight: "90vh", overflowY: "auto",
-          }}>
-            {/* Modal Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                  <span style={{ background: selectedLogbook.warna, color: "#fff", fontSize: 12, fontWeight: 800, padding: "3px 10px", borderRadius: 999 }}>
-                    {selectedLogbook.kelas}
-                  </span>
-                  <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "monospace" }}>{selectedLogbook.id}</span>
-                </div>
-                <h2 style={{ fontSize: 18, fontWeight: 900, color: "#1a202c", margin: 0 }}>
-                  {selectedLogbook.tglDisplay}
-                </h2>
-                <div style={{ fontSize: 12.5, color: "#64748b", marginTop: 2 }}>
-                  {selectedLogbook.program} · Pertemuan {selectedLogbook.pertemuan}/{selectedLogbook.totalPertemuan} · {selectedLogbook.jam} · {selectedLogbook.ruang}
-                </div>
-              </div>
-              <button onClick={() => setSelectedLogbook(null)} style={{ background: "#f1f5f9", border: "none", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", fontWeight: 800, fontSize: 14 }}>
-                ✕
-              </button>
-            </div>
+      <Modal open onClose={() => setSelectedLogbook(null)} title="Detail Logbook" maxWidth={600}>
+        {/* Modal Header */}
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <span style={{ background: selectedLogbook?.warna, color: "#fff", fontSize: 12, fontWeight: 800, padding: "3px 10px", borderRadius: 999 }}>
+              {selectedLogbook?.kelas}
+            </span>
+            <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "monospace" }}>{selectedLogbook?.id}</span>
+          </div>
+          <h2 style={{ fontSize: 18, fontWeight: 900, color: "#1a202c", margin: 0 }}>
+            {selectedLogbook?.tglDisplay}
+          </h2>
+          <div style={{ fontSize: 12.5, color: "#64748b", marginTop: 2 }}>
+            {selectedLogbook?.program} · Pertemuan {selectedLogbook?.pertemuan}/{selectedLogbook?.totalPertemuan} · {selectedLogbook?.jam} · {selectedLogbook?.ruang}
+          </div>
+        </div>
 
-            {/* Materi */}
+        {/* Materi */}
             <div style={{ background: "linear-gradient(135deg, #f0fdf8, #dcfce7)", border: "1.5px solid #bbf7d0", borderRadius: 14, padding: "14px 18px", marginBottom: 18 }}>
               <div style={{ fontSize: 10.5, fontWeight: 900, color: "#166534", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Materi Pembelajaran</div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: "#14532d", lineHeight: 1.4 }}>{selectedLogbook.materi}</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#14532d", lineHeight: 1.4 }}>{selectedLogbook?.materi}</div>
             </div>
 
             {/* Kehadiran */}
@@ -325,13 +310,13 @@ export default function GuruKalenderLogbookPage() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                 <span style={{ fontSize: 12, fontWeight: 800, color: "#64748b", textTransform: "uppercase" }}>Rekap Kehadiran</span>
                 <div style={{ display: "flex", gap: 6 }}>
-                  <span style={{ background: "#d1fae5", color: "#059669", fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 999 }}>{selectedLogbook.hadir} Hadir</span>
-                  {selectedLogbook.izin > 0 && <span style={{ background: "#fef3c7", color: "#b45309", fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 999 }}>{selectedLogbook.izin} Izin</span>}
-                  {selectedLogbook.sakit > 0 && <span style={{ background: "#fce7f3", color: "#be185d", fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 999 }}>{selectedLogbook.sakit} Sakit</span>}
+                  <span style={{ background: "#d1fae5", color: "#059669", fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 999 }}>{selectedLogbook?.hadir} Hadir</span>
+                  {selectedLogbook && selectedLogbook.izin > 0 && <span style={{ background: "#fef3c7", color: "#b45309", fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 999 }}>{selectedLogbook.izin} Izin</span>}
+                  {selectedLogbook && selectedLogbook.sakit > 0 && <span style={{ background: "#fce7f3", color: "#be185d", fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 999 }}>{selectedLogbook.sakit} Sakit</span>}
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {selectedLogbook.siswaAbsensi.map((s, i) => {
+                {selectedLogbook?.siswaAbsensi.map((s, i) => {
                   const bg = s.status === "Hadir" ? "#d1fae5" : s.status === "Izin" ? "#fef3c7" : s.status === "Sakit" ? "#fce7f3" : "#fee2e2";
                   const clr = s.status === "Hadir" ? "#059669" : s.status === "Izin" ? "#b45309" : s.status === "Sakit" ? "#be185d" : "#dc2626";
                   return (
@@ -354,7 +339,7 @@ export default function GuruKalenderLogbookPage() {
             <div style={{ marginBottom: 18 }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: "#64748b", textTransform: "uppercase", marginBottom: 6 }}>Catatan Guru</div>
               <div style={{ background: "#f8fafc", borderRadius: 12, padding: "12px 16px", fontSize: 13, color: "#334155", lineHeight: 1.6, border: "1px solid #e2e8f0", fontStyle: "italic" }}>
-                &ldquo;{selectedLogbook.catatanGuru}&rdquo;
+                &ldquo;{selectedLogbook?.catatanGuru}&rdquo;
               </div>
             </div>
 
@@ -363,37 +348,19 @@ export default function GuruKalenderLogbookPage() {
               <button className="btn btn-ghost" onClick={() => { setSelectedLogbook(null); showToast("Logbook berhasil diunduh sebagai PDF!"); }} style={{ flex: 1, justifyContent: "center" }}>Unduh PDF</button>
               <button className="btn btn-accent" onClick={() => { setSelectedLogbook(null); showToast("Logbook berhasil dikirim ke Orang Tua!"); }} style={{ flex: 1, justifyContent: "center" }}>Kirim ke Ortu</button>
             </div>
-          </div>
-        </div>
+      </Modal>
       )}
 
       {/* MODAL: Hari Kosong */}
-      {selectedEmptyDay && (
-        <div style={{
-          position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)",
-          zIndex: 150, display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
-          animation: "fadeIn 0.2s ease-out",
-        }}>
-          <div style={{
-            background: "#fff", borderRadius: 18, maxWidth: 440, width: "100%", padding: 26,
-            boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1)",
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <h3 style={{ fontSize: 17, fontWeight: 900, color: "#1a202c", margin: 0 }}>
-                Tanggal {selectedEmptyDay.dayNum} {currentBulan.label}
-              </h3>
-              <button onClick={() => setSelectedEmptyDay(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#94a3b8", fontWeight: 800, fontSize: 16 }}>✕</button>
-            </div>
-            <p style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5, marginBottom: 18 }}>
-              Tidak ada kelas atau logbook untuk tanggal ini. Hari libur / kosong.
-            </p>
-            <div style={{ display: "flex", gap: 10 }}>
-              <Link href="/guru/jadwal" className="btn btn-accent" style={{ flex: 1, textAlign: "center", textDecoration: "none", justifyContent: "center" }}>Lihat Jadwal</Link>
-              <button className="btn btn-ghost" onClick={() => setSelectedEmptyDay(null)} style={{ flex: 1, justifyContent: "center" }}>Tutup</button>
-            </div>
-          </div>
+      <Modal open={!!selectedEmptyDay} onClose={() => setSelectedEmptyDay(null)} title={`Tanggal ${selectedEmptyDay?.dayNum} ${currentBulan.label}`} maxWidth={440}>
+        <p style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5, marginBottom: 18 }}>
+          Tidak ada kelas atau logbook untuk tanggal ini. Hari libur / kosong.
+        </p>
+        <div style={{ display: "flex", gap: 10 }}>
+          <Link href="/guru/jadwal" className="btn btn-accent" style={{ flex: 1, textAlign: "center", textDecoration: "none", justifyContent: "center" }}>Lihat Jadwal</Link>
+          <button className="btn btn-ghost" onClick={() => setSelectedEmptyDay(null)} style={{ flex: 1, justifyContent: "center" }}>Tutup</button>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

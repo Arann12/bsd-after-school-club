@@ -166,12 +166,34 @@ export const adminAccounts = [
 ];
 
 /* ======================== NOTIFICATIONS ======================== */
-export const notifications = [
-  { id: "NOT-001", title: "Cash Verification Pending", message: "2 pembayaran cash menunggu verifikasi Anda", type: "warning" as const, read: false, createdAt: "2026-09-08T10:30:00", href: "/owner/verifikasi-cash" },
-  { id: "NOT-002", title: "New Enrollment", message: "Naura Azzahra mendaftar program Calistung", type: "info" as const, read: false, createdAt: "2026-09-07T08:00:00", href: "/owner/pendaftaran" },
-  { id: "NOT-003", title: "Overdue Payment", message: "Hana Pertiwi — tagihan Rp 100.000 overdue 5 hari", type: "error" as const, read: true, createdAt: "2026-09-05T09:00:00", href: "/owner/tagihan" },
-  { id: "NOT-004", title: "Honor Submitted", message: "Ms. Sarah — honor Rp 1.450.000 belum dibayar", type: "info" as const, read: true, createdAt: "2026-09-04T16:00:00", href: "/owner/honor" },
-];
+export const notificationsByRole: Record<string, typeof notifications_owner> = {
+  owner: [
+    { id: "NOT-O01", title: "Cash Verification Pending", message: "2 pembayaran cash menunggu verifikasi Anda", type: "warning" as const, read: false, createdAt: "2026-09-08T10:30:00", href: "/owner/verifikasi-cash" },
+    { id: "NOT-O02", title: "New Enrollment", message: "Naura Azzahra mendaftar program Calistung", type: "info" as const, read: false, createdAt: "2026-09-07T08:00:00", href: "/owner/pendaftaran" },
+    { id: "NOT-O03", title: "Overdue Payment", message: "Hana Pertiwi — tagihan Rp 100.000 overdue 5 hari", type: "error" as const, read: true, createdAt: "2026-09-05T09:00:00", href: "/owner/tagihan" },
+    { id: "NOT-O04", title: "Honor Submitted", message: "Ms. Sarah — honor Rp 1.450.000 belum dibayar", type: "info" as const, read: true, createdAt: "2026-09-04T16:00:00", href: "/owner/honor" },
+  ],
+  admin: [
+    { id: "NOT-A01", title: "Verifikasi Cash Diperlukan", message: "3 pembayaran cash dari orang tua menunggu verifikasi", type: "warning" as const, read: false, createdAt: "2026-09-08T11:00:00", href: "/admin/verifikasi-cash" },
+    { id: "NOT-A02", title: "Pendaftaran Baru", message: "Raka Pratama mendaftar program English Starter", type: "info" as const, read: false, createdAt: "2026-09-07T09:30:00", href: "/admin/pendaftaran" },
+    { id: "NOT-A03", title: "Inventaris Perlu Diperbaiki", message: "2 meja dan 1 kursi di ruang Phonics perlu perbaikan", type: "warning" as const, read: true, createdAt: "2026-09-06T14:00:00", href: "/admin/inventaris" },
+    { id: "NOT-A04", title: "Tagihan Overdue", message: "5 tagihan belum dibayar melewati jatuh tempo", type: "error" as const, read: true, createdAt: "2026-09-05T08:00:00", href: "/admin/tagihan" },
+  ],
+  guru: [
+    { id: "NOT-G01", title: "Jadwal Mengajar Hari Ini", message: "Anda memiliki 3 sesi mengajar hari ini: Phonics A, Calistung B, English C", type: "info" as const, read: false, createdAt: "2026-09-09T07:00:00", href: "/guru/kelas" },
+    { id: "NOT-G02", title: "Logbook Belum Diisi", message: "Sesi Calistung Level 1 — 9 Sept 2026 belum ada catatan logbook", type: "warning" as const, read: false, createdAt: "2026-09-09T08:30:00", href: "/guru/logbook" },
+    { id: "NOT-G03", title: "Honor Bulanan Siap", message: "Honor September Anda: Rp 1.450.000 — menunggu approval owner", type: "info" as const, read: true, createdAt: "2026-09-08T16:00:00", href: "/guru/honor" },
+    { id: "NOT-G04", title: "Progress Siswa Update", message: "Andi Setiawan mencapai 70% progress program Calistung", type: "success" as const, read: true, createdAt: "2026-09-07T15:00:00", href: "/guru/progress" },
+  ],
+  orangTua: [
+    { id: "NOT-P01", title: "Tagihan Pembayaran", message: "Tagihan pertemuan 7 & 8 sebesar Rp 100.000 belum dibayar", type: "warning" as const, read: false, createdAt: "2026-09-08T10:00:00", href: "/orang-tua/pembayaran" },
+    { id: "NOT-P02", title: "Pengumuman Baru", message: "Jadwal libur nasional 17 Agustus — sesi digeser", type: "info" as const, read: false, createdAt: "2026-09-07T09:00:00", href: "/orang-tua/pengumuman" },
+    { id: "NOT-P03", title: "Pembayaran Berhasil", message: "Pembayaran Virtual Account BCA Rp 250.000 telah terverifikasi", type: "success" as const, read: true, createdAt: "2026-09-06T14:00:00", href: "/orang-tua/pembayaran" },
+    { id: "NOT-P04", title: "Logbook Anak", message: "Ms. Sarah menulis catatan untuk sesi Andi — Membaca Kalimat Sederhana", type: "info" as const, read: true, createdAt: "2026-09-05T16:00:00", href: "/orang-tua/absensi" },
+  ],
+};
+const notifications_owner = notificationsByRole.owner;
+export const notifications = notifications_owner;
 
 /* ======================== REVENUE SUMMARY ======================== */
 export const revenueSummary = {

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import Modal from "@/components/ui/Modal";
 
 type StatusEnroll = "Pending" | "Approved" | "Rejected";
 
@@ -42,6 +43,7 @@ export default function PendaftaranPage() {
   const [antrian, setAntrian] = useState(antrianAwal);
   const [dipilih, setDipilih] = useState<typeof antrianAwal[0] | null>(null);
   const [catatanAdmin, setCatatanAdmin] = useState("");
+  const [showFormModal, setShowFormModal] = useState(false);
 
   // Form state
   const [modeOrtu, setModeOrtu] = useState<"pilih" | "baru">("pilih");
@@ -77,6 +79,7 @@ export default function PendaftaranPage() {
       }, ...prev]);
       setSedangKirim(false);
       setSukses(true);
+      setShowFormModal(false);
       setTab("antrian");
     }, 1200);
   };
@@ -92,8 +95,6 @@ export default function PendaftaranPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
-        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-        @keyframes modalIn{from{opacity:0;transform:translateY(12px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
         .row-enr:hover{background:#f8fafc!important;cursor:pointer}
       `}</style>
 
@@ -109,8 +110,8 @@ export default function PendaftaranPage() {
               {pending} Menunggu Review
             </span>
           )}
-          <button className={`btn ${tab === "form" ? "btn-outline" : "btn-accent"}`} onClick={() => { setTab(tab === "form" ? "antrian" : "form"); setSukses(false); }}>
-            {tab === "form" ? "← Kembali ke Antrian" : "+ Daftarkan Siswa Baru"}
+          <button className="btn btn-accent" onClick={() => { setShowFormModal(true); setSukses(false); }}>
+            + Daftarkan Siswa Baru
           </button>
         </div>
       </div>
@@ -176,125 +177,122 @@ export default function PendaftaranPage() {
         </div>
       )}
 
-      {/* TAB: FORM PENDAFTARAN */}
-      {tab === "form" && !sukses && (
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 840, width: "100%" }}>
-          {/* Orang Tua */}
-          <div className="card" style={{ padding: 24 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--color-text-primary)", marginBottom: 16 }}>1. Data Orang Tua / Wali</h3>
-            <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
-              {(["pilih", "baru"] as const).map(m => (
-                <button key={m} type="button" onClick={() => setModeOrtu(m)}
-                  style={{ padding: "8px 16px", borderRadius: "var(--radius-md)", border: "1.5px solid", fontSize: 13, fontWeight: 700, cursor: "pointer",
-                    background: modeOrtu === m ? "var(--color-primary-bg)" : "white",
-                    color: modeOrtu === m ? "var(--color-primary)" : "var(--color-text-secondary)",
-                    borderColor: modeOrtu === m ? "var(--color-primary)" : "var(--color-border)" }}>
-                  {m === "pilih" ? "Orang Tua Terdaftar" : "+ Tambah Orang Tua Baru"}
-                </button>
-              ))}
-            </div>
-            {modeOrtu === "pilih" ? (
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Pilih Orang Tua</label>
-                <select className="form-input" value={selectedOrtu} onChange={e => setSelectedOrtu(e.target.value)}>
-                  {ortuExisting.map(o => <option key={o.id} value={o.id}>{o.nama} ({o.hp})</option>)}
-                </select>
+      {/* MODAL FORM PENDAFTARAN */}
+      {showFormModal && !sukses && (
+        <Modal open onClose={() => setShowFormModal(false)} title="Daftarkan Siswa Baru" maxWidth={700}>
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            {/* Orang Tua */}
+            <div>
+              <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", marginBottom: 12 }}>1. Data Orang Tua / Wali</h3>
+              <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+                {(["pilih", "baru"] as const).map(m => (
+                  <button key={m} type="button" onClick={() => setModeOrtu(m)}
+                    style={{ padding: "7px 14px", borderRadius: "var(--radius-md)", border: "1.5px solid", fontSize: 12.5, fontWeight: 700, cursor: "pointer",
+                      background: modeOrtu === m ? "var(--color-primary-bg)" : "white",
+                      color: modeOrtu === m ? "var(--color-primary)" : "var(--color-text-secondary)",
+                      borderColor: modeOrtu === m ? "var(--color-primary)" : "var(--color-border)" }}>
+                    {m === "pilih" ? "Orang Tua Terdaftar" : "+ Tambah Orang Tua Baru"}
+                  </button>
+                ))}
               </div>
-            ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
+              {modeOrtu === "pilih" ? (
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Nama Lengkap Orang Tua</label>
-                  <input className="form-input" placeholder="Contoh: Rina Handayani" value={namaOrtuBaru} onChange={e => setNamaOrtuBaru(e.target.value)} required />
+                  <label className="form-label">Pilih Orang Tua</label>
+                  <select className="form-input" value={selectedOrtu} onChange={e => setSelectedOrtu(e.target.value)}>
+                    {ortuExisting.map(o => <option key={o.id} value={o.id}>{o.nama} ({o.hp})</option>)}
+                  </select>
                 </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">No. WhatsApp</label>
-                  <input className="form-input" placeholder="0812xxxxxxx" value={hpOrtuBaru} onChange={e => setHpOrtuBaru(e.target.value)} required />
-                </div>
-                <div className="form-group" style={{ marginBottom: 0, gridColumn: "span 2" }}>
-                  <label className="form-label">Email (untuk login akun Orang Tua)</label>
-                  <input className="form-input" type="email" placeholder="nama@email.com" value={emailOrtuBaru} onChange={e => setEmailOrtuBaru(e.target.value)} />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Data Siswa */}
-          <div className="card" style={{ padding: 24 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--color-text-primary)", marginBottom: 16 }}>2. Data Siswa</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Nama Lengkap Siswa</label>
-                <input className="form-input" placeholder="Contoh: Anisa Putri" value={namaSiswa} onChange={e => setNamaSiswa(e.target.value)} required />
-              </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Tanggal Lahir</label>
-                <input className="form-input" type="date" value={tgllahir} onChange={e => setTgllahir(e.target.value)} />
-              </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Jenis Kelamin</label>
-                <select className="form-input" value={gender} onChange={e => setGender(e.target.value)}>
-                  <option>Laki-laki</option><option>Perempuan</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Program & Kelas */}
-          <div className="card" style={{ padding: 24 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--color-text-primary)", marginBottom: 16 }}>3. Program & Penempatan Kelas</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14, marginBottom: 16 }}>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Pilih Program</label>
-                <select className="form-input" value={selectedProgram} onChange={e => setSelectedProgram(e.target.value)}>
-                  {dataProgram.map(p => <option key={p.id} value={p.id}>{p.nama} — Rp {p.harga.toLocaleString("id")}</option>)}
-                </select>
-              </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Pilih Kelas / Batch</label>
-                <select className="form-input" value={selectedKelas} onChange={e => setSelectedKelas(e.target.value)}>
-                  {dataKelas.map(k => (
-                    <option key={k.id} value={k.id} disabled={k.sisaKapasitas === 0}>
-                      {k.nama} {k.sisaKapasitas === 0 ? `— PENUH (${k.kapasitas}/${k.kapasitas})` : `(Sisa ${k.sisaKapasitas} dari ${k.kapasitas})`}
-                    </option>
-                  ))}
-                </select>
-                {kelasPenuh && (
-                  <div style={{ marginTop: 8, background: "#fee2e2", border: "1.5px solid #fca5a5", borderRadius: "var(--radius-md)", padding: "10px 14px", fontSize: 13, color: "#991b1b", fontWeight: 600 }}>
-                    Kelas ini PENUH (maks. 7 siswa). Pilih kelas/batch lain atau buat kelas baru.
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Nama Lengkap Orang Tua</label>
+                    <input className="form-input" placeholder="Contoh: Rina Handayani" value={namaOrtuBaru} onChange={e => setNamaOrtuBaru(e.target.value)} required />
                   </div>
-                )}
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">No. WhatsApp</label>
+                    <input className="form-input" placeholder="0812xxxxxxx" value={hpOrtuBaru} onChange={e => setHpOrtuBaru(e.target.value)} required />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0, gridColumn: "span 2" }}>
+                    <label className="form-label">Email (untuk login akun Orang Tua)</label>
+                    <input className="form-input" type="email" placeholder="nama@email.com" value={emailOrtuBaru} onChange={e => setEmailOrtuBaru(e.target.value)} />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Data Siswa */}
+            <div>
+              <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", marginBottom: 12 }}>2. Data Siswa</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12 }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Nama Lengkap Siswa</label>
+                  <input className="form-input" placeholder="Contoh: Anisa Putri" value={namaSiswa} onChange={e => setNamaSiswa(e.target.value)} required />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Tanggal Lahir</label>
+                  <input className="form-input" type="date" value={tgllahir} onChange={e => setTgllahir(e.target.value)} />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Jenis Kelamin</label>
+                  <select className="form-input" value={gender} onChange={e => setGender(e.target.value)}>
+                    <option>Laki-laki</option><option>Perempuan</option>
+                  </select>
+                </div>
               </div>
             </div>
-            <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "var(--radius-md)", padding: "10px 14px", fontSize: 13, color: "#1e40af" }}>
-              Setelah disubmit, pendaftaran masuk ke antrian <strong>Pending</strong> dan menunggu review Admin sebelum siswa resmi terdaftar.
-            </div>
-          </div>
 
-          <button type="submit" disabled={sedangKirim || !namaSiswa.trim() || kelasPenuh}
-            style={{ width: "100%", padding: "14px", borderRadius: "var(--radius-md)", border: "none", fontWeight: 800, fontSize: 15, cursor: kelasPenuh ? "not-allowed" : "pointer", transition: "all .2s ease",
-              background: kelasPenuh ? "#94a3b8" : "var(--color-primary)", color: "white",
-              opacity: sedangKirim || !namaSiswa.trim() ? 0.6 : 1 }}>
-            {sedangKirim ? "Memproses..." : kelasPenuh ? "Kelas Penuh — Pilih Kelas Lain" : "Kirim ke Antrian Pending"}
-          </button>
-        </form>
+            {/* Program & Kelas */}
+            <div>
+              <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", marginBottom: 12 }}>3. Program & Penempatan Kelas</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginBottom: 14 }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Pilih Program</label>
+                  <select className="form-input" value={selectedProgram} onChange={e => setSelectedProgram(e.target.value)}>
+                    {dataProgram.map(p => <option key={p.id} value={p.id}>{p.nama} — Rp {p.harga.toLocaleString("id")}</option>)}
+                  </select>
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Pilih Kelas / Batch</label>
+                  <select className="form-input" value={selectedKelas} onChange={e => setSelectedKelas(e.target.value)}>
+                    {dataKelas.map(k => (
+                      <option key={k.id} value={k.id} disabled={k.sisaKapasitas === 0}>
+                        {k.nama} {k.sisaKapasitas === 0 ? `— PENUH (${k.kapasitas}/${k.kapasitas})` : `(Sisa ${k.sisaKapasitas} dari ${k.kapasitas})`}
+                      </option>
+                    ))}
+                  </select>
+                  {kelasPenuh && (
+                    <div style={{ marginTop: 8, background: "#fee2e2", border: "1.5px solid #fca5a5", borderRadius: "var(--radius-md)", padding: "10px 14px", fontSize: 12.5, color: "#991b1b", fontWeight: 600 }}>
+                      Kelas ini PENUH (maks. 7 siswa). Pilih kelas/batch lain.
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "var(--radius-md)", padding: "10px 14px", fontSize: 12.5, color: "#1e40af" }}>
+                Setelah disubmit, pendaftaran masuk ke antrian <strong>Pending</strong> dan menunggu review Admin.
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button type="button" className="btn btn-ghost" onClick={() => setShowFormModal(false)}>Batal</button>
+              <button type="submit" disabled={sedangKirim || !namaSiswa.trim() || kelasPenuh}
+                style={{ flex: 1, padding: "12px", borderRadius: "var(--radius-md)", border: "none", fontWeight: 800, fontSize: 14, cursor: kelasPenuh ? "not-allowed" : "pointer", transition: "all .2s ease",
+                  background: kelasPenuh ? "#94a3b8" : "var(--color-primary)", color: "white",
+                  opacity: sedangKirim || !namaSiswa.trim() ? 0.6 : 1 }}>
+                {sedangKirim ? "Memproses..." : kelasPenuh ? "Kelas Penuh — Pilih Kelas Lain" : "Kirim ke Antrian Pending"}
+              </button>
+            </div>
+          </form>
+        </Modal>
       )}
 
-      {sukses && tab === "antrian" && (
+      {sukses && !showFormModal && (
         <div style={{ background: "#d1fae5", border: "1px solid #86efac", borderRadius: "var(--radius-lg)", padding: "16px 20px", display: "flex", gap: 12, alignItems: "center", animation: "fadeIn .3s ease" }}>
           <div style={{ fontSize: 14, color: "#15803d", fontWeight: 600 }}>Pendaftaran berhasil dikirim ke antrian. Status: <strong>Pending</strong> — menunggu review Admin.</div>
         </div>
       )}
 
       {/* Modal Review */}
-      {dipilih && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn .2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 520, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,.25)", animation: "modalIn .25s cubic-bezier(0.16,1,0.3,1)", maxHeight: "90vh", overflowY: "auto" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Review Pendaftaran</h2>
-              <button onClick={() => setDipilih(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
+      {dipilih && (<Modal open onClose={() => setDipilih(null)} title="Review Pendaftaran" maxWidth={520}>
 
             {/* Info */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 16 }}>
@@ -338,9 +336,7 @@ export default function PendaftaranPage() {
                 <button className="btn btn-ghost" onClick={() => setDipilih(null)}>Tutup</button>
               </div>
             )}
-          </div>
-        </div>
-      )}
+      </Modal>)}
     </div>
   );
 }

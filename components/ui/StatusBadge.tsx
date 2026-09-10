@@ -64,7 +64,7 @@ export default function StatusBadge({ status, variant, prefix, size = "default" 
         fontSize,
         fontWeight: 700,
         padding,
-        borderRadius: "var(--radius-sm)",
+        borderRadius: "var(--radius-full)",
         whiteSpace: "nowrap",
       }}
     >

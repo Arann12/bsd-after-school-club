@@ -45,7 +45,7 @@ export default function Modal({ open, onClose, title, maxWidth = 520, children }
         {title && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
             <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>{title}</h2>
-            <button onClick={onClose} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)", padding: 4 }}>
+            <button onClick={onClose} className="modal-close">
               <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           </div>
@@ -79,7 +79,6 @@ export function ConfirmDialog({
         <button className="btn btn-ghost" onClick={onClose}>{cancelLabel}</button>
         <button
           className={`btn ${variant === "danger" ? "btn-danger" : "btn-accent"}`}
-          style={variant === "danger" ? { background: "var(--color-danger)", color: "#fff" } : undefined}
           onClick={() => { onConfirm(); onClose(); }}
         >
           {confirmLabel}

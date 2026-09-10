@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Modal from "@/components/ui/Modal";
 
 export interface Program {
   id: string;
@@ -119,8 +120,6 @@ export default function AdminProgramsPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
-        @keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
         .prog-card{transition:all .2s ease;cursor:pointer}
         .prog-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.12)!important;transform:translateY(-2px)}
       `}</style>
@@ -238,160 +237,135 @@ export default function AdminProgramsPage() {
       </div>
 
       {/* MODAL DETAIL PROGRAM (Mode Normal — Requirement #5) */}
-      {showDetailModal && selectedProgram && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 580, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1)", maxHeight: "90vh", overflowY: "auto" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>
-                Detail Informasi Program — {selectedProgram.name}
-              </h2>
-              <button onClick={() => setShowDetailModal(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
+      <Modal open={showDetailModal && !!selectedProgram} onClose={() => setShowDetailModal(false)} title={selectedProgram ? `Detail Informasi Program — ${selectedProgram.name}` : ""} maxWidth={580}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Card Banner */}
+          <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "16px 20px" }}>
+            <div style={{ fontSize: 11, fontFamily: "monospace", color: "var(--color-text-muted)" }}>{selectedProgram?.id}</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", marginTop: 2 }}>{selectedProgram?.name}</div>
+            <p style={{ fontSize: 13, color: "var(--color-text-secondary)", marginTop: 6, lineHeight: 1.5 }}>{selectedProgram?.desc}</p>
+          </div>
+
+          {/* Grid Metrics */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+            {[
+              { label: "Jumlah Pertemuan", val: `${selectedProgram?.sessions} Sesi` },
+              { label: "Biaya / Pertemuan", val: `Rp ${selectedProgram?.price.toLocaleString("id-ID")}` },
+              { label: "Total Siswa", val: `${selectedProgram?.students} Siswa` },
+            ].map(m => (
+              <div key={m.label} style={{ background: "#f8fafc", borderRadius: 10, padding: "12px 14px", border: "1px solid var(--color-border)" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>{m.label}</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "var(--color-text-primary)", marginTop: 2 }}>{m.val}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* GURU YANG MENGAJAR (Requirement #5) */}
+          <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 12, padding: "16px 18px" }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: "#166534", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
+              Guru / Tenaga Pengajar Program Ini
             </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {/* Card Banner */}
-              <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "16px 20px" }}>
-                <div style={{ fontSize: 11, fontFamily: "monospace", color: "var(--color-text-muted)" }}>{selectedProgram.id}</div>
-                <div style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", marginTop: 2 }}>{selectedProgram.name}</div>
-                <p style={{ fontSize: 13, color: "var(--color-text-secondary)", marginTop: 6, lineHeight: 1.5 }}>{selectedProgram.desc}</p>
-              </div>
-
-              {/* Grid Metrics */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
-                {[
-                  { label: "Jumlah Pertemuan", val: `${selectedProgram.sessions} Sesi` },
-                  { label: "Biaya / Pertemuan", val: `Rp ${selectedProgram.price.toLocaleString("id-ID")}` },
-                  { label: "Total Siswa", val: `${selectedProgram.students} Siswa` },
-                ].map(m => (
-                  <div key={m.label} style={{ background: "#f8fafc", borderRadius: 10, padding: "12px 14px", border: "1px solid var(--color-border)" }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>{m.label}</div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: "var(--color-text-primary)", marginTop: 2 }}>{m.val}</div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {selectedProgram?.teachers.map(t => (
+                <div key={t} style={{ background: "#fff", border: "1px solid #86efac", borderRadius: 8, padding: "8px 14px", fontSize: 13, fontWeight: 700, color: "#15803d", display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#d1fae5", color: "#059669", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 12 }}>
+                    {t[0]}
                   </div>
-                ))}
-              </div>
-
-              {/* GURU YANG MENGAJAR (Requirement #5) */}
-              <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 12, padding: "16px 18px" }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: "#166534", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
-                  Guru / Tenaga Pengajar Program Ini
+                  {t}
                 </div>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  {selectedProgram.teachers.map(t => (
-                    <div key={t} style={{ background: "#fff", border: "1px solid #86efac", borderRadius: 8, padding: "8px 14px", fontSize: 13, fontWeight: 700, color: "#15803d", display: "flex", alignItems: "center", gap: 8 }}>
-                      <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#d1fae5", color: "#059669", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 12 }}>
-                        {t[0]}
-                      </div>
-                      {t}
-                    </div>
-                  ))}
-                </div>
-              </div>
+              ))}
+            </div>
+          </div>
 
-              {/* LEVEL-LEVEL DALAM PROGRAM */}
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Tingkatan Level</div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {selectedProgram.levels.map(l => (
-                    <span key={l} style={{ background: "var(--color-primary-bg)", color: "var(--color-primary)", fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 999 }}>{l}</span>
-                  ))}
-                </div>
-              </div>
+          {/* LEVEL-LEVEL DALAM PROGRAM */}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Tingkatan Level</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {selectedProgram?.levels.map(l => (
+                <span key={l} style={{ background: "var(--color-primary-bg)", color: "var(--color-primary)", fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 999 }}>{l}</span>
+              ))}
+            </div>
+          </div>
 
-              {/* DAFTAR SISWA PROGRAM (Requirement #5) */}
-              <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: 14 }}>
-                <button
-                  className="btn btn-outline"
-                  style={{ width: "100%", justifyContent: "center", fontWeight: 700 }}
-                  onClick={() => setShowStudentsTab(!showStudentsTab)}
-                >
-                  {showStudentsTab ? "Sembunyikan Daftar Siswa" : `Lihat Siswa Program Ini (${selectedProgram.studentList.length})`}
-                </button>
+          {/* DAFTAR SISWA PROGRAM (Requirement #5) */}
+          <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: 14 }}>
+            <button
+              className="btn btn-outline"
+              style={{ width: "100%", justifyContent: "center", fontWeight: 700 }}
+              onClick={() => setShowStudentsTab(!showStudentsTab)}
+            >
+              {showStudentsTab ? "Sembunyikan Daftar Siswa" : `Lihat Siswa Program Ini (${selectedProgram?.studentList.length})`}
+            </button>
 
-                {showStudentsTab && (
-                  <div style={{ marginTop: 12, background: "var(--color-bg)", borderRadius: 10, padding: 14 }}>
-                    {selectedProgram.studentList.length === 0 ? (
-                      <div style={{ fontSize: 13, color: "var(--color-text-muted)", textAlign: "center", padding: 12 }}>Belum ada siswa terdaftar pada program ini.</div>
-                    ) : (
-                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                        <thead>
-                          <tr style={{ borderBottom: "1px solid var(--color-border)" }}>
-                            <th style={{ textAlign: "left", padding: 6, fontSize: 11, color: "var(--color-text-muted)" }}>Nama Siswa</th>
-                            <th style={{ textAlign: "left", padding: 6, fontSize: 11, color: "var(--color-text-muted)" }}>Kelas</th>
-                            <th style={{ textAlign: "left", padding: 6, fontSize: 11, color: "var(--color-text-muted)" }}>Orang Tua</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {selectedProgram.studentList.map(s => (
-                            <tr key={s.name} style={{ borderBottom: "1px solid var(--color-border-light)" }}>
-                              <td style={{ padding: "8px 6px", fontWeight: 700 }}>{s.name}</td>
-                              <td style={{ padding: "8px 6px" }}>{s.kelas}</td>
-                              <td style={{ padding: "8px 6px", color: "var(--color-text-secondary)" }}>{s.parent}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-                  </div>
+            {showStudentsTab && (
+              <div style={{ marginTop: 12, background: "var(--color-bg)", borderRadius: 10, padding: 14 }}>
+                {selectedProgram?.studentList.length === 0 ? (
+                  <div style={{ fontSize: 13, color: "var(--color-text-muted)", textAlign: "center", padding: 12 }}>Belum ada siswa terdaftar pada program ini.</div>
+                ) : (
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                    <thead>
+                      <tr style={{ borderBottom: "1px solid var(--color-border)" }}>
+                        <th style={{ textAlign: "left", padding: 6, fontSize: 11, color: "var(--color-text-muted)" }}>Nama Siswa</th>
+                        <th style={{ textAlign: "left", padding: 6, fontSize: 11, color: "var(--color-text-muted)" }}>Kelas</th>
+                        <th style={{ textAlign: "left", padding: 6, fontSize: 11, color: "var(--color-text-muted)" }}>Orang Tua</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedProgram?.studentList.map(s => (
+                        <tr key={s.name} style={{ borderBottom: "1px solid var(--color-border-light)" }}>
+                          <td style={{ padding: "8px 6px", fontWeight: 700 }}>{s.name}</td>
+                          <td style={{ padding: "8px 6px" }}>{s.kelas}</td>
+                          <td style={{ padding: "8px 6px", color: "var(--color-text-secondary)" }}>{s.parent}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 )}
               </div>
+            )}
+          </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 6 }}>
-                <button className="btn btn-ghost" onClick={() => setShowDetailModal(false)}>Tutup</button>
-                <button className="btn btn-accent" onClick={() => { setShowDetailModal(false); setShowEditModal(true); }}>Edit Program Ini</button>
-              </div>
-            </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 6 }}>
+            <button className="btn btn-ghost" onClick={() => setShowDetailModal(false)}>Tutup</button>
+            <button className="btn btn-accent" onClick={() => { setShowDetailModal(false); setShowEditModal(true); }}>Edit Program Ini</button>
           </div>
         </div>
-      )}
+      </Modal>
 
       {/* MODAL EDIT / TAMBAH PROGRAM */}
-      {showEditModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 500, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>
-                {selectedProgram ? `Edit Program — ${selectedProgram.name}` : "Tambah Program Baru"}
-              </h2>
-              <button onClick={() => setShowEditModal(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
+      <Modal open={showEditModal} onClose={() => setShowEditModal(false)} title={selectedProgram ? `Edit Program — ${selectedProgram.name}` : "Tambah Program Baru"} maxWidth={500}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label">Nama Program</label>
+            <input className="form-input" defaultValue={selectedProgram?.name || ""} placeholder="Contoh: Calistung" />
+          </div>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label">Deskripsi</label>
+            <textarea className="form-input" defaultValue={selectedProgram?.desc || ""} placeholder="Deskripsi program..." style={{ minHeight: 80 }} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Harga Per Pertemuan (Rp)</label>
+              <input className="form-input" defaultValue={selectedProgram?.price.toString() || ""} placeholder="50000" />
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Nama Program</label>
-                <input className="form-input" defaultValue={selectedProgram?.name || ""} placeholder="Contoh: Calistung" />
-              </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Deskripsi</label>
-                <textarea className="form-input" defaultValue={selectedProgram?.desc || ""} placeholder="Deskripsi program..." style={{ minHeight: 80 }} />
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Harga Per Pertemuan (Rp)</label>
-                  <input className="form-input" defaultValue={selectedProgram?.price.toString() || ""} placeholder="50000" />
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Jumlah Pertemuan Paket</label>
-                  <input className="form-input" defaultValue={selectedProgram?.sessions.toString() || ""} placeholder="12" />
-                </div>
-              </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Status Program</label>
-                <select className="form-input" defaultValue={selectedProgram?.status || "Aktif"}>
-                  <option>Aktif</option>
-                  <option>Nonaktif</option>
-                </select>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 8 }}>
-                <button className="btn btn-ghost" onClick={() => setShowEditModal(false)}>Batal</button>
-                <button className="btn btn-accent" onClick={() => setShowEditModal(false)}>Simpan Program</button>
-              </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Jumlah Pertemuan Paket</label>
+              <input className="form-input" defaultValue={selectedProgram?.sessions.toString() || ""} placeholder="12" />
             </div>
           </div>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label">Status Program</label>
+            <select className="form-input" defaultValue={selectedProgram?.status || "Aktif"}>
+              <option>Aktif</option>
+              <option>Nonaktif</option>
+            </select>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 8 }}>
+            <button className="btn btn-ghost" onClick={() => setShowEditModal(false)}>Batal</button>
+            <button className="btn btn-accent" onClick={() => setShowEditModal(false)}>Simpan Program</button>
+          </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

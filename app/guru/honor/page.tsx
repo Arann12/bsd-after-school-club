@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Modal from "@/components/ui/Modal";
 
 export interface TeachingSessionLog {
   id: string;
@@ -385,65 +386,33 @@ export default function GuruHonorJamPage() {
 
       {/* MODAL DETAIL SESI MENGAJAR */}
       {selectedDetailLog && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(15,23,42,0.6)",
-            backdropFilter: "blur(6px)",
-            zIndex: 100,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 16,
-          }}
-        >
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 20,
-              maxWidth: 580,
-              width: "100%",
-              maxHeight: "90vh",
-              overflowY: "auto",
-              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.3)",
-              padding: 26,
-            }}
-          >
-            {/* Header Modal */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18, borderBottom: "1px solid var(--color-border-light)", paddingBottom: 14 }}>
-              <div>
-                <span style={{ fontSize: 11, fontFamily: "monospace", color: "var(--color-primary)", fontWeight: 800 }}>
-                  {selectedDetailLog.id}
-                </span>
-                <h2 style={{ fontSize: 18, fontWeight: 900, color: "var(--color-text-primary)", margin: "2px 0 0" }}>
-                  Detail Sesi {selectedDetailLog.kelas} — {selectedDetailLog.program}
-                </h2>
-                <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>
-                  {selectedDetailLog.tanggal} · Pukul {selectedDetailLog.jamMulai} – {selectedDetailLog.jamSelesai} WIB
-                </div>
-              </div>
-              <button
-                onClick={() => setSelectedDetailLog(null)}
-                style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)", fontSize: 18, fontWeight: 700 }}
-              >
-                ✕
-              </button>
-            </div>
+      <Modal open onClose={() => setSelectedDetailLog(null)} title="Detail Sesi Mengajar" maxWidth={580}>
+        {/* Header */}
+        <div style={{ marginBottom: 18, borderBottom: "1px solid var(--color-border-light)", paddingBottom: 14 }}>
+          <span style={{ fontSize: 11, fontFamily: "monospace", color: "var(--color-primary)", fontWeight: 800 }}>
+            {selectedDetailLog?.id}
+          </span>
+          <h2 style={{ fontSize: 18, fontWeight: 900, color: "var(--color-text-primary)", margin: "2px 0 0" }}>
+            Detail Sesi {selectedDetailLog?.kelas} — {selectedDetailLog?.program}
+          </h2>
+          <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>
+            {selectedDetailLog?.tanggal} · Pukul {selectedDetailLog?.jamMulai} – {selectedDetailLog?.jamSelesai} WIB
+          </div>
+        </div>
 
-            {/* Grid Metrics */}
+        {/* Grid Metrics */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 16 }}>
               <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "12px 14px", border: "1px solid var(--color-border)" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Durasi Jam</div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "#1d4ed8", marginTop: 2 }}>{selectedDetailLog.durasiJam} Jam</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#1d4ed8", marginTop: 2 }}>{selectedDetailLog?.durasiJam} Jam</div>
               </div>
               <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "12px 14px", border: "1px solid var(--color-border)" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Ruang Kelas</div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: "var(--color-text-primary)", marginTop: 2 }}>{selectedDetailLog.ruang}</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "var(--color-text-primary)", marginTop: 2 }}>{selectedDetailLog?.ruang}</div>
               </div>
               <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "12px 14px", border: "1px solid var(--color-border)" }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Siswa Hadir</div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: "#059669", marginTop: 2 }}>{selectedDetailLog.siswaHadir} / {selectedDetailLog.totalSiswa} Siswa</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#059669", marginTop: 2 }}>{selectedDetailLog?.siswaHadir} / {selectedDetailLog?.totalSiswa} Siswa</div>
               </div>
             </div>
 
@@ -453,7 +422,7 @@ export default function GuruHonorJamPage() {
                 Materi Pembelajaran / Modul
               </div>
               <div style={{ fontSize: 13, color: "#0f172a", lineHeight: 1.5, fontWeight: 600 }}>
-                {selectedDetailLog.materi}
+                {selectedDetailLog?.materi}
               </div>
             </div>
 
@@ -463,14 +432,14 @@ export default function GuruHonorJamPage() {
                 Catatan Guru & Evaluasi Sesi
               </div>
               <div style={{ fontSize: 13, color: "#334155", lineHeight: 1.5 }}>
-                {selectedDetailLog.catatanGuru}
+                {selectedDetailLog?.catatanGuru}
               </div>
             </div>
 
             {/* Status Verifikasi Info */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#ecfdf5", border: "1px solid #a7f3d0", padding: "12px 16px", borderRadius: 10, marginBottom: 18 }}>
               <div style={{ fontSize: 12, color: "#047857", fontWeight: 700 }}>
-                Status Verifikasi Logbook: <strong>{selectedDetailLog.statusLogbook}</strong>
+                Status Verifikasi Logbook: <strong>{selectedDetailLog?.statusLogbook}</strong>
               </div>
               <span style={{ fontSize: 11, color: "#059669", background: "#fff", padding: "2px 8px", borderRadius: 6, border: "1px solid #a7f3d0" }}>
                 Validasi Sistem
@@ -481,73 +450,37 @@ export default function GuruHonorJamPage() {
             <button className="btn btn-accent" style={{ width: "100%" }} onClick={() => setSelectedDetailLog(null)}>
               Tutup Detail Sesi
             </button>
-          </div>
-        </div>
+      </Modal>
       )}
 
       {/* MODAL AJUKAN KOREKSI JAM */}
-      {showKoreksiModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(15,23,42,0.6)",
-            backdropFilter: "blur(6px)",
-            zIndex: 100,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 16,
-          }}
-        >
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 20,
-              maxWidth: 500,
-              width: "100%",
-              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.3)",
-              padding: 26,
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-              <div>
-                <h2 style={{ fontSize: 18, fontWeight: 900, color: "var(--color-text-primary)", margin: 0 }}>
-                  Form Pengajuan Koreksi Jam
-                </h2>
-                <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: "2px 0 0" }}>
-                  Ajukan klaim durasi jam mengajar jika terdapat sesi yang belum terakumulasi.
-                </p>
-              </div>
-              <button onClick={() => setShowKoreksiModal(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)", fontSize: 18, fontWeight: 700 }}>
-                ✕
-              </button>
-            </div>
+      <Modal open={showKoreksiModal} onClose={() => setShowKoreksiModal(false)} title="Form Pengajuan Koreksi Jam" maxWidth={500}>
+        <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: "0 0 16px 0", lineHeight: 1.4 }}>
+          Ajukan klaim durasi jam mengajar jika terdapat sesi yang belum terakumulasi.
+        </p>
 
-            <form onSubmit={handleAjukanKoreksi} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Tanggal Sesi Mengajar</label>
-                <input className="form-input" type="date" required value={koreksiTanggal} onChange={(e) => setKoreksiTanggal(e.target.value)} />
-              </div>
-
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Estimasi Durasi Jam (Jam)</label>
-                <input className="form-input" type="number" min={1} max={8} required value={koreksiDurasi} onChange={(e) => setKoreksiDurasi(Number(e.target.value))} />
-              </div>
-
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Alasan / Catatan Koreksi</label>
-                <textarea className="form-input" rows={3} placeholder="Contoh: Mengisi kelas pengganti KLS-B pada tanggal..." required value={koreksiAlasan} onChange={(e) => setKoreksiAlasan(e.target.value)} />
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 10 }}>
-                <button type="button" className="btn btn-ghost" onClick={() => setShowKoreksiModal(false)}>Batal</button>
-                <button type="submit" className="btn btn-accent">Kirim Pengajuan</button>
-              </div>
-            </form>
+        <form onSubmit={handleAjukanKoreksi} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Tanggal Sesi Mengajar</label>
+            <input className="form-input" type="date" required value={koreksiTanggal} onChange={(e) => setKoreksiTanggal(e.target.value)} />
           </div>
-        </div>
-      )}
+
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Estimasi Durasi Jam (Jam)</label>
+            <input className="form-input" type="number" min={1} max={8} required value={koreksiDurasi} onChange={(e) => setKoreksiDurasi(Number(e.target.value))} />
+          </div>
+
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Alasan / Catatan Koreksi</label>
+            <textarea className="form-input" rows={3} placeholder="Contoh: Mengisi kelas pengganti KLS-B pada tanggal..." required value={koreksiAlasan} onChange={(e) => setKoreksiAlasan(e.target.value)} />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 10 }}>
+            <button type="button" className="btn btn-ghost" onClick={() => setShowKoreksiModal(false)}>Batal</button>
+            <button type="submit" className="btn btn-accent">Kirim Pengajuan</button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

@@ -200,7 +200,7 @@ export default function Header({
       {/* Right Actions */}
       <div className="header-actions" style={{ position: "relative" }}>
         {/* Notification Bell */}
-        <NotificationDropdown />
+        <NotificationDropdown role={pathname.startsWith("/admin") ? "admin" : pathname.startsWith("/guru") ? "guru" : pathname.startsWith("/orang-tua") ? "orangTua" : "owner"} />
 
         {/* Help Question Icon (if Orang Tua) */}
         {greetingText && (

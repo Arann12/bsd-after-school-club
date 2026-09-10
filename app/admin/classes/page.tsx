@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import Modal from "@/components/ui/Modal";
 
 export interface ClassItem {
   id: string;
@@ -125,8 +126,6 @@ export default function AdminClassesPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
-        @keyframes modalIn { from { opacity:0; transform:translateY(16px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
-        @keyframes fadeIn  { from { opacity:0; } to { opacity:1; } }
         .cls-card { transition: all 0.2s ease; cursor: pointer; }
         .cls-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important; transform: translateY(-2px); }
       `}</style>
@@ -232,88 +231,77 @@ export default function AdminClassesPage() {
       </div>
 
       {/* MODAL DETAIL KELAS & SISWA INSIDE (Requirement #8) */}
-      {selectedClass && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 620, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1)", maxHeight: "90vh", overflowY: "auto" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>
-                Detail Kelas — {selectedClass.name}
-              </h2>
-              <button onClick={() => setSelectedClass(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
+      <Modal open={!!selectedClass} onClose={() => setSelectedClass(null)} title={selectedClass ? `Detail Kelas — ${selectedClass.name}` : ""} maxWidth={620}>
+        {selectedClass && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Header Info Guru & Jadwal */}
+            <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "16px 20px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Guru Pengajar</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "var(--color-primary)", marginTop: 2 }}>👩‍🏫 {selectedClass.guru}</div>
+                <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>{selectedClass.guruHp}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Jadwal & Ruangan</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "var(--color-text-primary)", marginTop: 2 }}>{selectedClass.jadwalHari}</div>
+                <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>{selectedClass.jadwalJam} ({selectedClass.ruangan})</div>
+              </div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {/* Header Info Guru & Jadwal */}
-              <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "16px 20px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Guru Pengajar</div>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: "var(--color-primary)", marginTop: 2 }}>👩‍🏫 {selectedClass.guru}</div>
-                  <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>{selectedClass.guruHp}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Jadwal & Ruangan</div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: "var(--color-text-primary)", marginTop: 2 }}>{selectedClass.jadwalHari}</div>
-                  <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>{selectedClass.jadwalJam} ({selectedClass.ruangan})</div>
-                </div>
+            {/* RINCIAN DAFTAR SISWA DI KELAS INI (Requirement #8) */}
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "var(--color-text-primary)", marginBottom: 10 }}>
+                👨‍🎓 Daftar Siswa Terdaftar di {selectedClass.id} ({selectedClass.siswaList.length} Anak)
               </div>
 
-              {/* RINCIAN DAFTAR SISWA DI KELAS INI (Requirement #8) */}
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: "var(--color-text-primary)", marginBottom: 10 }}>
-                  👨‍🎓 Daftar Siswa Terdaftar di {selectedClass.id} ({selectedClass.siswaList.length} Anak)
+              {selectedClass.siswaList.length === 0 ? (
+                <div style={{ background: "var(--color-bg)", padding: 20, borderRadius: 10, textAlign: "center", color: "var(--color-text-muted)", fontSize: 13 }}>
+                  Belum ada siswa yang dimasukkan ke kelas ini.
                 </div>
-
-                {selectedClass.siswaList.length === 0 ? (
-                  <div style={{ background: "var(--color-bg)", padding: 20, borderRadius: 10, textAlign: "center", color: "var(--color-text-muted)", fontSize: 13 }}>
-                    Belum ada siswa yang dimasukkan ke kelas ini.
-                  </div>
-                ) : (
-                  <div style={{ border: "1px solid var(--color-border)", borderRadius: 12, overflow: "hidden" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
-                      <thead>
-                        <tr style={{ background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}>
-                          <th style={{ padding: "10px 14px", fontSize: 11, color: "var(--color-text-muted)" }}>ID Siswa</th>
-                          <th style={{ padding: "10px 14px", fontSize: 11, color: "var(--color-text-muted)" }}>Nama Siswa</th>
-                          <th style={{ padding: "10px 14px", fontSize: 11, color: "var(--color-text-muted)" }}>Orang Tua</th>
-                          <th style={{ padding: "10px 14px", fontSize: 11, color: "var(--color-text-muted)" }}>Status Bayar</th>
+              ) : (
+                <div style={{ border: "1px solid var(--color-border)", borderRadius: 12, overflow: "hidden" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
+                    <thead>
+                      <tr style={{ background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}>
+                        <th style={{ padding: "10px 14px", fontSize: 11, color: "var(--color-text-muted)" }}>ID Siswa</th>
+                        <th style={{ padding: "10px 14px", fontSize: 11, color: "var(--color-text-muted)" }}>Nama Siswa</th>
+                        <th style={{ padding: "10px 14px", fontSize: 11, color: "var(--color-text-muted)" }}>Orang Tua</th>
+                        <th style={{ padding: "10px 14px", fontSize: 11, color: "var(--color-text-muted)" }}>Status Bayar</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedClass.siswaList.map((s, idx) => (
+                        <tr key={s.id} style={{ borderBottom: idx < selectedClass.siswaList.length - 1 ? "1px solid var(--color-border-light)" : "none" }}>
+                          <td style={{ padding: "12px 14px", fontFamily: "monospace", fontSize: 12, color: "var(--color-text-muted)" }}>{s.id}</td>
+                          <td style={{ padding: "12px 14px", fontWeight: 700, color: "var(--color-text-primary)" }}>{s.name}</td>
+                          <td style={{ padding: "12px 14px", color: "var(--color-text-secondary)" }}>
+                            <div>{s.parent}</div>
+                            <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>{s.parentPhone}</div>
+                          </td>
+                          <td style={{ padding: "12px 14px" }}>
+                            <span style={{
+                              background: s.statusBayar === "Lunas" ? "#d1fae5" : "#fee2e2",
+                              color: s.statusBayar === "Lunas" ? "#059669" : "#dc2626",
+                              fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 999
+                            }}>
+                              {s.statusBayar}
+                            </span>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {selectedClass.siswaList.map((s, idx) => (
-                          <tr key={s.id} style={{ borderBottom: idx < selectedClass.siswaList.length - 1 ? "1px solid var(--color-border-light)" : "none" }}>
-                            <td style={{ padding: "12px 14px", fontFamily: "monospace", fontSize: 12, color: "var(--color-text-muted)" }}>{s.id}</td>
-                            <td style={{ padding: "12px 14px", fontWeight: 700, color: "var(--color-text-primary)" }}>{s.name}</td>
-                            <td style={{ padding: "12px 14px", color: "var(--color-text-secondary)" }}>
-                              <div>{s.parent}</div>
-                              <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>{s.parentPhone}</div>
-                            </td>
-                            <td style={{ padding: "12px 14px" }}>
-                              <span style={{
-                                background: s.statusBayar === "Lunas" ? "#d1fae5" : "#fee2e2",
-                                color: s.statusBayar === "Lunas" ? "#059669" : "#dc2626",
-                                fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 999
-                              }}>
-                                {s.statusBayar}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 8 }}>
-                <button className="btn btn-ghost" onClick={() => setSelectedClass(null)}>Tutup</button>
-                <button className="btn btn-accent" onClick={() => setSelectedClass(null)}>+ Masukkan Siswa</button>
-              </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 8 }}>
+              <button className="btn btn-ghost" onClick={() => setSelectedClass(null)}>Tutup</button>
+              <button className="btn btn-accent" onClick={() => setSelectedClass(null)}>+ Masukkan Siswa</button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 }

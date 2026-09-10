@@ -87,8 +87,6 @@ export default function OrangTuaLaporanPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
-        @keyframes modalIn{from{opacity:0;transform:translateY(14px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
         @keyframes shimmer{0%,100%{opacity:1}50%{opacity:.6}}
       `}</style>
 

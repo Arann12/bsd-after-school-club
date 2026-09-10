@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Modal from "@/components/ui/Modal";
 
 export interface GuruKursus {
   id: string;
@@ -66,8 +67,6 @@ export default function OrangTuaAbsensiKalenderPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
-        @keyframes modalIn { from { opacity:0; transform:translateY(16px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
-        @keyframes fadeIn  { from { opacity:0; } to { opacity:1; } }
         .guru-card { transition: all .2s ease; cursor: pointer; }
         .guru-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.08)!important; }
         .cal-day { min-height: 85px; padding: 6px; border-radius: 8px; border: 1px solid var(--color-border-light); background: #fff; transition: all .15s; }
@@ -235,7 +234,7 @@ export default function OrangTuaAbsensiKalenderPage() {
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
               <thead>
                 <tr style={{ background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}>
-                  {["Tanggal", "Jam Sesi", "Status Absensi", "Materi Pembelajaran", "Catatan Guru untuk Ortu & Siswa"].map(h => (
+                  {["Tanggal", "Jam Sesi", "Status Absensi", "Materi Pembelajaran", "Catatan Guru untuk Ortu & Siswa", ""].map(h => (
                     <th key={h} style={{ padding: "10px 14px", fontSize: 11, color: "var(--color-text-muted)", textTransform: "uppercase" }}>{h}</th>
                   ))}
                 </tr>
@@ -256,6 +255,26 @@ export default function OrangTuaAbsensiKalenderPage() {
                     </td>
                     <td style={{ padding: "12px 14px", fontWeight: 700, color: "var(--color-text-primary)" }}>{s.materi}</td>
                     <td style={{ padding: "12px 14px", color: "var(--color-text-secondary)", lineHeight: 1.5 }}>{s.catatanGuru}</td>
+                    <td style={{ padding: "12px 14px" }}>
+                      <button
+                        onClick={() => setSelectedLogbook(s)}
+                        style={{
+                          display: "inline-flex", alignItems: "center", gap: 5,
+                          padding: "6px 12px", borderRadius: 8,
+                          background: "#f0f9ff", border: "1px solid #bae6fd",
+                          color: "#0284c7", fontSize: 12, fontWeight: 700,
+                          cursor: "pointer", transition: "all 0.15s", whiteSpace: "nowrap",
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "#e0f2fe"; e.currentTarget.style.borderColor = "#7dd3fc"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = "#f0f9ff"; e.currentTarget.style.borderColor = "#bae6fd"; }}
+                      >
+                        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        Detail
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -265,41 +284,28 @@ export default function OrangTuaAbsensiKalenderPage() {
       )}
 
       {/* MODAL LOGBOOK DETAIL POPUP */}
-      {selectedLogbook && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 500, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>
-                Catatan Logbook Pembelajaran
-              </h2>
-              <button onClick={() => setSelectedLogbook(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
+      <Modal open={!!selectedLogbook} onClose={() => setSelectedLogbook(null)} title="Catatan Logbook Pembelajaran" maxWidth={500}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 12, padding: "14px 16px" }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: "#0369a1" }}>{selectedLogbook?.tglDisplay} ({selectedLogbook?.jam})</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#0c4a6e", marginTop: 4 }}>{selectedLogbook?.materi}</div>
+            <span style={{ background: selectedLogbook?.status === "Hadir" ? "#d1fae5" : "#fef3c7", color: selectedLogbook?.status === "Hadir" ? "#059669" : "#b45309", fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 999, marginTop: 8, display: "inline-block" }}>
+              Status: {selectedLogbook?.status}
+            </span>
+          </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 12, padding: "14px 16px" }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: "#0369a1" }}>{selectedLogbook.tglDisplay} ({selectedLogbook.jam})</div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "#0c4a6e", marginTop: 4 }}>{selectedLogbook.materi}</div>
-                <span style={{ background: selectedLogbook.status === "Hadir" ? "#d1fae5" : "#fef3c7", color: selectedLogbook.status === "Hadir" ? "#059669" : "#b45309", fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 999, marginTop: 8, display: "inline-block" }}>
-                  Status: {selectedLogbook.status}
-                </span>
-              </div>
-
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 800, color: "var(--color-text-muted)", textTransform: "uppercase", marginBottom: 4 }}>Catatan Perkembangan dari Guru</div>
-                <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "14px 16px", fontSize: 13.5, color: "var(--color-text-primary)", lineHeight: 1.6 }}>
-                  "{selectedLogbook.catatanGuru}"
-                </div>
-              </div>
-
-              <button className="btn btn-ghost" onClick={() => setSelectedLogbook(null)} style={{ marginTop: 8 }}>
-                Tutup Logbook
-              </button>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "var(--color-text-muted)", textTransform: "uppercase", marginBottom: 4 }}>Catatan Perkembangan dari Guru</div>
+            <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "14px 16px", fontSize: 13.5, color: "var(--color-text-primary)", lineHeight: 1.6 }}>
+              "{selectedLogbook?.catatanGuru}"
             </div>
           </div>
+
+          <button className="btn btn-ghost" onClick={() => setSelectedLogbook(null)} style={{ marginTop: 8 }}>
+            Tutup Logbook
+          </button>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

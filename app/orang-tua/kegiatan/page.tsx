@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Modal from "@/components/ui/Modal";
 
 const agendaKegiatan = [
   {
@@ -80,8 +81,6 @@ export default function OrangTuaKegiatanPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
-        @keyframes modalIn{from{opacity:0;transform:translateY(14px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
         .kartu-keg{transition:all .2s ease;cursor:pointer}
         .kartu-keg:hover{box-shadow:0 6px 20px rgba(0,0,0,.1)!important;transform:translateY(-2px)}
       `}</style>
@@ -171,50 +170,41 @@ export default function OrangTuaKegiatanPage() {
       )}
 
       {/* Modal Detail Kegiatan */}
-      {dipilih && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn .2s ease" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 520, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,.25)", animation: "modalIn .25s cubic-bezier(.16,1,.3,1)", maxHeight: "90vh", overflowY: "auto" }}>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18 }}>
-              <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-                <div style={{ width: 48, height: 48, borderRadius: 12, background: dipilih.bgWarna, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{dipilih.emoji}</div>
-                <div>
-                  <div style={{ fontSize: 17, fontWeight: 800, color: "var(--color-text-primary)", lineHeight: 1.3 }}>{dipilih.judul}</div>
-                  <span style={{ ...kategoriWarna[dipilih.kategori], fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 999 }}>{dipilih.kategori}</span>
-                </div>
-              </div>
-              <button onClick={() => setDipilih(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 16 }}>
-              {[
-                { label: "Tanggal", val: dipilih.tanggal },
-                { label: "Waktu", val: dipilih.jam },
-                { label: "Lokasi", val: dipilih.lokasi },
-                { label: "Peserta", val: dipilih.peserta },
-              ].map(item => (
-                <div key={item.label} style={{ background: "var(--color-bg)", borderRadius: 10, padding: "10px 14px" }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", marginBottom: 3 }}>{item.label}</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text-primary)" }}>{item.val}</div>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "14px 16px", marginBottom: 20, fontSize: 13.5, color: "var(--color-text-secondary)", lineHeight: 1.7 }}>
-              {dipilih.deskripsi}
-            </div>
-
-            {dipilih.wajib && (
-              <div style={{ background: "#fee2e2", border: "1px solid #fecaca", borderRadius: "var(--radius-md)", padding: "10px 14px", fontSize: 13, color: "#dc2626", fontWeight: 600, marginBottom: 16 }}>
-                Kegiatan ini <strong>wajib dihadiri</strong> oleh siswa.
-              </div>
-            )}
-
-            <button className="btn btn-ghost" style={{ width: "100%" }} onClick={() => setDipilih(null)}>Tutup</button>
+      <Modal open={!!dipilih} onClose={() => setDipilih(null)} title="Detail Kegiatan" maxWidth={520}>
+        <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 18 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: dipilih?.bgWarna, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{dipilih?.emoji}</div>
+          <div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: "var(--color-text-primary)", lineHeight: 1.3 }}>{dipilih?.judul}</div>
+            <span style={{ ...kategoriWarna[dipilih?.kategori || ""], fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 999 }}>{dipilih?.kategori}</span>
           </div>
         </div>
-      )}
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 16 }}>
+          {[
+            { label: "Tanggal", val: dipilih?.tanggal },
+            { label: "Waktu", val: dipilih?.jam },
+            { label: "Lokasi", val: dipilih?.lokasi },
+            { label: "Peserta", val: dipilih?.peserta },
+          ].map(item => (
+            <div key={item.label} style={{ background: "var(--color-bg)", borderRadius: 10, padding: "10px 14px" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", marginBottom: 3 }}>{item.label}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text-primary)" }}>{item.val}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "14px 16px", marginBottom: 20, fontSize: 13.5, color: "var(--color-text-secondary)", lineHeight: 1.7 }}>
+          {dipilih?.deskripsi}
+        </div>
+
+        {dipilih?.wajib && (
+          <div style={{ background: "#fee2e2", border: "1px solid #fecaca", borderRadius: "var(--radius-md)", padding: "10px 14px", fontSize: 13, color: "#dc2626", fontWeight: 600, marginBottom: 16 }}>
+            Kegiatan ini <strong>wajib dihadiri</strong> oleh siswa.
+          </div>
+        )}
+
+        <button className="btn btn-ghost" style={{ width: "100%" }} onClick={() => setDipilih(null)}>Tutup</button>
+      </Modal>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 
 export default function PembayaranPage() {
 
@@ -19,6 +19,12 @@ export default function PembayaranPage() {
 
   // Selected bank for VA
   const [selectedBank, setSelectedBank] = useState<"BCA" | "BNI" | "Mandiri" | "BRI">("BCA");
+  const [selectedEwallet, setSelectedEwallet] = useState<"GoPay" | "OVO" | "ShopeePay" | "DANA">("GoPay");
+
+  const historyRef = useRef<HTMLDivElement>(null);
+
+  // Detail modal for history items
+  const [detailItem, setDetailItem] = useState<typeof historyList[number] | null>(null);
 
   // Copy VA feedback
   const [vaCopied, setVaCopied] = useState(false);
@@ -63,12 +69,14 @@ export default function PembayaranPage() {
   };
 
   const totalAmount = paymentType === "per_pertemuan" ? "Rp 100.000" : "Rp 300.000";
+  const childName = "Andi Setiawan";
   const itemDescription = paymentType === "per_pertemuan" ? "Pertemuan 7 & 8" : "Pertemuan 7 - 12 (Sisa Paket)";
 
   const handleStartPayment = (type: "per_pertemuan" | "pelunasan") => {
     setPaymentType(type);
     setSelectedMethod("va");
     setSelectedBank("BCA");
+    setSelectedEwallet("GoPay");
     setVaCopied(false);
     setUploadedFile(null);
     setModalStep("select_method");
@@ -109,7 +117,10 @@ export default function PembayaranPage() {
       ...historyList,
     ]);
 
-    setModalStep("success");
+    setModalStep(null);
+    setTimeout(() => {
+      historyRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
   };
 
   return (
@@ -126,10 +137,6 @@ export default function PembayaranPage() {
             transform: translateY(0) scale(1);
           }
         }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
@@ -138,6 +145,20 @@ export default function PembayaranPage() {
           0% { transform: scale(0.8); opacity: 0; }
           50% { transform: scale(1.1); }
           100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes cardSelect {
+          0% { transform: scale(0.97); }
+          50% { transform: scale(1.02); }
+          100% { transform: scale(1); }
+        }
+        .bank-card-btn {
+          transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .bank-card-btn:active {
+          transform: scale(0.96);
+        }
+        .bank-card-active {
+          animation: cardSelect 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
       `}</style>
 
@@ -563,7 +584,7 @@ export default function PembayaranPage() {
       </div>
 
       {/* ── 4. BOTTOM SECTION 1: RIWAYAT PEMBAYARAN ─────────────────────── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div ref={historyRef} style={{ display: "flex", flexDirection: "column", gap: 14, scrollMarginTop: 80 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: "#1e293b", margin: 0 }}>
             Riwayat Pembayaran
@@ -601,6 +622,7 @@ export default function PembayaranPage() {
                 <th style={{ padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>METODE</th>
                 <th style={{ padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>JUMLAH</th>
                 <th style={{ padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>STATUS</th>
+                <th style={{ padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}></th>
               </tr>
             </thead>
             <tbody>
@@ -627,6 +649,26 @@ export default function PembayaranPage() {
                         Selesai
                       </span>
                     )}
+                  </td>
+                  <td style={{ padding: "16px 20px" }}>
+                    <button
+                      onClick={() => setDetailItem(row)}
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: 5,
+                        padding: "6px 12px", borderRadius: 8,
+                        background: "#f0f9ff", border: "1px solid #bae6fd",
+                        color: "#0284c7", fontSize: 12, fontWeight: 700,
+                        cursor: "pointer", transition: "all 0.15s",
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "#e0f2fe"; e.currentTarget.style.borderColor = "#7dd3fc"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "#f0f9ff"; e.currentTarget.style.borderColor = "#bae6fd"; }}
+                    >
+                      <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                      Detail
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -680,6 +722,8 @@ export default function PembayaranPage() {
               boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
               animation: "modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
               position: "relative",
+              maxHeight: "90vh",
+              overflowY: "auto",
             }}
           >
             {/* ── STEP 1: PILIH METODE PEMBAYARAN ── */}
@@ -730,123 +774,166 @@ export default function PembayaranPage() {
                   </div>
                 </div>
 
-                {/* Payment Options List */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
+                {/* Payment Options List — Midtrans/Xendit style */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 0, marginBottom: 24, border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden" }}>
                   {/* Option 1: Virtual Account */}
-                  <div
-                    onClick={() => setSelectedMethod("va")}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "14px 16px",
-                      borderRadius: 12,
-                      border: selectedMethod === "va" ? "2px solid #0e7490" : "1px solid #e2e8f0",
-                      background: selectedMethod === "va" ? "#f0f9ff" : "#ffffff",
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                      <div style={{ width: 40, height: 40, borderRadius: 10, background: selectedMethod === "va" ? "#e0f2fe" : "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", color: "#0e7490" }}>
-                        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="2" /><path d="M6 12h.01M18 12h.01" />
+                  {(() => {
+                    const isSelected = selectedMethod === "va";
+                    return (
+                    <div
+                      onClick={() => setSelectedMethod("va")}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 14,
+                        padding: "14px 16px",
+                        background: isSelected ? "#f0f9ff" : "#ffffff",
+                        borderBottom: "1px solid #f1f5f9",
+                        cursor: "pointer", transition: "all 0.15s ease",
+                      }}
+                    >
+                      {/* Radio */}
+                      <div style={{ width: 20, height: 20, borderRadius: "50%", border: isSelected ? "2px solid #0e7490" : "2px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "#fff", transition: "border-color 0.15s" }}>
+                        {isSelected && <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#0e7490" }} />}
+                      </div>
+                      {/* Icon */}
+                      <div style={{ width: 40, height: 40, borderRadius: 10, background: "#f0f9ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#0e7490" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" />
                         </svg>
                       </div>
-                      <div>
-                        <div style={{ fontSize: 14, fontWeight: 800, color: "#1e293b" }}>Virtual Account</div>
-                        <div style={{ fontSize: 12, color: "#64748b" }}>Bayar melalui nomor Virtual Account</div>
+                      {/* Text */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Transfer Bank (VA)</div>
+                        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 1 }}>BCA, Mandiri, BNI, BRI</div>
                       </div>
+                      {/* Brand logos */}
+                      <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                        {[
+                          { src: "/logo%20pembayaran/BCA.webp", name: "BCA" },
+                          { src: "/logo%20pembayaran/mandiri.png", name: "Mandiri" },
+                          { src: "/logo%20pembayaran/BNI.webp", name: "BNI" },
+                          { src: "/logo%20pembayaran/BRI.png", name: "BRI" },
+                        ].map(b => (
+                          <div key={b.name} style={{ width: 32, height: 22, borderRadius: 5, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #e2e8f0", overflow: "hidden" }}>
+                            <img src={b.src} alt={b.name} style={{ width: 22, height: 16, objectFit: "contain" }} />
+                          </div>
+                        ))}
+                      </div>
+                      {/* Chevron */}
+                      <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
                     </div>
-                    <div style={{ width: 18, height: 18, borderRadius: "50%", border: selectedMethod === "va" ? "5px solid #0e7490" : "2px solid #cbd5e1", background: "#fff" }} />
-                  </div>
+                    );
+                  })()}
 
                   {/* Option 2: E-Wallet */}
-                  <div
-                    onClick={() => setSelectedMethod("ewallet")}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "14px 16px",
-                      borderRadius: 12,
-                      border: selectedMethod === "ewallet" ? "2px solid #0e7490" : "1px solid #e2e8f0",
-                      background: selectedMethod === "ewallet" ? "#f0f9ff" : "#ffffff",
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                      <div style={{ width: 40, height: 40, borderRadius: 10, background: selectedMethod === "ewallet" ? "#e0f2fe" : "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", color: "#0e7490" }}>
-                        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  {(() => {
+                    const isSelected = selectedMethod === "ewallet";
+                    return (
+                    <div
+                      onClick={() => setSelectedMethod("ewallet")}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 14,
+                        padding: "14px 16px",
+                        background: isSelected ? "#f0fdf4" : "#ffffff",
+                        borderBottom: "1px solid #f1f5f9",
+                        cursor: "pointer", transition: "all 0.15s ease",
+                      }}
+                    >
+                      <div style={{ width: 20, height: 20, borderRadius: "50%", border: isSelected ? "2px solid #059669" : "2px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "#fff" }}>
+                        {isSelected && <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#059669" }} />}
+                      </div>
+                      <div style={{ width: 40, height: 40, borderRadius: 10, background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                           <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4" /><path d="M4 6v12c0 1.1.9 2 2 2h14v-4" /><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z" />
                         </svg>
                       </div>
-                      <div>
-                        <div style={{ fontSize: 14, fontWeight: 800, color: "#1e293b" }}>E-Wallet</div>
-                        <div style={{ fontSize: 12, color: "#64748b" }}>Bayar menggunakan dompet digital</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>E-Wallet</div>
+                        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 1 }}>GoPay, OVO, ShopeePay, DANA</div>
                       </div>
+                      <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                        {[
+                          { src: "/logo%20pembayaran/gopay.webp", name: "GoPay" },
+                          { src: "/logo%20pembayaran/ovo.jpg", name: "OVO" },
+                          { src: "/logo%20pembayaran/shopeepay.webp", name: "ShopeePay" },
+                          { src: "/logo%20pembayaran/Dana.webp", name: "DANA" },
+                        ].map(w => (
+                          <div key={w.name} style={{ width: 32, height: 22, borderRadius: 5, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #e2e8f0", overflow: "hidden" }}>
+                            <img src={w.src} alt={w.name} style={{ width: 22, height: 16, objectFit: "contain" }} />
+                          </div>
+                        ))}
+                      </div>
+                      <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
                     </div>
-                    <div style={{ width: 18, height: 18, borderRadius: "50%", border: selectedMethod === "ewallet" ? "5px solid #0e7490" : "2px solid #cbd5e1", background: "#fff" }} />
-                  </div>
+                    );
+                  })()}
 
                   {/* Option 3: QRIS */}
-                  <div
-                    onClick={() => setSelectedMethod("qris")}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "14px 16px",
-                      borderRadius: 12,
-                      border: selectedMethod === "qris" ? "2px solid #0e7490" : "1px solid #e2e8f0",
-                      background: selectedMethod === "qris" ? "#f0f9ff" : "#ffffff",
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                      <div style={{ width: 40, height: 40, borderRadius: 10, background: selectedMethod === "qris" ? "#e0f2fe" : "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", color: "#0e7490" }}>
-                        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
-                        </svg>
+                  {(() => {
+                    const isSelected = selectedMethod === "qris";
+                    return (
+                    <div
+                      onClick={() => setSelectedMethod("qris")}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 14,
+                        padding: "14px 16px",
+                        background: isSelected ? "#fef2f2" : "#ffffff",
+                        borderBottom: "1px solid #f1f5f9",
+                        cursor: "pointer", transition: "all 0.15s ease",
+                      }}
+                    >
+                      <div style={{ width: 20, height: 20, borderRadius: "50%", border: isSelected ? "2px solid #ED1C24" : "2px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "#fff" }}>
+                        {isSelected && <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#ED1C24" }} />}
                       </div>
-                      <div>
-                        <div style={{ fontSize: 14, fontWeight: 800, color: "#1e293b" }}>QRIS</div>
-                        <div style={{ fontSize: 12, color: "#64748b" }}>Scan QRIS menggunakan aplikasi pembayaran</div>
+                      <div style={{ width: 40, height: 40, borderRadius: 10, background: "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        {/* QRIS logo style */}
+                        <div style={{ display: "flex", alignItems: "center" }}>
+                          <span style={{ fontSize: 11, fontWeight: 900, color: "#ED1C24", letterSpacing: "-0.02em" }}>QR</span>
+                          <span style={{ fontSize: 11, fontWeight: 900, color: "#ED1C24", letterSpacing: "-0.02em", marginLeft: 1 }}>IS</span>
+                        </div>
                       </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>QRIS</div>
+                        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 1 }}>Semua bank & e-wallet</div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                        <div style={{ background: "#f1f5f9", borderRadius: 6, padding: "3px 8px" }}>
+                          <span style={{ fontSize: 9, fontWeight: 700, color: "#64748b" }}>ALL</span>
+                        </div>
+                      </div>
+                      <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
                     </div>
-                    <div style={{ width: 18, height: 18, borderRadius: "50%", border: selectedMethod === "qris" ? "5px solid #0e7490" : "2px solid #cbd5e1", background: "#fff" }} />
-                  </div>
+                    );
+                  })()}
 
                   {/* Option 4: Cash */}
-                  <div
-                    onClick={() => setSelectedMethod("cash")}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "14px 16px",
-                      borderRadius: 12,
-                      border: selectedMethod === "cash" ? "2px solid #0e7490" : "1px solid #e2e8f0",
-                      background: selectedMethod === "cash" ? "#f0f9ff" : "#ffffff",
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                      <div style={{ width: 40, height: 40, borderRadius: 10, background: selectedMethod === "cash" ? "#e0f2fe" : "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", color: "#0e7490" }}>
-                        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  {(() => {
+                    const isSelected = selectedMethod === "cash";
+                    return (
+                    <div
+                      onClick={() => setSelectedMethod("cash")}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 14,
+                        padding: "14px 16px",
+                        background: isSelected ? "#f0fdf4" : "#ffffff",
+                        cursor: "pointer", transition: "all 0.15s ease",
+                      }}
+                    >
+                      <div style={{ width: 20, height: 20, borderRadius: "50%", border: isSelected ? "2px solid #16a34a" : "2px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "#fff" }}>
+                        {isSelected && <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#16a34a" }} />}
+                      </div>
+                      <div style={{ width: 40, height: 40, borderRadius: 10, background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                           <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                         </svg>
                       </div>
-                      <div>
-                        <div style={{ fontSize: 14, fontWeight: 800, color: "#1e293b" }}>Cash</div>
-                        <div style={{ fontSize: 12, color: "#64748b" }}>Bayar langsung di cabang / upload bukti pembayaran</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Tunai (Cash)</div>
+                        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 1 }}>Bayar langsung di lokasi</div>
                       </div>
+                      <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
                     </div>
-                    <div style={{ width: 18, height: 18, borderRadius: "50%", border: selectedMethod === "cash" ? "5px solid #0e7490" : "2px solid #cbd5e1", background: "#fff" }} />
-                  </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Footer Buttons */}
@@ -947,27 +1034,38 @@ export default function PembayaranPage() {
                       PILIH BANK
                     </div>
 
-                    {/* Bank Grid Selector */}
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 16 }}>
-                      {(["BCA", "BNI", "Mandiri", "BRI"] as const).map((bank) => (
+                    {/* Bank Grid Selector — branded cards with real logos */}
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 16 }}>
+                      {([
+                        { id: "BCA" as const, name: "Bank Central Asia", method: "m-BCA / KlikBCA / ATM", color: "#0066B3", selectedBg: "#DBEAFE", logo: "/logo%20pembayaran/BCA.webp" },
+                        { id: "BNI" as const, name: "Bank Negara Indonesia", method: "iBanking BNI / ATM", color: "#F58220", selectedBg: "#FFE8CC", logo: "/logo%20pembayaran/BNI.webp" },
+                        { id: "Mandiri" as const, name: "Bank Mandiri", method: "Livin' by Mandiri / ATM", color: "#FFB81C", selectedBg: "#FFF3CC", logo: "/logo%20pembayaran/mandiri.png" },
+                        { id: "BRI" as const, name: "Bank Rakyat Indonesia", method: "BRImo / ATM", color: "#003D6B", selectedBg: "#CCE0F2", logo: "/logo%20pembayaran/BRI.png" },
+                      ]).map((bank) => {
+                        const isActive = selectedBank === bank.id;
+                        return (
                         <button
-                          key={bank}
-                          onClick={() => setSelectedBank(bank)}
+                          key={bank.id}
+                          onClick={() => setSelectedBank(bank.id)}
+                          className={`bank-card-btn ${isActive ? "bank-card-active" : ""}`}
                           style={{
-                            padding: "10px",
-                            borderRadius: 10,
-                            border: selectedBank === bank ? "2px solid #0e7490" : "1px solid #cbd5e1",
-                            background: selectedBank === bank ? "#f0f9ff" : "#ffffff",
-                            fontWeight: selectedBank === bank ? 800 : 700,
-                            color: selectedBank === bank ? "#0e7490" : "#1e293b",
-                            fontSize: 14,
+                            padding: "12px", borderRadius: 12, textAlign: "left",
+                            border: isActive ? `2px solid ${bank.color}` : "1px solid #e2e8f0",
+                            background: isActive ? bank.selectedBg : "#ffffff",
                             cursor: "pointer",
-                            transition: "all 0.15s ease",
+                            display: "flex", alignItems: "center", gap: 10,
                           }}
                         >
-                          {bank}
+                          <div style={{ width: 42, height: 42, borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: isActive ? `0 4px 12px ${bank.color}33` : "0 1px 3px rgba(0,0,0,0.08)", overflow: "hidden" }}>
+                            <img src={bank.logo} alt={bank.name} style={{ width: 34, height: 34, objectFit: "contain" }} />
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: isActive ? bank.color : "#1e293b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{bank.name}</div>
+                            <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{bank.method}</div>
+                          </div>
                         </button>
-                      ))}
+                        );
+                      })}
                     </div>
 
                     {/* Virtual Account Number Container */}
@@ -1069,43 +1167,80 @@ export default function PembayaranPage() {
                 {/* ── DETAILS FOR QRIS ── */}
                 {selectedMethod === "qris" && (
                   <div style={{ textAlign: "center", padding: "10px 0 20px" }}>
-                    <div style={{ background: "#ffffff", padding: 12, display: "inline-block", borderRadius: 12, border: "1px solid #e2e8f0", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-                      <svg width={140} height={140} viewBox="0 0 100 100" fill="#1e293b">
+                    {/* QRIS Logo */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 16 }}>
+                      <div style={{ display: "flex", alignItems: "center", background: "#ED1C24", borderRadius: 8, padding: "6px 16px", gap: 2 }}>
+                        <svg width={20} height={20} viewBox="0 0 24 24" fill="#fff">
+                          <rect x="1" y="1" width="9" height="9" rx="1" /><rect x="3" y="3" width="5" height="5" rx="0.5" fill="#ED1C24" /><rect x="4" y="4" width="3" height="3" rx="0.5" fill="#fff" />
+                          <rect x="14" y="1" width="9" height="9" rx="1" /><rect x="16" y="3" width="5" height="5" rx="0.5" fill="#ED1C24" /><rect x="17" y="4" width="3" height="3" rx="0.5" fill="#fff" />
+                          <rect x="1" y="14" width="9" height="9" rx="1" /><rect x="3" y="16" width="5" height="5" rx="0.5" fill="#ED1C24" /><rect x="4" y="17" width="3" height="3" rx="0.5" fill="#fff" />
+                          <rect x="14" y="14" width="4" height="4" rx="0.5" /><rect x="20" y="14" width="3" height="3" rx="0.5" /><rect x="14" y="20" width="3" height="3" rx="0.5" /><rect x="19" y="19" width="4" height="4" rx="0.5" />
+                        </svg>
+                        <span style={{ fontSize: 18, fontWeight: 900, color: "#fff", letterSpacing: "0.06em" }}>QRIS</span>
+                      </div>
+                    </div>
+                    <div style={{ background: "#ffffff", padding: 20, display: "inline-block", borderRadius: 16, border: "2px solid #e2e8f0", boxShadow: "0 2px 16px rgba(0,0,0,0.06)", marginBottom: 14 }}>
+                      <svg width={160} height={160} viewBox="0 0 100 100" fill="#1e293b">
                         <path d="M0,0 h30 v30 h-30 z M10,10 h10 v10 h-10 z" />
                         <path d="M70,0 h30 v30 h-30 z M80,10 h10 v10 h-10 z" />
                         <path d="M0,70 h30 v30 h-30 z M10,80 h10 v10 h-10 z" />
-                        <rect x="40" y="40" width="20" height="20" fill="#0e7490" />
+                        <rect x="40" y="40" width="20" height="20" fill="#ED1C24" />
                         <rect x="10" y="40" width="10" height="10" />
                         <rect x="80" y="50" width="10" height="20" />
                         <rect x="50" y="10" width="20" height="10" />
                         <rect x="40" y="80" width="30" height="10" />
+                        <rect x="60" y="60" width="10" height="10" />
+                        <rect x="40" y="65" width="8" height="8" />
+                        <rect x="70" y="30" width="8" height="8" />
                       </svg>
                     </div>
-                    <div style={{ fontSize: 12, color: "#64748b", marginTop: 8 }}>
-                      Scan kode QRIS di atas dengan aplikasi m-banking atau e-wallet pilihan Anda.
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", marginBottom: 10 }}>Scan QRIS ini dengan:</div>
+                    <div style={{ display: "flex", justifyContent: "center", gap: 5, flexWrap: "wrap" }}>
+                      {[
+                        { n: "m-BCA", c: "#0066B3" }, { n: "BRImo", c: "#003D6B" },
+                        { n: "OVO", c: "#4C3494" }, { n: "GoPay", c: "#00AA13" },
+                        { n: "ShopeePay", c: "#EE4D2D" }, { n: "DANA", c: "#108EE9" },
+                        { n: "LinkAja", c: "#E4002B" },
+                      ].map(a => (
+                        <span key={a.n} style={{ fontSize: 10, fontWeight: 700, color: a.c, background: `${a.c}12`, padding: "4px 10px", borderRadius: 6, border: `1px solid ${a.c}20` }}>{a.n}</span>
+                      ))}
                     </div>
                   </div>
                 )}
 
                 {/* ── DETAILS FOR E-WALLET ── */}
                 {selectedMethod === "ewallet" && (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 20 }}>
-                    {["GoPay", "OVO", "ShopeePay", "DANA"].map((ew) => (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 20 }}>
+                    {([
+                      { name: "GoPay" as const, fullName: "GoPay", color: "#00AA13", selectedBg: "#D1FADF", desc: "Bayar via Gojek App", logo: "/logo%20pembayaran/gopay.webp" },
+                      { name: "OVO" as const, fullName: "OVO", color: "#4C3494", selectedBg: "#E2DDF6", desc: "Bayar via OVO App", logo: "/logo%20pembayaran/ovo.jpg" },
+                      { name: "ShopeePay" as const, fullName: "ShopeePay", color: "#EE4D2D", selectedBg: "#FDDDD5", desc: "Bayar via Shopee App", logo: "/logo%20pembayaran/shopeepay.webp" },
+                      { name: "DANA" as const, fullName: "DANA", color: "#108EE9", selectedBg: "#D4ECFC", desc: "Bayar via DANA App", logo: "/logo%20pembayaran/Dana.webp" },
+                    ]).map((ew) => {
+                      const isActive = selectedEwallet === ew.name;
+                      return (
                       <button
-                        key={ew}
+                        key={ew.name}
+                        onClick={() => setSelectedEwallet(ew.name)}
+                        className={`bank-card-btn ${isActive ? "bank-card-active" : ""}`}
                         style={{
-                          padding: "12px",
-                          borderRadius: 10,
-                          border: "1.5px solid #0e7490",
-                          background: "#f0f9ff",
-                          color: "#0e7490",
-                          fontWeight: 800,
-                          fontSize: 14,
+                          padding: "12px", borderRadius: 12, textAlign: "left",
+                          border: isActive ? `2px solid ${ew.color}` : `1px solid ${ew.color}30`,
+                          background: isActive ? ew.selectedBg : "#ffffff",
+                          cursor: "pointer",
+                          display: "flex", alignItems: "center", gap: 10,
                         }}
                       >
-                        {ew}
+                        <div style={{ width: 42, height: 42, borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: isActive ? `0 4px 12px ${ew.color}33` : "0 1px 3px rgba(0,0,0,0.08)", overflow: "hidden" }}>
+                          <img src={ew.logo} alt={ew.name} style={{ width: 34, height: 34, objectFit: "contain" }} />
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: ew.color }}>{ew.fullName}</div>
+                          <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ew.desc}</div>
+                        </div>
                       </button>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
 
@@ -1140,7 +1275,7 @@ export default function PembayaranPage() {
                       boxShadow: "0 4px 12px rgba(245,158,11,0.25)",
                     }}
                   >
-                    Saya Sudah Melakukan Pembayaran
+                    Bayar
                   </button>
                 </div>
               </div>
@@ -1260,11 +1395,11 @@ export default function PembayaranPage() {
                 <p style={{ fontSize: 13, color: "#64748b", marginBottom: 20, lineHeight: 1.5 }}>
                   {selectedMethod === "cash" ? (
                     <>
-                      Bukti pembayaran tunai sebesar <strong>{totalAmount}</strong> untuk <strong>{selectedChild.name}</strong> telah berhasil terkirim. Status saat ini: <strong>Menunggu ACC / Verifikasi Kasir Admin</strong>.
+                      Bukti pembayaran tunai sebesar <strong>{totalAmount}</strong> untuk <strong>{childName}</strong> telah berhasil terkirim. Status saat ini: <strong>Menunggu ACC / Verifikasi Kasir Admin</strong>.
                     </>
                   ) : (
                     <>
-                      Transaksi sebesar <strong>{totalAmount}</strong> untuk <strong>{selectedChild.name}</strong> telah <strong>terverifikasi OTOMATIS LUNAS</strong> oleh sistem Payment Gateway.
+                      Transaksi sebesar <strong>{totalAmount}</strong> untuk <strong>{childName}</strong> telah <strong>terverifikasi OTOMATIS LUNAS</strong> oleh sistem Payment Gateway.
                     </>
                   )}
                 </p>
@@ -1287,6 +1422,86 @@ export default function PembayaranPage() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── DETAIL RIWAYAT MODAL ── */}
+      {detailItem && (
+        <div
+          style={{
+            position: "fixed", inset: 0,
+            background: "rgba(15,23,42,0.6)", backdropFilter: "blur(4px)",
+            zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 16, animation: "fadeIn 0.2s ease-out",
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setDetailItem(null); }}
+        >
+          <div
+            style={{
+              background: "#fff", borderRadius: 18, maxWidth: 480, width: "100%", padding: 24,
+              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
+              animation: "modalSlideUp 0.25s cubic-bezier(0.16,1,0.3,1)",
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+              <h3 style={{ fontSize: 17, fontWeight: 800, color: "#1e293b", margin: 0 }}>Detail Transaksi</h3>
+              <button onClick={() => setDetailItem(null)} style={{ background: "transparent", border: "none", color: "#64748b", cursor: "pointer", padding: 4 }}>
+                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            {/* Status Badge */}
+            <div style={{ marginBottom: 16 }}>
+              <span style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                fontSize: 12, fontWeight: 700, padding: "6px 14px", borderRadius: 8,
+                background: detailItem.status === "Selesai" ? "#dcfce7" : "#fef3c7",
+                color: detailItem.status === "Selesai" ? "#16a34a" : "#b45309",
+              }}>
+                {detailItem.status === "Selesai" ? (
+                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}><polyline points="20 6 9 17 4 12" /></svg>
+                ) : (
+                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M5 22h14M5 2h14" /><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                )}
+                {detailItem.status}
+              </span>
+            </div>
+
+            {/* Detail Fields */}
+            {[
+              { label: "ID Transaksi", value: detailItem.id, mono: true },
+              { label: "Tanggal", value: detailItem.tanggal },
+              { label: "Keterangan", value: detailItem.keterangan },
+              { label: "Metode Pembayaran", value: detailItem.metode },
+              { label: "Anak", value: childName },
+              { label: "Program", value: "Phonics Level 2" },
+            ].map((field) => (
+              <div key={field.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
+                <span style={{ fontSize: 12.5, color: "#64748b", fontWeight: 600 }}>{field.label}</span>
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: "#1e293b", fontFamily: field.mono ? "monospace" : "inherit" }}>{field.value}</span>
+              </div>
+            ))}
+
+            {/* Total */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 0 0" }}>
+              <span style={{ fontSize: 14, fontWeight: 800, color: "#1e293b" }}>Total Pembayaran</span>
+              <span style={{ fontSize: 22, fontWeight: 800, color: "#0e7490" }}>{detailItem.jumlah}</span>
+            </div>
+
+            {/* Close Button */}
+            <button
+              onClick={() => setDetailItem(null)}
+              style={{
+                width: "100%", marginTop: 20, padding: "11px",
+                background: "#ffffff", color: "#64748b",
+                border: "1px solid #cbd5e1", borderRadius: 10,
+                fontWeight: 700, fontSize: 14, cursor: "pointer",
+              }}
+            >
+              Tutup
+            </button>
           </div>
         </div>
       )}

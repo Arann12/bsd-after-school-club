@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { classes, teachers, programs } from "@/lib/data";
+import Modal from "@/components/ui/Modal";
 
 export interface ScheduleSession {
   id: string;
@@ -98,7 +99,7 @@ function ClockFace({ value, onChange, onClose, title }: { value: string; onChang
   const minuteDeg = (parseInt(selectedMinute) / 5) * 30;
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease-out" }}>
+    <Modal open={true} onClose={onClose} title={title} maxWidth={360}>
       <style>{`
         @keyframes clockPop { 0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0; } 60% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1); } }
         @keyframes clockRingIn { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
@@ -108,7 +109,7 @@ function ClockFace({ value, onChange, onClose, title }: { value: string; onChang
         .clock-num-active { animation: clockPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
         .clock-ring { animation: clockRingIn 0.3s ease-out forwards; }
       `}</style>
-      <div style={{ background: "#fff", borderRadius: 18, width: 360, padding: "24px 20px", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1)", display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <div style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
 
         {/* header */}
         <div style={{ fontSize: 13, fontWeight: 800, color: "var(--color-text-primary)", marginBottom: 2 }}>{title}</div>
@@ -130,14 +131,14 @@ function ClockFace({ value, onChange, onClose, title }: { value: string; onChang
               position: "absolute", left: CX - 2.5, top: CX - (R_HOUR_OUTER - 10),
               width: 5, height: R_HOUR_OUTER - 10, borderRadius: 3,
               background: "#334155", transformOrigin: "center bottom",
-              transform: `rotate(${hourDeg}deg)`, zIndex: 2,
+              transform: `rotate(${hourDeg}deg)`, zIndex: 2, opacity: 0.45,
             }} />
           ) : (
             <div className="clock-hand" style={{
               position: "absolute", left: CX - 1.5, top: CX - (R_MINUTE - 10),
               width: 3, height: R_MINUTE - 10, borderRadius: 2,
               background: "var(--color-primary)", transformOrigin: "center bottom",
-              transform: `rotate(${minuteDeg}deg)`, zIndex: 3,
+              transform: `rotate(${minuteDeg}deg)`, zIndex: 3, opacity: 0.5,
             }} />
           )}
           {/* center dot */}
@@ -219,7 +220,7 @@ function ClockFace({ value, onChange, onClose, title }: { value: string; onChang
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -260,8 +261,6 @@ export default function AdminSchedulePage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
-        @keyframes modalIn { from { opacity:0; transform:translateY(16px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
-        @keyframes fadeIn  { from { opacity:0; } to { opacity:1; } }
         .schedule-card { transition: all 0.15s ease; }
         .schedule-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
       `}</style>
@@ -273,16 +272,16 @@ export default function AdminSchedulePage() {
           <p className="page-subtitle">Kalender jadwal mingguan interaktif. Filter berdasarkan guru pengajar atau program kursus.</p>
         </div>
         <div className="page-header-actions" style={{ display: "flex", gap: 10 }}>
-          <div style={{ display: "flex", background: "#f1f5f9", padding: 3, borderRadius: 8 }}>
+          <div className="view-toggle-group">
             <button
               onClick={() => setViewMode("grid")}
-              style={{ padding: "6px 14px", borderRadius: 6, border: "none", fontSize: 12.5, fontWeight: 700, cursor: "pointer", background: viewMode === "grid" ? "#fff" : "transparent", color: viewMode === "grid" ? "var(--color-primary)" : "var(--color-text-muted)" }}
+              className={`view-toggle-btn${viewMode === "grid" ? " active" : ""}`}
             >
               Matriks Mingguan
             </button>
             <button
               onClick={() => setViewMode("list")}
-              style={{ padding: "6px 14px", borderRadius: 6, border: "none", fontSize: 12.5, fontWeight: 700, cursor: "pointer", background: viewMode === "list" ? "#fff" : "transparent", color: viewMode === "list" ? "var(--color-primary)" : "var(--color-text-muted)" }}
+              className={`view-toggle-btn${viewMode === "list" ? " active" : ""}`}
             >
               Daftar Sesi
             </button>
@@ -421,15 +420,7 @@ export default function AdminSchedulePage() {
       )}
 
       {/* MODAL DETAIL SESI */}
-      {selectedSession && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 500, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Detail Sesi Jadwal</h2>
-              <button onClick={() => setSelectedSession(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
+      {selectedSession && (<Modal open onClose={() => setSelectedSession(null)} title="Detail Sesi Jadwal" maxWidth={500}>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "16px 18px", borderLeft: `5px solid ${selectedSession.warna}` }}>
@@ -454,20 +445,10 @@ export default function AdminSchedulePage() {
                 <button className="btn btn-accent" onClick={() => setSelectedSession(null)}>Reschedule Sesi</button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>)}
 
       {/* MODAL TAMBAH SESI */}
-      {showAddModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 520, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1)", position: "relative", overflow: "hidden" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Tambah Sesi Jadwal Baru</h2>
-              <button onClick={() => { setShowAddModal(false); setClockTarget(null); }} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
+      <Modal open={showAddModal} onClose={() => { setShowAddModal(false); setClockTarget(null); }} title="Tambah Sesi Jadwal Baru" maxWidth={520}>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {/* Hari */}
               <div className="form-group" style={{ marginBottom: 0 }}>
@@ -549,9 +530,7 @@ export default function AdminSchedulePage() {
                 <button className="btn btn-accent" onClick={() => { setShowAddModal(false); setClockTarget(null); }} disabled={!!conflictSession}>Simpan Sesi</button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* CLOCK PICKER MODAL — separate overlay */}
       {clockTarget && (

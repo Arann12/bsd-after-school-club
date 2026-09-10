@@ -77,9 +77,6 @@ export default function PengumumanPage({ peran = "admin" }: Props) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
-        @keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-        @keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
         .kartu-pengumuman:hover{box-shadow:0 4px 16px rgba(0,0,0,.09)!important;transform:translateY(-1px)}
         .kartu-pengumuman{transition:all .2s ease;cursor:pointer}
       `}</style>
@@ -136,11 +133,8 @@ export default function PengumumanPage({ peran = "admin" }: Props) {
         <div style={{ display: "flex", gap: 8 }}>
           {["Semua", "Aktif", "Draft", "Selesai"].map(f => (
             <button key={f} onClick={() => setFilterStatus(f)}
-              style={{ padding: "7px 18px", borderRadius: "var(--radius-full)", border: "1.5px solid", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all .15s",
-                background: filterStatus === f ? "var(--color-primary)" : "white",
-                color: filterStatus === f ? "white" : "var(--color-text-secondary)",
-                borderColor: filterStatus === f ? "var(--color-primary)" : "var(--color-border)",
-              }}>{f}</button>
+              className={`filter-chip${filterStatus === f ? " active" : ""}`}
+            >{f}</button>
           ))}
         </div>
       )}
@@ -197,7 +191,7 @@ export default function PengumumanPage({ peran = "admin" }: Props) {
                 {dipilih.penting && <span style={{ background: "#fee2e2", color: "#dc2626", fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 999, marginBottom: 8, display: "inline-block" }}>PENTING</span>}
                 <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0, lineHeight: 1.3 }}>{dipilih.judul}</h2>
               </div>
-              <button onClick={() => setDipilih(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)", flexShrink: 0 }}>
+              <button onClick={() => setDipilih(null)} className="modal-close">
                 <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
@@ -229,7 +223,7 @@ export default function PengumumanPage({ peran = "admin" }: Props) {
           <div style={{ background: "#fff", borderRadius: 18, maxWidth: 540, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,.25)", animation: "modalIn .25s cubic-bezier(0.16,1,0.3,1)", maxHeight: "92vh", overflowY: "auto" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
               <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Buat Pengumuman Baru</h2>
-              <button onClick={() => setShowForm(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
+              <button onClick={() => setShowForm(false)} className="modal-close">
                 <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>

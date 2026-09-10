@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 /* ─────────────────────────────────────────────
    TYPES
@@ -37,17 +37,17 @@ export interface GuruAbsensiData {
    MOCK DATA — GURU
 ───────────────────────────────────────────── */
 const daftarGuru: GuruAbsensiData[] = [
-  { id: "G-001", nama: "Ms. Sarah", spesialisasi: "Calistung & English", totalSesiBulanIni: 16, tingkatKehadiran: 100, statusLogbook: "Terisi Lengkap" },
-  { id: "G-002", nama: "Mr. Andi", spesialisasi: "Math & Logic", totalSesiBulanIni: 14, tingkatKehadiran: 93, statusLogbook: "Terisi Lengkap" },
-  { id: "G-003", nama: "Ms. Nina", spesialisasi: "Phonics & Reading", totalSesiBulanIni: 18, tingkatKehadiran: 95, statusLogbook: "Terisi Lengkap" },
-  { id: "G-004", nama: "Mr. Budi", spesialisasi: "English & Coding Kids", totalSesiBulanIni: 12, tingkatKehadiran: 90, statusLogbook: "1 Sesi Pending" },
+  { id: "GUR-2026-001", nama: "Ms. Sarah", spesialisasi: "Calistung & English", totalSesiBulanIni: 16, tingkatKehadiran: 100, statusLogbook: "Terisi Lengkap" },
+  { id: "GUR-2026-002", nama: "Mr. Andi", spesialisasi: "Math & Logic", totalSesiBulanIni: 14, tingkatKehadiran: 93, statusLogbook: "Terisi Lengkap" },
+  { id: "GUR-2026-003", nama: "Ms. Nina", spesialisasi: "Phonics & Reading", totalSesiBulanIni: 18, tingkatKehadiran: 95, statusLogbook: "Terisi Lengkap" },
+  { id: "GUR-2026-004", nama: "Mr. Budi", spesialisasi: "English & Coding Kids", totalSesiBulanIni: 12, tingkatKehadiran: 90, statusLogbook: "1 Sesi Pending" },
 ];
 
 /* ─────────────────────────────────────────────
    MOCK DATA — LOGBOOK PER GURU (dengan daftar siswa)
 ───────────────────────────────────────────── */
 const mockCalendarData: Record<string, LogEntry[]> = {
-  "G-001": [
+  "GUR-2026-001": [
     {
       tanggal: "2026-09-01",
       dayNum: 1,
@@ -123,7 +123,7 @@ const mockCalendarData: Record<string, LogEntry[]> = {
       ],
     },
   ],
-  "G-002": [
+  "GUR-2026-002": [
     {
       tanggal: "2026-09-02",
       dayNum: 2,
@@ -160,7 +160,7 @@ const mockCalendarData: Record<string, LogEntry[]> = {
       ],
     },
   ],
-  "G-003": [
+  "GUR-2026-003": [
     {
       tanggal: "2026-09-01",
       dayNum: 1,
@@ -181,7 +181,7 @@ const mockCalendarData: Record<string, LogEntry[]> = {
       ],
     },
   ],
-  "G-004": [
+  "GUR-2026-004": [
     {
       tanggal: "2026-09-03",
       dayNum: 3,
@@ -226,6 +226,16 @@ export default function AdminAbsensiPage() {
   const [selectedGuru, setSelectedGuru] = useState<GuruAbsensiData | null>(null);
   const [selectedMonth, setSelectedMonth] = useState("September 2026");
   const [activeLogDetail, setActiveLogDetail] = useState<LogEntry | null>(null);
+
+  // Auto-select guru from URL query param (?guru=G-001)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const guruId = params.get("guru");
+    if (guruId) {
+      const found = daftarGuru.find(g => g.id === guruId);
+      if (found) setSelectedGuru(found);
+    }
+  }, []);
 
   const teacherLogs = selectedGuru ? (mockCalendarData[selectedGuru.id] || []) : [];
 

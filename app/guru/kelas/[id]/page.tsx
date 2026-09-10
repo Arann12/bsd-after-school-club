@@ -45,7 +45,6 @@ export default function GuruKelasPage({ params }: { params: { id: string } }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
         @keyframes munculMasuk { from{opacity:0;transform:translateY(16px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)} }
-        @keyframes fadeIn { from{opacity:0}to{opacity:1} }
         @keyframes bounce { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
         .tombol-absen { transition: all .15s ease; border: 2px solid transparent; }
         .tombol-absen:hover { transform: translateY(-1px); }

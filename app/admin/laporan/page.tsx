@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Modal from "@/components/ui/Modal";
 
 const dataLaporanSiswa = [
   { id: "STD-2026-001", nama: "Andi Setiawan", program: "Calistung Level 1", kelas: "KLS-A", kehadiran: "92%", nilaiTugas: 88, nilaiUjian: 90, nilaiAkhir: 89, status: "Aktif", sertifikat: false },
@@ -31,7 +32,6 @@ export default function LaporanPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
         @keyframes certReveal { from { opacity: 0; transform: scale(0.92) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .row-hover:hover { background: #f8fafc !important; cursor: pointer; }
       `}</style>
 
@@ -51,11 +51,7 @@ export default function LaporanPage() {
           { id: "keuangan", label: "Laporan Keuangan" },
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id as any)}
-            style={{
-              padding: "10px 20px", borderRadius: "var(--radius-md)", border: "none", fontSize: 13.5, fontWeight: 700, cursor: "pointer", transition: "all .15s",
-              background: tab === t.id ? "var(--color-primary)" : "var(--color-bg)",
-              color: tab === t.id ? "white" : "var(--color-text-secondary)",
-            }}>
+            className={`tab-btn${tab === t.id ? " active" : ""}`}>
             {t.label}
           </button>
         ))}
@@ -204,10 +200,8 @@ export default function LaporanPage() {
       )}
 
       {/* MODAL PREVIEW SERTIFIKAT RESMI */}
-      {showPreview && dipilih && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.75)", backdropFilter: "blur(6px)", zIndex: 120, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, animation: "fadeIn .2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 20, maxWidth: 680, width: "100%", padding: 36, boxShadow: "0 25px 50px -12px rgba(0,0,0,.35)", animation: "certReveal .35s cubic-bezier(0.16,1,0.3,1)", overflowY: "auto", maxHeight: "90vh" }}>
-            
+      {dipilih && (<Modal open={showPreview} onClose={() => setShowPreview(false)} maxWidth={680}>
+
             {/* Sertifikat Visual (Bingkai Emas & Elegan) */}
             <div style={{
               border: "8px double #d97706",
@@ -262,9 +256,7 @@ export default function LaporanPage() {
               <button className="btn btn-accent" onClick={(e) => { (e.currentTarget as HTMLButtonElement).innerText = "File Terunduh!"; setTimeout(() => setShowPreview(false), 1500); }}>Unduh PDF</button>
             </div>
 
-          </div>
-        </div>
-      )}
+      </Modal>)}
     </div>
   );
 }
