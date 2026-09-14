@@ -89,6 +89,20 @@ export async function deleteParent(id: string): Promise<void> {
   await axiosInstance.delete(`/parents/${id}`);
 }
 
+// ── Relasi Parent ↔ Student ─────────────────────────────────
+// Backend: POST   /parents/{parent}/students/{student}
+//          DELETE /parents/{parent}/students/{student}
+
+/** POST /parents/:parentId/students/:studentId — kaitkan anak ke orang tua */
+export async function linkStudentToParent(parentId: string, studentId: string): Promise<void> {
+  await axiosInstance.post(`/parents/${parentId}/students/${studentId}`);
+}
+
+/** DELETE /parents/:parentId/students/:studentId — lepas kaitan anak dari orang tua */
+export async function unlinkStudentFromParent(parentId: string, studentId: string): Promise<void> {
+  await axiosInstance.delete(`/parents/${parentId}/students/${studentId}`);
+}
+
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  ENROLLMENT (PENDAFTARAN)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
