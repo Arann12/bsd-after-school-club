@@ -3,6 +3,13 @@
 import { useState, useRef, useEffect } from "react";
 import { checkPaymentStatus, getPaymentMethods } from "@/lib/api/finance";
 
+interface PanduanItem {
+  title?: string;
+  name?: string;
+  steps?: string[];
+  content?: string | string[];
+}
+
 interface GatewayMethod {
   category: string;
   code: string;
@@ -11,17 +18,19 @@ interface GatewayMethod {
   status: string;
   fee?: number;
   fee_format?: string;
+  panduan?: PanduanItem[] | Record<string, string[]> | string;
 }
 
 export default function PembayaranPage() {
   // Gateway Dynamic Methods State
   const [gatewayMethods, setGatewayMethods] = useState<GatewayMethod[]>([]);
+  const [expandedGuideIndex, setExpandedGuideIndex] = useState<number | null>(null);
 
-  // Fetch Payment Methods from Gateway (auto-cached 2 mins in backend)
+  // Fetch Payment Methods from Gateway (auto-cached 2 mins in backend) with panduan: true
   useEffect(() => {
     async function loadMethods() {
       try {
-        const res = await getPaymentMethods(false);
+        const res = await getPaymentMethods(true);
         if (res && res.data && Array.isArray(res.data)) {
           setGatewayMethods(res.data);
         }
@@ -63,9 +72,14 @@ export default function PembayaranPage() {
   const [activePaymentId, setActivePaymentId] = useState<string | null>(null);
   const [liveQrUrl, setLiveQrUrl] = useState<string | null>(null);
   const [liveVaNumber, setLiveVaNumber] = useState<string | null>(null);
+  const [liveCheckoutUrl, setLiveCheckoutUrl] = useState<string | null>(null);
   const [liveExpiredAt, setLiveExpiredAt] = useState<string | null>(null);
+  const [liveFee, setLiveFee] = useState<number | null>(null);
+  const [liveAmount, setLiveAmount] = useState<number | null>(null);
+  const [liveTotalAmount, setLiveTotalAmount] = useState<number | null>(null);
   const [isCharging, setIsCharging] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
+  const [isGenerated, setIsGenerated] = useState(false);
 
   // Filter Gateway Methods based on category
   const vaGatewayList = gatewayMethods.filter((m) => m.category === "Virtual Account" && (m.status === "aktif" || m.status === "on"));
@@ -100,14 +114,6 @@ export default function PembayaranPage() {
     },
   ]);
 
-  // Helper bank numbers
-  const vaNumbers: Record<string, string> = {
-    BCA: "1234 5678 9012 3456",
-    BNI: "8271 9920 1283 4410",
-    Mandiri: "8931 0029 4412 8821",
-    BRI: "8102 7712 9901 2341",
-  };
-
   const totalAmount = paymentType === "per_pertemuan" ? "Rp 100.000" : "Rp 300.000";
   const childName = "Andi Setiawan";
   const itemDescription = paymentType === "per_pertemuan" ? "Pertemuan 7 & 8" : "Pertemuan 7 - 12 (Sisa Paket)";
@@ -119,29 +125,31 @@ export default function PembayaranPage() {
     setSelectedEwallet("GoPay");
     setVaCopied(false);
     setUploadedFile(null);
+    setIsGenerated(false);
+    setLiveVaNumber(null);
+    setLiveQrUrl(null);
+    setLiveCheckoutUrl(null);
+    setLiveExpiredAt(null);
+    setLiveFee(null);
+    setLiveAmount(null);
+    setLiveTotalAmount(null);
+    setActivePaymentId(null);
     setModalStep("select_method");
   };
 
   const handleCopyVa = () => {
-    const num = vaNumbers[selectedBank];
-    navigator.clipboard.writeText(num.replace(/\s/g, ""));
-    setVaCopied(true);
-    setTimeout(() => setVaCopied(false), 2000);
+    if (liveVaNumber) {
+      navigator.clipboard.writeText(liveVaNumber.replace(/\s/g, ""));
+      setVaCopied(true);
+      setTimeout(() => setVaCopied(false), 2000);
+    }
   };
 
-  const handleProceedToDetail = async () => {
-    // Jika cash, langsung lanjut ke detail
-    if (selectedMethod === "cash") {
-      setModalStep("payment_detail");
-      return;
-    }
-
+  const requestCharge = async (method: "va" | "qris" | "ewallet", channelName: string) => {
     setIsCharging(true);
     try {
-      // Pastikan ada auth_token tersimpan untuk demo lokal
       let currentToken = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
       if (!currentToken) {
-        // Ambil token default orang tua jika belum login
         try {
           const authRes = await fetch("http://127.0.0.1:8000/api/v1/auth/login", {
             method: "POST",
@@ -159,15 +167,13 @@ export default function PembayaranPage() {
         }
       }
 
-      // Tentukan payment channel yang valid untuk gateway
-      let channel = "QRISNB";
-      if (selectedMethod === "va") {
-        channel = selectedBank === "BRI" ? "BRIVA" : selectedBank === "BNI" ? "BNIVA" : "BCVA";
-      } else if (selectedMethod === "ewallet") {
-        channel = selectedEwallet.toUpperCase();
+      let channel = channelName;
+      if (method === "va") {
+        channel = channelName.toUpperCase().endsWith("VA") ? channelName.toUpperCase() : `${channelName.toUpperCase()}VA`;
+      } else if (method === "ewallet") {
+        channel = channelName.toUpperCase();
       }
 
-      // Inisiasi charge langsung dengan fetch agar robust
       const chargeRes = await fetch("http://127.0.0.1:8000/api/v1/payments/charge", {
         method: "POST",
         headers: {
@@ -177,7 +183,7 @@ export default function PembayaranPage() {
         },
         body: JSON.stringify({
           payment_plan_id: "01a0663a-025e-728c-8c20-b5cac0d238c2", // Tagihan aktif anak di database
-          payment_method: selectedMethod === "va" ? "va" : selectedMethod === "qris" ? "qris" : "ewallet",
+          payment_method: method,
           payment_channel: channel,
         }),
       });
@@ -189,14 +195,152 @@ export default function PembayaranPage() {
         setActivePaymentId(res.data.payment?.id || null);
         if (inst.qr_url) setLiveQrUrl(inst.qr_url);
         if (inst.virtual_account) setLiveVaNumber(inst.virtual_account);
+        if (inst.checkout_url) setLiveCheckoutUrl(inst.checkout_url);
         if (inst.expired_at) setLiveExpiredAt(inst.expired_at);
+        if (inst.fee !== undefined) setLiveFee(inst.fee);
+        if (inst.amount !== undefined) setLiveAmount(inst.amount);
+        if (inst.total_amount !== undefined) setLiveTotalAmount(inst.total_amount);
+        setIsGenerated(true);
       }
     } catch (err) {
       console.error("Gagal inisiasi payment gateway:", err);
     } finally {
       setIsCharging(false);
-      setModalStep("payment_detail");
     }
+  };
+
+  const handleSelectBank = (bankKey: string) => {
+    setSelectedBank(bankKey);
+    setIsGenerated(false);
+    setExpandedGuideIndex(null);
+    setLiveVaNumber(null);
+    setLiveCheckoutUrl(null);
+    setLiveExpiredAt(null);
+    setLiveFee(null);
+    setLiveAmount(null);
+    setLiveTotalAmount(null);
+  };
+
+  const handleSelectEwallet = (ewalletKey: string) => {
+    setSelectedEwallet(ewalletKey);
+    setIsGenerated(false);
+    setExpandedGuideIndex(null);
+    setLiveCheckoutUrl(null);
+    setLiveExpiredAt(null);
+    setLiveFee(null);
+    setLiveAmount(null);
+    setLiveTotalAmount(null);
+  };
+
+  const handleProceedToDetail = () => {
+    setIsGenerated(false);
+    setExpandedGuideIndex(null);
+    setLiveVaNumber(null);
+    setLiveQrUrl(null);
+    setLiveCheckoutUrl(null);
+    setLiveExpiredAt(null);
+    setLiveFee(null);
+    setLiveAmount(null);
+    setLiveTotalAmount(null);
+    setModalStep("payment_detail");
+  };
+
+  // Helper untuk normalisasi array panduan (Kategori/Channel, Langkah, Catatan)
+  const getNormalizedPanduan = (
+    panduanData: any
+  ): { categoryTitle?: string; steps: string[]; notes?: string }[] => {
+    if (!panduanData) return [];
+
+    // Jika panduan berbentuk Array
+    if (Array.isArray(panduanData)) {
+      return panduanData.map((item, idx) => {
+        if (typeof item === "string") {
+          return { categoryTitle: `Panduan ${idx + 1}`, steps: [item] };
+        }
+        if (typeof item === "object" && item !== null) {
+          const catTitle = item.title || item.name || item.channel || item.method || `Cara Bayar ${idx + 1}`;
+          const steps = Array.isArray(item.steps)
+            ? item.steps
+            : Array.isArray(item.content)
+            ? item.content
+            : item.content
+            ? [item.content]
+            : [];
+          const notes = item.notes || item.catatan || item.note;
+          return { categoryTitle: catTitle, steps, notes };
+        }
+        return { categoryTitle: `Panduan ${idx + 1}`, steps: [] };
+      });
+    }
+
+    // Jika panduan berbentuk Object Key-Value (e.g. { "m_bca": [...], "atm_bca": [...] })
+    if (typeof panduanData === "object" && panduanData !== null) {
+      return Object.entries(panduanData).map(([key, val]) => {
+        const catTitle = key
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (l) => l.toUpperCase());
+        const steps = Array.isArray(val) ? val : typeof val === "string" ? [val] : [];
+        return { categoryTitle: catTitle, steps, notes: undefined };
+      });
+    }
+
+    if (typeof panduanData === "string") {
+      return [{ categoryTitle: "Petunjuk Pembayaran", steps: [panduanData], notes: undefined }];
+    }
+
+    return [];
+  };
+
+  // Helper untuk mendapatkan metode aktif saat ini
+  const getCurrentActiveMethodData = () => {
+    if (selectedMethod === "va") {
+      return (
+        vaGatewayList.find(
+          (m) =>
+            m.code.toUpperCase().replace(/VA$/, "") === selectedBank.toUpperCase().replace(/VA$/, "") ||
+            m.name.toUpperCase().includes(selectedBank.toUpperCase())
+        ) || null
+      );
+    }
+    if (selectedMethod === "ewallet") {
+      return (
+        ewalletGatewayList.find(
+          (m) =>
+            m.code.toUpperCase() === selectedEwallet.toUpperCase() ||
+            m.name.toUpperCase().includes(selectedEwallet.toUpperCase())
+        ) || null
+      );
+    }
+    if (selectedMethod === "qris") {
+      return qrisGatewayList.length > 0 ? qrisGatewayList[0] : null;
+    }
+    return null;
+  };
+
+  // Format waktu expired sesuai device lokal user
+  const formatUserLocalExpiry = (isoString: string | null) => {
+    if (!isoString) return "";
+    try {
+      const d = new Date(isoString);
+      return new Intl.DateTimeFormat(undefined, {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        timeZoneName: "short",
+      }).format(d);
+    } catch {
+      return new Date(isoString).toLocaleTimeString();
+    }
+  };
+
+  const handleGeneratePayment = async () => {
+    if (selectedMethod === "cash") {
+      setModalStep("waiting_confirm");
+      return;
+    }
+
+    const channel = selectedMethod === "va" ? selectedBank : selectedMethod === "ewallet" ? selectedEwallet : "QRIS";
+    await requestCharge(selectedMethod, channel);
   };
 
   const handleConfirmWaiting = () => {
@@ -1121,29 +1265,56 @@ export default function PembayaranPage() {
             {/* ── STEP 2: PEMBAYARAN DETAIL (VIRTUAL ACCOUNT / QRIS / CASH) ── */}
             {modalStep === "payment_detail" && (
               <div>
-                {/* Header */}
+                {/* Header with Change Method Button */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
                   <h3 style={{ fontSize: 18, fontWeight: 800, color: "#1e293b", margin: 0 }}>
                     {selectedMethod === "va"
-                      ? "Pembayaran Virtual Account"
+                      ? `Virtual Account (${selectedBank})`
                       : selectedMethod === "qris"
                       ? "Pembayaran QRIS"
                       : selectedMethod === "ewallet"
-                      ? "Pembayaran E-Wallet"
+                      ? `E-Wallet (${selectedEwallet})`
                       : "Pembayaran Cash / Tunai"}
                   </h3>
-                  <button
-                    onClick={() => setModalStep(null)}
-                    style={{ background: "transparent", border: "none", color: "#64748b", cursor: "pointer", padding: 4 }}
-                  >
-                    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </button>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsGenerated(false);
+                        setModalStep("select_method");
+                      }}
+                      style={{
+                        padding: "5px 10px",
+                        borderRadius: 8,
+                        border: "1px solid #cbd5e1",
+                        background: "#f8fafc",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: "#0e7490",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                        <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      <span>Ganti Metode</span>
+                    </button>
+                    <button
+                      onClick={() => setModalStep(null)}
+                      style={{ background: "transparent", border: "none", color: "#64748b", cursor: "pointer", padding: 4 }}
+                    >
+                      <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
 
                 <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 16px 0", lineHeight: 1.4 }}>
-                  Silakan selesaikan pembayaran menggunakan {selectedMethod === "va" ? "Virtual Account" : selectedMethod.toUpperCase()} sebelum batas waktu pembayaran.
+                  Silakan selesaikan pembayaran menggunakan {selectedMethod === "va" ? `Virtual Account ${selectedBank}` : selectedMethod.toUpperCase()} sebelum batas waktu pembayaran.
                 </p>
 
                 {/* Ringkasan Pembayaran Box */}
@@ -1156,19 +1327,34 @@ export default function PembayaranPage() {
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
                         <span>Pertemuan 7</span><span>Rp 50.000</span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 10 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: liveFee ? 4 : 10 }}>
                         <span>Pertemuan 8</span><span>Rp 50.000</span>
                       </div>
                     </>
                   ) : (
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 10 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: liveFee ? 4 : 10 }}>
                       <span>Sisa Pertemuan (7-12)</span><span>6 x Rp 50.000</span>
                     </div>
                   )}
 
+                  {/* Biaya Layanan Gateway jika sudah digenerate */}
+                  {liveFee !== null && liveFee > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, fontWeight: 600, color: "#64748b", marginBottom: 10 }}>
+                      <span>Biaya Transaksi / Fee Gateway</span>
+                      <span>+ Rp {liveFee.toLocaleString("id-ID")}</span>
+                    </div>
+                  )}
+
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #e2e8f0", paddingTop: 8 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>Total Pembayaran</span>
-                    <span style={{ fontSize: 20, fontWeight: 800, color: "#0e7490" }}>{totalAmount}</span>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>Total yang Harus Ditransfer</div>
+                      {liveFee !== null && liveFee > 0 && (
+                        <div style={{ fontSize: 10.5, color: "#64748b" }}>(Termasuk Biaya Gateway)</div>
+                      )}
+                    </div>
+                    <span style={{ fontSize: 20, fontWeight: 800, color: "#0e7490" }}>
+                      {liveTotalAmount ? `Rp ${liveTotalAmount.toLocaleString("id-ID")}` : totalAmount}
+                    </span>
                   </div>
                 </div>
 
@@ -1188,7 +1374,7 @@ export default function PembayaranPage() {
                           return (
                             <button
                               key={bank.code}
-                              onClick={() => setSelectedBank(bankKey)}
+                              onClick={() => handleSelectBank(bankKey)}
                               className={`bank-card-btn ${isActive ? "bank-card-active" : ""}`}
                               style={{
                                 padding: "12px", borderRadius: 12, textAlign: "left",
@@ -1219,7 +1405,7 @@ export default function PembayaranPage() {
                           return (
                           <button
                             key={bank.id}
-                            onClick={() => setSelectedBank(bank.id)}
+                            onClick={() => handleSelectBank(bank.id)}
                             className={`bank-card-btn ${isActive ? "bank-card-active" : ""}`}
                             style={{
                               padding: "12px", borderRadius: 12, textAlign: "left",
@@ -1257,41 +1443,54 @@ export default function PembayaranPage() {
                         NOMOR VIRTUAL ACCOUNT
                       </div>
 
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                        <span style={{ fontSize: 22, fontWeight: 800, color: "#0e7490", letterSpacing: "0.04em" }}>
-                          {liveVaNumber || vaNumbers[selectedBank]}
-                        </span>
-                        <button
-                          onClick={handleCopyVa}
-                          title="Salin Nomor VA"
-                          style={{
-                            background: "#e0f2fe",
-                            border: "none",
-                            borderRadius: 6,
-                            padding: "6px 10px",
-                            cursor: "pointer",
-                            color: "#0284c7",
-                            fontSize: 12,
-                            fontWeight: 700,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                          }}
-                        >
-                          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                          </svg>
-                          <span>{vaCopied ? "Tersalin!" : ""}</span>
-                        </button>
-                      </div>
+                      {liveVaNumber ? (
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                          <span style={{ fontSize: 22, fontWeight: 800, color: "#0e7490", letterSpacing: "0.04em" }}>
+                            {liveVaNumber}
+                          </span>
+                          <button
+                            onClick={handleCopyVa}
+                            title="Salin Nomor VA"
+                            style={{
+                              background: "#e0f2fe",
+                              border: "none",
+                              borderRadius: 6,
+                              padding: "6px 10px",
+                              cursor: "pointer",
+                              color: "#0284c7",
+                              fontSize: 12,
+                              fontWeight: 700,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
+                          >
+                            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
+                            <span>{vaCopied ? "Tersalin!" : ""}</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ padding: "8px 0", color: "#64748b", fontSize: 13, fontWeight: 600 }}>
+                          Klik tombol <strong>Bayar</strong> di bawah untuk mendapatkan Nomor Virtual Account resmi.
+                        </div>
+                      )}
 
                       <div style={{ fontSize: 13, color: "#475569", marginTop: 8, fontWeight: 600 }}>
-                        Total: <strong>{totalAmount}</strong>
+                        Total Transfer: <strong>{liveTotalAmount ? `Rp ${liveTotalAmount.toLocaleString("id-ID")}` : totalAmount}</strong>
+                        {liveFee !== null && liveFee > 0 && (
+                          <span style={{ fontSize: 11, color: "#64748b", marginLeft: 6 }}>
+                            (Tagihan: Rp {(liveAmount || 0).toLocaleString("id-ID")} + Fee: Rp {liveFee.toLocaleString("id-ID")})
+                          </span>
+                        )}
                       </div>
-                      <div style={{ fontSize: 12, color: "#dc2626", fontWeight: 700, marginTop: 4 }}>
-                        {liveExpiredAt ? `Bayar sebelum ${new Date(liveExpiredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} WIB` : "Bayar sebelum 27 Agustus 2024, 23:59"}
-                      </div>
+                      {liveExpiredAt && (
+                        <div style={{ fontSize: 12, color: "#dc2626", fontWeight: 700, marginTop: 4 }}>
+                          Bayar sebelum {formatUserLocalExpiry(liveExpiredAt)}
+                        </div>
+                      )}
                     </div>
                   </>
                 )}
@@ -1384,7 +1583,7 @@ export default function PembayaranPage() {
                       )}
                     </div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", marginBottom: 10 }}>Scan QRIS ini dengan:</div>
-                    <div style={{ display: "flex", justifyContent: "center", gap: 5, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", justifyContent: "center", gap: 5, flexWrap: "wrap", marginBottom: 10 }}>
                       {[
                         { n: "m-BCA", c: "#0066B3" }, { n: "BRImo", c: "#003D6B" },
                         { n: "OVO", c: "#4C3494" }, { n: "GoPay", c: "#00AA13" },
@@ -1394,6 +1593,15 @@ export default function PembayaranPage() {
                         <span key={a.n} style={{ fontSize: 10, fontWeight: 700, color: a.c, background: `${a.c}12`, padding: "4px 10px", borderRadius: 6, border: `1px solid ${a.c}20` }}>{a.n}</span>
                       ))}
                     </div>
+
+                    <div style={{ fontSize: 13, color: "#475569", marginTop: 8, fontWeight: 600 }}>
+                      Total: <strong>{totalAmount}</strong>
+                    </div>
+                    {liveExpiredAt && (
+                      <div style={{ fontSize: 12, color: "#dc2626", fontWeight: 700, marginTop: 4 }}>
+                        Bayar sebelum {formatUserLocalExpiry(liveExpiredAt)}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1406,7 +1614,7 @@ export default function PembayaranPage() {
                         return (
                           <button
                             key={ew.code}
-                            onClick={() => setSelectedEwallet(ew.code)}
+                            onClick={() => handleSelectEwallet(ew.code)}
                             className={`bank-card-btn ${isActive ? "bank-card-active" : ""}`}
                             style={{
                               padding: "12px", borderRadius: 12, textAlign: "left",
@@ -1437,7 +1645,7 @@ export default function PembayaranPage() {
                         return (
                         <button
                           key={ew.name}
-                          onClick={() => setSelectedEwallet(ew.name)}
+                          onClick={() => handleSelectEwallet(ew.name)}
                           className={`bank-card-btn ${isActive ? "bank-card-active" : ""}`}
                           style={{
                             padding: "12px", borderRadius: 12, textAlign: "left",
@@ -1461,8 +1669,199 @@ export default function PembayaranPage() {
                   </div>
                 )}
 
+                {/* E-Wallet Total & Fee Info jika sudah generated */}
+                {selectedMethod === "ewallet" && (
+                  <div style={{ background: "#f8fafc", borderRadius: 12, padding: "14px", border: "1px solid #e2e8f0", textAlign: "center", marginBottom: 16 }}>
+                    <div style={{ fontSize: 13, color: "#475569", fontWeight: 600 }}>
+                      Total Transfer: <strong>{liveTotalAmount ? `Rp ${liveTotalAmount.toLocaleString("id-ID")}` : totalAmount}</strong>
+                      {liveFee !== null && liveFee > 0 && (
+                        <span style={{ fontSize: 11, color: "#64748b", marginLeft: 6 }}>
+                          (Tagihan: Rp {(liveAmount || 0).toLocaleString("id-ID")} + Fee: Rp {liveFee.toLocaleString("id-ID")})
+                        </span>
+                      )}
+                    </div>
+                    {liveExpiredAt && (
+                      <div style={{ fontSize: 12, color: "#dc2626", fontWeight: 700, marginTop: 4 }}>
+                        Bayar sebelum {formatUserLocalExpiry(liveExpiredAt)}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tombol Buka Invoice / Checkout Resmi Gateway jika tersedia (Hanya E-Wallet) */}
+                {liveCheckoutUrl && selectedMethod === "ewallet" && (
+                  <div style={{ textAlign: "center", marginBottom: 16 }}>
+                    <a
+                      href={liveCheckoutUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 8,
+                        padding: "10px 16px",
+                        background: "#f0f9ff",
+                        border: "1px solid #bae6fd",
+                        borderRadius: 8,
+                        color: "#0284c7",
+                        fontWeight: 700,
+                        fontSize: 13,
+                        textDecoration: "none",
+                      }}
+                    >
+                      <span>Buka Halaman Checkout Resmi {selectedEwallet}</span>
+                      <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                      </svg>
+                    </a>
+                  </div>
+                )}
+
+                {/* ── DROPDOWN PANDUAN CARA BAYAR (ZANNSTORE GATEWAY) — HANYA MUNCUL SETELAH KLIK BAYAR ── */}
+                {isGenerated && (() => {
+                  const activeMethodData = getCurrentActiveMethodData();
+                  const rawPanduan = activeMethodData?.panduan;
+                  const categories = getNormalizedPanduan(rawPanduan);
+
+                  // Fallback jika tidak ada data dari gateway
+                  const defaultCategories: { categoryTitle?: string; steps: string[]; notes?: string }[] =
+                    selectedMethod === "va"
+                      ? [
+                          {
+                            categoryTitle: `m-${selectedBank} / Mobile Banking`,
+                            steps: [
+                              `Login ke aplikasi Mobile Banking ${selectedBank}.`,
+                              `Pilih menu 'Transfer' atau 'Bayar' lalu pilih 'Virtual Account'.`,
+                              `Masukkan Nomor Virtual Account: ${liveVaNumber || ""}.`,
+                              `Pastikan nominal tagihan sesuai (${totalAmount}) lalu masukkan PIN transaksi.`,
+                            ],
+                          },
+                          {
+                            categoryTitle: `ATM ${selectedBank}`,
+                            steps: [
+                              `Masukkan Kartu ATM dan PIN ${selectedBank} Anda.`,
+                              `Pilih menu 'Transaksi Lainnya' → 'Transfer' → 'Ke Rekening Virtual Account'.`,
+                              `Masukkan Nomor Virtual Account: ${liveVaNumber || ""}.`,
+                              `Konfirmasi detail pembayaran dan selesaikan transaksi.`,
+                            ],
+                          },
+                        ]
+                      : selectedMethod === "qris"
+                      ? [
+                          {
+                            categoryTitle: "BCA Mobile / Mandiri / BRImo / Bank Lain",
+                            steps: [
+                              "Buka aplikasi Mobile Banking pilihan Anda.",
+                              "Pilih fitur 'QRIS' atau 'Scan QR'.",
+                              "Arahkan kamera ke QR Code di atas.",
+                              `Periksa nominal (${totalAmount}) dan konfirmasi dengan PIN.`,
+                            ],
+                          },
+                          {
+                            categoryTitle: "GoPay / OVO / DANA / ShopeePay",
+                            steps: [
+                              "Buka aplikasi E-Wallet Anda.",
+                              "Pilih menu 'Scan' atau 'Bayar'.",
+                              "Arahkan kamera ke QR Code di atas.",
+                              "Verifikasi pembayaran dan selesaikan transaksi.",
+                            ],
+                          },
+                        ]
+                      : [
+                          {
+                            categoryTitle: `Aplikasi ${selectedEwallet}`,
+                            steps: [
+                              `Klik tombol 'Buka Halaman Checkout Resmi ${selectedEwallet}' di atas atau buka aplikasi ${selectedEwallet}.`,
+                              "Selesaikan otorisasi dan konfirmasi pembayaran di aplikasi.",
+                              "Setelah berhasil, status pembayaran akan terverifikasi otomatis.",
+                            ],
+                          },
+                        ];
+
+                  const categoriesToRender = categories.length > 0 ? categories : defaultCategories;
+
+                  return (
+                    <div style={{ marginBottom: 20 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#475569", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                        <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="#0e7490" strokeWidth={2}>
+                          <circle cx="12" cy="12" r="10" />
+                          <path d="M12 16v-4M12 8h.01" />
+                        </svg>
+                        <span>Petunjuk & Cara Pembayaran:</span>
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {categoriesToRender.map((cat, catIdx) => {
+                          const isCatOpen = expandedGuideIndex === catIdx;
+                          return (
+                            <div key={catIdx} style={{ border: "1px solid #e2e8f0", borderRadius: 10, overflow: "hidden", background: "#ffffff" }}>
+                              <button
+                                type="button"
+                                onClick={() => setExpandedGuideIndex(isCatOpen ? null : catIdx)}
+                                style={{
+                                  width: "100%",
+                                  padding: "10px 14px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  background: isCatOpen ? "#f8fafc" : "#ffffff",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  textAlign: "left",
+                                }}
+                              >
+                                <span style={{ fontSize: 12, fontWeight: 700, color: isCatOpen ? "#0e7490" : "#334155" }}>
+                                  ▸ {cat.categoryTitle}
+                                </span>
+                                <svg
+                                  width={14}
+                                  height={14}
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="#64748b"
+                                  strokeWidth={2}
+                                  style={{
+                                    transform: isCatOpen ? "rotate(180deg)" : "rotate(0deg)",
+                                    transition: "transform 0.2s ease",
+                                  }}
+                                >
+                                  <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                              </button>
+
+                              {isCatOpen && (
+                                <div style={{ padding: "10px 16px 14px", borderTop: "1px solid #f1f5f9", background: "#f8fafc" }}>
+                                  <ol style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: "#334155", lineHeight: 1.6 }}>
+                                    {cat.steps.map((st, stIdx) => {
+                                      // Ganti placeholder jika ada dengan nomor VA live
+                                      const text = liveVaNumber ? st.replace(/Nomor VA/i, `Nomor VA (${liveVaNumber})`) : st;
+                                      return (
+                                        <li key={stIdx} style={{ marginBottom: 4 }}>
+                                          {text}
+                                        </li>
+                                      );
+                                    })}
+                                  </ol>
+
+                                  {cat.notes && (
+                                    <div style={{ marginTop: 8, padding: "6px 10px", background: "#fffbeb", border: "1px solid #fef3c7", borderRadius: 6, fontSize: 11, color: "#92400e" }}>
+                                      <strong>Catatan:</strong> {cat.notes}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Footer Action Buttons */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: isGenerated ? "1fr 1.4fr" : "1fr 1.4fr", gap: 12 }}>
                   <button
                     onClick={() => setModalStep("select_method")}
                     style={{
@@ -1478,22 +1877,63 @@ export default function PembayaranPage() {
                   >
                     Kembali
                   </button>
-                  <button
-                    onClick={handleConfirmWaiting}
-                    style={{
-                      padding: "12px",
-                      background: "#f59e0b",
-                      color: "#ffffff",
-                      border: "none",
-                      borderRadius: 10,
-                      fontWeight: 700,
-                      fontSize: 14,
-                      cursor: "pointer",
-                      boxShadow: "0 4px 12px rgba(245,158,11,0.25)",
-                    }}
-                  >
-                    Bayar
-                  </button>
+
+                  {!isGenerated && selectedMethod !== "cash" ? (
+                    <button
+                      onClick={handleGeneratePayment}
+                      disabled={isCharging}
+                      style={{
+                        padding: "12px",
+                        background: isCharging ? "#94a3b8" : "#f59e0b",
+                        color: "#ffffff",
+                        border: "none",
+                        borderRadius: 10,
+                        fontWeight: 700,
+                        fontSize: 14,
+                        cursor: isCharging ? "not-allowed" : "pointer",
+                        boxShadow: isCharging ? "none" : "0 4px 12px rgba(245,158,11,0.25)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                      }}
+                    >
+                      {isCharging ? (
+                        <>
+                          <div
+                            style={{
+                              width: 16,
+                              height: 16,
+                              borderRadius: "50%",
+                              border: "2px solid #ffffff",
+                              borderTopColor: "transparent",
+                              animation: "spin 0.8s linear infinite",
+                            }}
+                          />
+                          <span>Memproses...</span>
+                        </>
+                      ) : (
+                        "Bayar"
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleConfirmWaiting}
+                      style={{
+                        padding: "12px",
+                        background: "#0e7490",
+                        color: "#ffffff",
+                        border: "none",
+                        borderRadius: 10,
+                        fontWeight: 700,
+                        fontSize: 14,
+                        cursor: "pointer",
+                        boxShadow: "0 4px 12px rgba(14,116,144,0.25)",
+                      }}
+                    >
+                      {selectedMethod === "cash" ? "Kirim Bukti Pembayaran" : "Saya Sudah Bayar"}
+                    </button>
+                  )}
                 </div>
               </div>
             )}
