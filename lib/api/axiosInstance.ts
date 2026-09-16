@@ -5,8 +5,8 @@
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
 // ---- Base URL dari environment variable ----
-// Di .env.local tambahkan: NEXT_PUBLIC_API_URL=http://localhost:8000/api
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
+// Di .env.local tambahkan: NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
 // ---- Create axios instance ----
 const axiosInstance = axios.create({

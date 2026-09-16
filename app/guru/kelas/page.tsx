@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import Modal from "@/components/ui/Modal";
 
 const datakelas = [
   {
@@ -41,8 +42,6 @@ export default function GuruKelasListPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
-        @keyframes modalIn{from{opacity:0;transform:translateY(14px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
         .kartu-kelas{transition:all .2s ease;cursor:pointer}
         .kartu-kelas:hover{box-shadow:0 6px 24px rgba(0,0,0,.1)!important;transform:translateY(-2px)}
       `}</style>
@@ -56,7 +55,7 @@ export default function GuruKelasListPage() {
       </div>
 
       {/* Stats Ringkasan */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
         <div className="stat-card">
           <span className="stat-card-label">Total Kelas Aktif</span>
           <div className="stat-card-value" style={{ fontSize: 28, color: "#1d4ed8" }}>{datakelas.length} Kelas</div>
@@ -128,27 +127,15 @@ export default function GuruKelasListPage() {
 
       {/* Modal Detail Kelas */}
       {dipilih && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn .2s ease" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 520, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,.25)", animation: "modalIn .25s cubic-bezier(.16,1,.3,1)", maxHeight: "90vh", overflowY: "auto" }}>
-            
-            {/* Header Modal */}
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
-              <div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: "var(--color-text-primary)", marginBottom: 2 }}>{dipilih.kelas}</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-primary)" }}>{dipilih.program}</div>
-              </div>
-              <button onClick={() => setDipilih(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
+      <Modal open onClose={() => setDipilih(null)} title={`${dipilih.kelas} — ${dipilih.program}`} maxWidth={520}>
 
             {/* Info Detail */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 20 }}>
               {[
-                { label: "Jadwal", val: dipilih.jadwal },
-                { label: "Ruangan", val: dipilih.ruang },
-                { label: "Pertemuan", val: `${dipilih.pertemuan} dari ${dipilih.totalPertemuan}` },
-                { label: "Status Hari Ini", val: dipilih.statusHariIni },
+                { label: "Jadwal", val: dipilih?.jadwal },
+                { label: "Ruangan", val: dipilih?.ruang },
+                { label: "Pertemuan", val: `${dipilih?.pertemuan} dari ${dipilih?.totalPertemuan}` },
+                { label: "Status Hari Ini", val: dipilih?.statusHariIni },
               ].map(item => (
                 <div key={item.label} style={{ background: "var(--color-bg)", borderRadius: 10, padding: "12px 14px" }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", marginBottom: 4 }}>{item.label}</div>
@@ -160,10 +147,10 @@ export default function GuruKelasListPage() {
             {/* Daftar Siswa */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-secondary)", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                Daftar Siswa ({dipilih.siswa})
+                Daftar Siswa ({dipilih?.siswa})
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {dipilih.siswaList.map((nama, i) => (
+                {dipilih?.siswaList.map((nama, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "var(--color-bg)", borderRadius: 10, border: "1px solid var(--color-border-light)" }}>
                     <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--color-primary)", color: "white", fontWeight: 800, fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       {nama[0]}
@@ -175,14 +162,13 @@ export default function GuruKelasListPage() {
             </div>
 
             {/* Tombol Aksi */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
               <button className="btn btn-ghost" onClick={() => setDipilih(null)}>Tutup</button>
-              <Link href={`/guru/kelas/${dipilih.id}`} className="btn btn-accent" style={{ textDecoration: "none", textAlign: "center" }}>
+              <Link href={`/guru/kelas/${dipilih?.id}`} className="btn btn-accent" style={{ textDecoration: "none", textAlign: "center" }}>
                 ▶ Mulai Sesi Sekarang
               </Link>
             </div>
-          </div>
-        </div>
+      </Modal>
       )}
     </div>
   );

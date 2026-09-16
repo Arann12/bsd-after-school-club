@@ -134,7 +134,7 @@ export default function GuruProgressPage() {
                 <textarea className="form-input" placeholder="Tuliskan catatan perkembangan konkret..." style={{ minHeight: 80 }} />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 10 }}>
                 <button className="btn btn-ghost" onClick={() => setShowInputModal(false)}>Batal</button>
                 <button className="btn btn-accent" onClick={() => { setNotifToast("Progress belajar siswa berhasil tersimpan!"); setTimeout(() => setNotifToast(null), 3000); setShowInputModal(false); }}>Simpan Progress</button>
               </div>

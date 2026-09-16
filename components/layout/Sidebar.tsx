@@ -194,7 +194,7 @@ export const ownerNav: NavSection[] = [
   {
     section: "ACADEMIC",
     items: [
-      { label: "Pendaftaran / Enrollment", href: "/owner/pendaftaran", icon: "UserPlus" },
+      { label: "Pendaftaran", href: "/owner/pendaftaran", icon: "UserPlus" },
       { label: "Siswa", href: "/owner/siswa", icon: "Users" },
       { label: "Orang Tua", href: "/owner/orang-tua", icon: "Users" },
       { label: "Guru & Staff", href: "/owner/guru", icon: "GraduationCap" },
@@ -202,7 +202,7 @@ export const ownerNav: NavSection[] = [
       { label: "Level", href: "/owner/level", icon: "Layers" },
       { label: "Kelas", href: "/owner/kelas", icon: "Door" },
       { label: "Jadwal", href: "/owner/jadwal", icon: "Calendar" },
-      { label: "Absensi & Logbook Guru", href: "/owner/absensi", icon: "ClipboardCheck" },
+      { label: "Absensi & Logbook", href: "/owner/absensi", icon: "ClipboardCheck" },
       { label: "Penilaian & Sertifikat", href: "/owner/penilaian", icon: "Award" },
     ],
   },
@@ -225,16 +225,23 @@ export const ownerNav: NavSection[] = [
   {
     section: "LAPORAN",
     items: [
-      { label: "Laporan Keuangan", href: "/owner/laporan", icon: "BarChart2" },
-      { label: "Laporan Kehadiran", href: "/owner/laporan", icon: "ClipboardCheck" },
+      { label: "Laporan Keuangan", href: "/owner/laporan/keuangan", icon: "BarChart2" },
+      { label: "Laporan Kehadiran", href: "/owner/laporan/kehadiran", icon: "ClipboardCheck" },
       { label: "Laporan Inventaris", href: "/owner/laporan/inventaris", icon: "FileText" },
+    ],
+  },
+  {
+    section: "KELOLA AKUN",
+    items: [
+      { label: "Akun Admin", href: "/owner/kelola-akun/admin", icon: "ShieldCheck" },
+      { label: "Akun Guru", href: "/owner/kelola-akun/guru", icon: "GraduationCap" },
+      { label: "Akun Orang Tua", href: "/owner/kelola-akun/orang-tua", icon: "Users" },
     ],
   },
   {
     section: "SYSTEM",
     items: [
-      { label: "Pengaturan Sistem", href: "/settings", icon: "Settings" },
-      { label: "Pengaturan Tarif Honor", href: "/owner/tarif", icon: "Settings" },
+      { label: "Pengaturan Honor", href: "/owner/tarif", icon: "Settings" },
     ],
   },
 ];
@@ -250,7 +257,7 @@ export const adminNav: NavSection[] = [
   {
     section: "ACADEMIC",
     items: [
-      { label: "Pendaftaran / Enrollment", href: "/admin/pendaftaran", icon: "UserPlus" },
+      { label: "Pendaftaran", href: "/admin/pendaftaran", icon: "UserPlus" },
       { label: "Siswa", href: "/admin/students", icon: "Users" },
       { label: "Orang Tua", href: "/admin/orang-tua", icon: "Users" },
       { label: "Guru & Staff", href: "/admin/guru", icon: "GraduationCap" },
@@ -258,7 +265,7 @@ export const adminNav: NavSection[] = [
       { label: "Level", href: "/admin/level", icon: "Layers" },
       { label: "Kelas", href: "/admin/classes", icon: "Door" },
       { label: "Jadwal", href: "/admin/schedule", icon: "Calendar" },
-      { label: "Absensi & Logbook Guru", href: "/admin/absensi", icon: "ClipboardCheck" },
+      { label: "Absensi & Logbook", href: "/admin/absensi", icon: "ClipboardCheck" },
       { label: "Sertifikat Kelulusan", href: "/admin/sertifikat", icon: "Award" },
     ],
   },
@@ -275,6 +282,13 @@ export const adminNav: NavSection[] = [
     items: [
       { label: "Inventaris", href: "/admin/inventaris", icon: "Box" },
       { label: "Pengumuman", href: "/admin/pengumuman", icon: "Bell" },
+    ],
+  },
+  {
+    section: "KELOLA AKUN",
+    items: [
+      { label: "Akun Guru", href: "/admin/kelola-akun/guru", icon: "GraduationCap" },
+      { label: "Akun Orang Tua", href: "/admin/kelola-akun/orang-tua", icon: "Users" },
     ],
   },
 ];
@@ -328,14 +342,12 @@ interface SidebarProps {
   nav: NavSection[];
   roleName: string;
   brandName?: string;
-  showLogout?: boolean;
 }
 
 function SidebarBase({
   nav,
   roleName,
   brandName = "BSD After School Club",
-  showLogout = true,
 }: SidebarProps) {
   const pathname = usePathname();
 
@@ -397,20 +409,6 @@ function SidebarBase({
           </div>
         ))}
       </nav>
-
-      {/* Bottom Logout Button */}
-      {showLogout && (
-        <div style={{ padding: "16px", borderTop: "1px solid var(--color-border-light)" }}>
-          <a
-            href="/"
-            className="sidebar-nav-item"
-            style={{ color: "var(--color-text-muted)", margin: 0 }}
-          >
-            <Icons.LogOut />
-            <span>Keluar</span>
-          </a>
-        </div>
-      )}
     </aside>
   );
 }
@@ -419,15 +417,15 @@ function SidebarBase({
 /* Role-specific exports                                               */
 /* ------------------------------------------------------------------ */
 export function OwnerSidebar() {
-  return <SidebarBase nav={ownerNav} roleName="Owner Dashboard" showLogout={true} />;
+  return <SidebarBase nav={ownerNav} roleName="Owner Dashboard" />;
 }
 
 export function AdminSidebar() {
-  return <SidebarBase nav={adminNav} roleName="Admin Dashboard" showLogout={true} />;
+  return <SidebarBase nav={adminNav} roleName="Admin Dashboard" />;
 }
 
 export function GuruSidebar() {
-  return <SidebarBase nav={guruNav} roleName="Panel Guru" showLogout={true} />;
+  return <SidebarBase nav={guruNav} roleName="Panel Guru" />;
 }
 
 export function OrangTuaSidebar() {
@@ -436,7 +434,6 @@ export function OrangTuaSidebar() {
       nav={orangTuaNav}
       roleName="Panel Orang Tua"
       brandName="KlubAnak"
-      showLogout={true}
     />
   );
 }

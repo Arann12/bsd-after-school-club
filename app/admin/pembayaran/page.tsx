@@ -53,7 +53,7 @@ export default function FinancePembayaranPage() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
         {[
           { label: "Total Pembayaran Masuk", value: `Rp ${payments.filter(p => p.status === "Berhasil").reduce((a, p) => a + p.jumlah, 0).toLocaleString("id-ID")}`, color: "#059669", bg: "#d1fae5" },
           { label: "Transaksi Berhasil", value: payments.filter(p => p.status === "Berhasil").length, color: "#1d4ed8", bg: "#dbeafe" },

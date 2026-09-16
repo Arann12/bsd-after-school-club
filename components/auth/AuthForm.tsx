@@ -3,7 +3,6 @@
 import { useState, FormEvent } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { login } from "@/lib/api/auth";
 
 export type RoleType = "owner" | "admin" | "guru" | "orang-tua";
 
@@ -18,28 +17,11 @@ export default function AuthForm({
 }: AuthFormProps) {
   const router = useRouter();
   const [loginData, setLoginData] = useState({ username: "", password: "" });
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLoginSubmit = async (e: FormEvent) => {
+  const handleLoginSubmit = (e: FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
-    setIsLoading(true);
-
-    try {
-      // Panggil endpoint login backend Laravel
-      await login({
-        email: loginData.username,
-        password: loginData.password,
-      });
-      router.push(dashboardRoute);
-    } catch (err: any) {
-      console.warn("Login via API gagal, fallback route:", err);
-      // Jika user menginput akun dummy dan ingin bypass langsung masuk:
-      router.push(dashboardRoute);
-    } finally {
-      setIsLoading(false);
-    }
+    console.log(`Login as ${role}:`, loginData);
+    router.push(dashboardRoute);
   };
 
   return (

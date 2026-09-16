@@ -166,17 +166,7 @@ export const adminAccounts = [
 ];
 
 /* ======================== NOTIFICATIONS ======================== */
-export interface NotificationItem {
-  id: string;
-  title: string;
-  message: string;
-  type: "info" | "warning" | "error" | "success";
-  read: boolean;
-  createdAt: string;
-  href: string;
-}
-
-export const notificationsByRole: Record<string, NotificationItem[]> = {
+export const notificationsByRole: Record<string, typeof notifications_owner> = {
   owner: [
     { id: "NOT-O01", title: "Cash Verification Pending", message: "2 pembayaran cash menunggu verifikasi Anda", type: "warning" as const, read: false, createdAt: "2026-09-08T10:30:00", href: "/owner/verifikasi-cash" },
     { id: "NOT-O02", title: "New Enrollment", message: "Naura Azzahra mendaftar program Calistung", type: "info" as const, read: false, createdAt: "2026-09-07T08:00:00", href: "/owner/pendaftaran" },
@@ -202,7 +192,8 @@ export const notificationsByRole: Record<string, NotificationItem[]> = {
     { id: "NOT-P04", title: "Logbook Anak", message: "Ms. Sarah menulis catatan untuk sesi Andi — Membaca Kalimat Sederhana", type: "info" as const, read: true, createdAt: "2026-09-05T16:00:00", href: "/orang-tua/absensi" },
   ],
 };
-export const notifications = notificationsByRole.owner;
+const notifications_owner = notificationsByRole.owner;
+export const notifications = notifications_owner;
 
 /* ======================== REVENUE SUMMARY ======================== */
 export const revenueSummary = {

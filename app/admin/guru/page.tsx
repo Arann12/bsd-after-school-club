@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import Modal from "@/components/ui/Modal";
 
 export interface Guru {
   id: string;
@@ -87,6 +89,9 @@ const daftarGuru: Guru[] = [
 ];
 
 export default function AdminGuruPage() {
+  const pathname = usePathname();
+  const rolePrefix = pathname.startsWith("/owner") ? "/owner" : "/admin";
+
   const [listGuru, setListGuru] = useState<Guru[]>(daftarGuru);
   const [cari, setCari] = useState("");
   const [selectedGuru, setSelectedGuru] = useState<Guru | null>(null);
@@ -101,8 +106,6 @@ export default function AdminGuruPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
-        @keyframes modalIn { from { opacity:0; transform:translateY(16px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
-        @keyframes fadeIn  { from { opacity:0; } to { opacity:1; } }
         .row-hover:hover { background: #f8fafc !important; cursor: pointer; }
       `}</style>
 
@@ -112,13 +115,10 @@ export default function AdminGuruPage() {
           <h1 className="page-title">Guru & Staff Pengajar</h1>
           <p className="page-subtitle">Kelola data tenaga pengajar, rincian rekening, honor, kontak WhatsApp, dan absensi.</p>
         </div>
-        <button className="btn btn-accent" onClick={() => setShowTambahModal(true)}>
-          + Tambah Guru Baru
-        </button>
       </div>
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
         {[
           { label: "Total Guru & Staff", value: listGuru.length, color: "#1d4ed8", bg: "#dbeafe" },
           { label: "Guru Aktif", value: listGuru.filter(g => g.status === "Aktif").length, color: "#059669", bg: "#d1fae5" },
@@ -202,146 +202,129 @@ export default function AdminGuruPage() {
       </div>
 
       {/* MODAL DETAIL GURU (Requirement #4) */}
-      {selectedGuru && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 580, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1)", maxHeight: "90vh", overflowY: "auto" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Detail Informasi Guru & Staff</h2>
-              <button onClick={() => setSelectedGuru(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
+      <Modal open={!!selectedGuru} onClose={() => setSelectedGuru(null)} title="Detail Informasi Guru & Staff" maxWidth={580}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Profile Card */}
+          <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "16px 20px", display: "flex", alignItems: "center", gap: 16 }}>
+            <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#7c3aed", color: "#fff", fontWeight: 800, fontSize: 22, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {selectedGuru?.nama[0]}
             </div>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)" }}>{selectedGuru?.nama}</div>
+              <div style={{ fontSize: 12.5, color: "var(--color-text-muted)", marginTop: 2 }}>{selectedGuru?.id} · Spesialisasi: {selectedGuru?.spesialisasi}</div>
+              <div style={{ fontSize: 12, color: "var(--color-primary)", fontWeight: 700, marginTop: 4 }}>Bergabung sejak: {selectedGuru?.tglBergabung}</div>
+            </div>
+          </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {/* Profile Card */}
-              <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "16px 20px", display: "flex", alignItems: "center", gap: 16 }}>
-                <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#7c3aed", color: "#fff", fontWeight: 800, fontSize: 22, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  {selectedGuru.nama[0]}
-                </div>
-                <div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)" }}>{selectedGuru.nama}</div>
-                  <div style={{ fontSize: 12.5, color: "var(--color-text-muted)", marginTop: 2 }}>{selectedGuru.id} · Spesialisasi: {selectedGuru.spesialisasi}</div>
-                  <div style={{ fontSize: 12, color: "var(--color-primary)", fontWeight: 700, marginTop: 4 }}>Bergabung sejak: {selectedGuru.tglBergabung}</div>
+          {/* Data Rekening & Honor */}
+          <div style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 12, padding: "16px 18px" }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: "#334155", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
+              Informasi Bank Rekening & Honor
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>Bank & No. Rekening</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a", marginTop: 2 }}>
+                  {selectedGuru?.bank} — {selectedGuru?.noRekening}
                 </div>
               </div>
-
-              {/* Data Rekening & Honor */}
-              <div style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", borderRadius: 12, padding: "16px 18px" }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: "#334155", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
-                  Informasi Bank Rekening & Honor
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>Bank & No. Rekening</div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: "#0f172a", marginTop: 2 }}>
-                      {selectedGuru.bank} — {selectedGuru.noRekening}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>Atas Nama Rekening</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginTop: 2 }}>
-                      {selectedGuru.atasNamaRekening}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>Tarif Honor Per Jam</div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: "#059669", marginTop: 2 }}>
-                      Rp {selectedGuru.honorPerJam.toLocaleString("id-ID")}/jam
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>Estimasi Honor Bulan Ini ({selectedGuru.jamBulanIni} jam)</div>
-                    <div style={{ fontSize: 15, fontWeight: 900, color: "#1d4ed8", marginTop: 2 }}>
-                      Rp {selectedGuru.totalHonorBulanIni.toLocaleString("id-ID")}
-                    </div>
-                  </div>
+              <div>
+                <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>Atas Nama Rekening</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginTop: 2 }}>
+                  {selectedGuru?.atasNamaRekening}
                 </div>
               </div>
-
-              {/* Kontak & Alamat */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "12px 14px", border: "1px solid var(--color-border)" }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>No. WhatsApp</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text-primary)" }}>{selectedGuru.hp}</div>
-                </div>
-                <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "12px 14px", border: "1px solid var(--color-border)" }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>Email</div>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--color-text-primary)" }}>{selectedGuru.email}</div>
+              <div>
+                <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>Tarif Honor Per Jam</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#059669", marginTop: 2 }}>
+                  Rp {selectedGuru?.honorPerJam.toLocaleString("id-ID")}/jam
                 </div>
               </div>
-
-              <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "12px 14px", border: "1px solid var(--color-border)" }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>Alamat Rumah Lengkap</div>
-                <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--color-text-primary)" }}>{selectedGuru.alamat}</div>
-              </div>
-
-              {/* SHORTCUT TOMBOL KE ABSENSI DAN LOGBOOK GURU (Requirement #4) */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
-                <Link href={`/owner/absensi?guru=${encodeURIComponent(selectedGuru.nama)}`} className="btn btn-outline" style={{ textDecoration: "none", textAlign: "center" }}>
-                  Ke Absensi & Logbook
-                </Link>
-                <a href={`https://wa.me/62${selectedGuru.hp.replace(/^0/, "")}`} target="_blank" rel="noopener noreferrer" className="btn btn-accent" style={{ textDecoration: "none", textAlign: "center" }}>
-                  Hubungi via WhatsApp
-                </a>
+              <div>
+                <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>Estimasi Honor Bulan Ini ({selectedGuru?.jamBulanIni} jam)</div>
+                <div style={{ fontSize: 15, fontWeight: 900, color: "#1d4ed8", marginTop: 2 }}>
+                  Rp {selectedGuru?.totalHonorBulanIni.toLocaleString("id-ID")}
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Kontak & Alamat */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+            <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "12px 14px", border: "1px solid var(--color-border)" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>No. WhatsApp</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text-primary)" }}>{selectedGuru?.hp}</div>
+            </div>
+            <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "12px 14px", border: "1px solid var(--color-border)" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>Email</div>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--color-text-primary)" }}>{selectedGuru?.email}</div>
+            </div>
+          </div>
+
+          <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "12px 14px", border: "1px solid var(--color-border)" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>Alamat Rumah Lengkap</div>
+            <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--color-text-primary)" }}>{selectedGuru?.alamat}</div>
+          </div>
+
+          {/* SHORTCUT TOMBOL KE ABSENSI DAN LOGBOOK GURU (Requirement #4) */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 4 }}>
+            {selectedGuru && (
+              <Link href={`${rolePrefix}/absensi?guru=${encodeURIComponent(selectedGuru.id)}`} className="btn btn-outline" style={{ textDecoration: "none", textAlign: "center" }}>
+                Ke Absensi & Logbook
+              </Link>
+            )}
+            {selectedGuru && (
+              <a href={`https://wa.me/62${selectedGuru.hp.replace(/^0/, "")}`} target="_blank" rel="noopener noreferrer" className="btn btn-accent" style={{ textDecoration: "none", textAlign: "center" }}>
+                Hubungi via WhatsApp
+              </a>
+            )}
+          </div>
         </div>
-      )}
+      </Modal>
 
       {/* MODAL TAMBAH GURU BARU (Requirement #6) */}
-      {showTambahModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 540, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1)", maxHeight: "90vh", overflowY: "auto" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Tambah Guru / Staff Baru</h2>
-              <button onClick={() => setShowTambahModal(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
+      <Modal open={showTambahModal} onClose={() => setShowTambahModal(false)} title="Tambah Guru / Staff Baru" maxWidth={540}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label">Nama Lengkap Guru</label>
+            <input className="form-input" placeholder="Contoh: Ms. Clara" />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Spesialisasi Program</label>
+              <input className="form-input" placeholder="Contoh: English & Phonics" />
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Nama Lengkap Guru</label>
-                <input className="form-input" placeholder="Contoh: Ms. Clara" />
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Spesialisasi Program</label>
-                  <input className="form-input" placeholder="Contoh: English & Phonics" />
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">No. WhatsApp</label>
-                  <input className="form-input" placeholder="08xxxxxxxxxx" />
-                </div>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Email</label>
-                  <input className="form-input" placeholder="guru@bsdclub.com" />
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Tarif Honor Per Jam (Rp)</label>
-                  <input className="form-input" placeholder="75000" />
-                </div>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Nama Bank</label>
-                  <input className="form-input" placeholder="BCA / Mandiri" />
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">No. Rekening</label>
-                  <input className="form-input" placeholder="1234567890" />
-                </div>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
-                <button className="btn btn-ghost" onClick={() => setShowTambahModal(false)}>Batal</button>
-                <button className="btn btn-accent" onClick={() => setShowTambahModal(false)}>Simpan Guru</button>
-              </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">No. WhatsApp</label>
+              <input className="form-input" placeholder="08xxxxxxxxxx" />
             </div>
           </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Email</label>
+              <input className="form-input" placeholder="guru@bsdclub.com" />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Tarif Honor Per Jam (Rp)</label>
+              <input className="form-input" placeholder="75000" />
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Nama Bank</label>
+              <input className="form-input" placeholder="BCA / Mandiri" />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">No. Rekening</label>
+              <input className="form-input" placeholder="1234567890" />
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 8 }}>
+            <button className="btn btn-ghost" onClick={() => setShowTambahModal(false)}>Batal</button>
+            <button className="btn btn-accent" onClick={() => setShowTambahModal(false)}>Simpan Guru</button>
+          </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Modal from "@/components/ui/Modal";
 
 export interface OrangTuaData {
   id: string;
@@ -109,8 +110,6 @@ export default function AdminOrangTuaPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
-        @keyframes modalIn { from { opacity:0; transform:translateY(16px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
-        @keyframes fadeIn  { from { opacity:0; } to { opacity:1; } }
         .row-hover:hover { background: #f8fafc !important; cursor: pointer; }
       `}</style>
 
@@ -153,7 +152,7 @@ export default function AdminOrangTuaPage() {
       </div>
 
       {/* Stat Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
         {[
           { label: "Total Akun Wali", value: daftarOrangTua.length, color: "#1d4ed8", bg: "#dbeafe" },
           { label: "Tagihan Lunas", value: daftarOrangTua.filter(o => o.statusTagihan === "Lunas").length, color: "#059669", bg: "#d1fae5" },
@@ -229,99 +228,90 @@ export default function AdminOrangTuaPage() {
       </div>
 
       {/* Modal Detail Informasi Lengkap Orang Tua (Requirement #3) */}
-      {selectedOrangTua && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn 0.2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 560, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1)", maxHeight: "90vh", overflowY: "auto" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Detail Informasi Orang Tua / Wali</h2>
-              <button onClick={() => setSelectedOrangTua(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
+      <Modal open={!!selectedOrangTua} onClose={() => setSelectedOrangTua(null)} title="Detail Informasi Orang Tua / Wali" maxWidth={560}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Header Info */}
+          <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "16px 18px", display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 50, height: 50, borderRadius: "50%", background: "var(--color-primary)", color: "#fff", fontWeight: 800, fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {selectedOrangTua?.nama[0]}
             </div>
+            <div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "var(--color-text-primary)" }}>{selectedOrangTua?.nama}</div>
+              <div style={{ fontSize: 12.5, color: "var(--color-text-muted)", marginTop: 2 }}>{selectedOrangTua?.id} · Terdaftar sejak {selectedOrangTua?.terdaftar}</div>
+            </div>
+          </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {/* Header Info */}
-              <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "16px 18px", display: "flex", alignItems: "center", gap: 14 }}>
-                <div style={{ width: 50, height: 50, borderRadius: "50%", background: "var(--color-primary)", color: "#fff", fontWeight: 800, fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  {selectedOrangTua.nama[0]}
-                </div>
-                <div>
-                  <div style={{ fontSize: 17, fontWeight: 800, color: "var(--color-text-primary)" }}>{selectedOrangTua.nama}</div>
-                  <div style={{ fontSize: 12.5, color: "var(--color-text-muted)", marginTop: 2 }}>{selectedOrangTua.id} · Terdaftar sejak {selectedOrangTua.terdaftar}</div>
-                </div>
-              </div>
-
-              {/* Rincian Biaya & Periode Pembayaran */}
-              <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 12, padding: "16px 18px" }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: "#166534", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
-                  Informasi Biaya & Tagihan
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 11, color: "#166534", fontWeight: 600 }}>Biaya Harus Dibayar</div>
-                    <div style={{ fontSize: 18, fontWeight: 900, color: "#15803d", marginTop: 2 }}>
-                      Rp {selectedOrangTua.totalTagihan.toLocaleString("id-ID")}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: "#166534", fontWeight: 600 }}>Metode Pembayaran</div>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: "#166534", marginTop: 2 }}>
-                      {selectedOrangTua.metodePembayaran}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: "#166534", fontWeight: 600 }}>Tanggal Mulai Bayar</div>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: "#166534", marginTop: 2 }}>
-                      {selectedOrangTua.tglMulaiBayar}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: "#166534", fontWeight: 600 }}>Batas Waktu Bayar (Due Date)</div>
-                    <div style={{ fontSize: 13.5, fontWeight: 800, color: selectedOrangTua.statusTagihan === "Overdue" ? "#dc2626" : "#166534", marginTop: 2 }}>
-                      {selectedOrangTua.batasWaktuBayar}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Data Pribadi & Kontak */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                {[
-                  { label: "No. WhatsApp", value: selectedOrangTua.hp },
-                  { label: "Email", value: selectedOrangTua.email },
-                  { label: "Pekerjaan", value: selectedOrangTua.pekerjaan },
-                  { label: "Alamat Tempat Tinggal", value: selectedOrangTua.alamat },
-                ].map(f => (
-                  <div key={f.label} style={{ background: "var(--color-bg)", borderRadius: 10, padding: "12px 14px", border: "1px solid var(--color-border)" }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>{f.label}</div>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--color-text-primary)" }}>{f.value}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Anak Terhubung */}
+          {/* Rincian Biaya & Periode Pembayaran */}
+          <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 12, padding: "16px 18px" }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: "#166534", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
+              Informasi Biaya & Tagihan
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
               <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Anak Terhubung</div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {selectedOrangTua.anak.map(a => (
-                    <span key={a} style={{ background: "#e0f2fe", color: "#0369a1", fontSize: 13, fontWeight: 700, padding: "6px 14px", borderRadius: 8 }}>
-                      {a}
-                    </span>
-                  ))}
+                <div style={{ fontSize: 11, color: "#166534", fontWeight: 600 }}>Biaya Harus Dibayar</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: "#15803d", marginTop: 2 }}>
+                  Rp {selectedOrangTua?.totalTagihan.toLocaleString("id-ID")}
                 </div>
               </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 6 }}>
-                <button className="btn btn-ghost" onClick={() => setSelectedOrangTua(null)}>Tutup</button>
-                <a href={`https://wa.me/62${selectedOrangTua.hp.replace(/^0/, "")}`} target="_blank" rel="noopener noreferrer" className="btn btn-accent" style={{ textAlign: "center", textDecoration: "none" }}>
-                  Hubungi via WhatsApp
-                </a>
+              <div>
+                <div style={{ fontSize: 11, color: "#166534", fontWeight: 600 }}>Metode Pembayaran</div>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: "#166534", marginTop: 2 }}>
+                  {selectedOrangTua?.metodePembayaran}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "#166534", fontWeight: 600 }}>Tanggal Mulai Bayar</div>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: "#166534", marginTop: 2 }}>
+                  {selectedOrangTua?.tglMulaiBayar}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "#166534", fontWeight: 600 }}>Batas Waktu Bayar (Due Date)</div>
+                <div style={{ fontSize: 13.5, fontWeight: 800, color: selectedOrangTua?.statusTagihan === "Overdue" ? "#dc2626" : "#166534", marginTop: 2 }}>
+                  {selectedOrangTua?.batasWaktuBayar}
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Data Pribadi & Kontak */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+            {[
+              { label: "No. WhatsApp", value: selectedOrangTua?.hp },
+              { label: "Email", value: selectedOrangTua?.email },
+              { label: "Pekerjaan", value: selectedOrangTua?.pekerjaan },
+              { label: "Alamat Tempat Tinggal", value: selectedOrangTua?.alamat },
+            ].map(f => (
+              <div key={f.label} style={{ background: "var(--color-bg)", borderRadius: 10, padding: "12px 14px", border: "1px solid var(--color-border)" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>{f.label}</div>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--color-text-primary)" }}>{f.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Anak Terhubung */}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Anak Terhubung</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {selectedOrangTua?.anak.map(a => (
+                <span key={a} style={{ background: "#e0f2fe", color: "#0369a1", fontSize: 13, fontWeight: 700, padding: "6px 14px", borderRadius: 8 }}>
+                  {a}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 6 }}>
+            <button className="btn btn-ghost" onClick={() => setSelectedOrangTua(null)}>Tutup</button>
+            {selectedOrangTua && (
+              <a href={`https://wa.me/62${selectedOrangTua.hp.replace(/^0/, "")}`} target="_blank" rel="noopener noreferrer" className="btn btn-accent" style={{ textAlign: "center", textDecoration: "none" }}>
+                Hubungi via WhatsApp
+              </a>
+            )}
+          </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

@@ -17,6 +17,7 @@ interface HeaderProps {
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import NotificationDropdown from "@/components/ui/NotificationDropdown";
 
 export default function Header({
   userName = "Owner",
@@ -35,6 +36,13 @@ export default function Header({
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [currentChild, setCurrentChild] = useState(selectedChild);
   const [currentLevel, setCurrentLevel] = useState(selectedChildLevel);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    const next = !sidebarOpen;
+    setSidebarOpen(next);
+    document.querySelector(".sidebar")?.classList.toggle("open", next);
+  };
 
   let profileLink = "/owner/profil";
   if (pathname.startsWith("/admin")) profileLink = "/admin/profil";
@@ -48,7 +56,20 @@ export default function Header({
 
   return (
     <header className="header" style={{ justifyContent: "space-between", position: "relative" }}>
-      {/* Left side: Greeting or Search */}
+      {/* Mobile Hamburger */}
+      <button className="hamburger-btn" onClick={toggleSidebar} aria-label="Toggle menu">
+        {sidebarOpen ? (
+          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        ) : (
+          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        )}
+      </button>
+
+      {/* Left side: Greeting / Child Selector */}
       {greetingText ? (
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <span style={{ fontSize: 14, fontWeight: 500, color: "var(--color-text-secondary)" }}>
@@ -169,32 +190,17 @@ export default function Header({
             </div>
           )}
         </div>
-      ) : showSearch ? (
-        <div className="header-search">
-          <div className="search-input-wrap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search..."
-              className="search-input"
-              id="header-search-input"
-            />
-          </div>
-        </div>
       ) : <div />}
+
+      {/* Mobile Sidebar Backdrop */}
+      {sidebarOpen && (
+        <div className="sidebar-backdrop" onClick={toggleSidebar} />
+      )}
 
       {/* Right Actions */}
       <div className="header-actions" style={{ position: "relative" }}>
         {/* Notification Bell */}
-        <button className="header-icon-btn" id="header-notif-btn" aria-label="Notifications">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
-          <span className="badge-dot" />
-        </button>
+        <NotificationDropdown role={pathname.startsWith("/admin") ? "admin" : pathname.startsWith("/guru") ? "guru" : pathname.startsWith("/orang-tua") ? "orangTua" : "owner"} />
 
         {/* Help Question Icon (if Orang Tua) */}
         {greetingText && (

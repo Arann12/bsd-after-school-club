@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Modal from "@/components/ui/Modal";
 
 export interface ItemInventaris {
   id: string;
@@ -76,17 +77,12 @@ export default function AdminInventarisPage() {
       </div>
 
       {/* MODAL DETAIL BARANG INVENTARIS (Requirement #5) */}
-      {selectedItem && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 540, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-              <div>
-                <span style={{ background: "var(--color-primary-bg)", color: "var(--color-primary)", fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 999 }}>
-                  {selectedItem.id}
-                </span>
-                <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: "4px 0 0" }}>{selectedItem.nama}</h2>
-              </div>
-              <button onClick={() => setSelectedItem(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>✕</button>
+      {selectedItem && (<Modal open onClose={() => setSelectedItem(null)} title="Detail Barang" maxWidth={540}>
+            <div>
+              <span style={{ background: "var(--color-primary-bg)", color: "var(--color-primary)", fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 999 }}>
+                {selectedItem.id}
+              </span>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: "4px 0 0" }}>{selectedItem.nama}</h2>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -107,7 +103,7 @@ export default function AdminInventarisPage() {
               </div>
 
               {/* Grid Metadata */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
                 <div style={{ background: "#f8fafc", padding: "10px 12px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
                   <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700 }}>Nomor Serial / SKU</div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", fontFamily: "monospace" }}>{selectedItem.noSerial}</div>
@@ -132,14 +128,12 @@ export default function AdminInventarisPage() {
                 <div style={{ fontSize: 13, color: "var(--color-text-primary)", lineHeight: 1.5 }}>{selectedItem.keterangan}</div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 4 }}>
                 <button className="btn btn-ghost" onClick={() => setSelectedItem(null)}>Tutup</button>
                 <button className="btn btn-accent" onClick={() => setSelectedItem(null)}>Edit Barang</button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+      </Modal>)}
     </div>
   );
 }

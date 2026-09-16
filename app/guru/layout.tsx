@@ -1,16 +1,10 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import { GuruSidebar } from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
+import Breadcrumb from "@/components/ui/Breadcrumb";
 
 export default function GuruLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-
-  if (pathname?.endsWith("/login")) {
-    return <>{children}</>;
-  }
-
   return (
     <div className="app-shell">
       <GuruSidebar />
@@ -22,7 +16,10 @@ export default function GuruLayout({ children }: { children: React.ReactNode }) 
           userRole="Guru Pengajar"
           userColor="linear-gradient(135deg, #1a5c8a, #3AABE3)"
         />
-        <main className="page-content">{children}</main>
+        <main className="page-content">
+          <Breadcrumb />
+          {children}
+        </main>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Modal from "@/components/ui/Modal";
 
 interface Pengumuman {
   id: string;
@@ -100,24 +101,20 @@ export default function OrangTuaPengumumanPage() {
 
       {/* MODAL DETAIL PENGUMUMAN */}
       {selected && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.6)", backdropFilter: "blur(6px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-          <div style={{ background: "#fff", borderRadius: 20, maxWidth: 640, width: "100%", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.3)" }}>
-            {/* Modal Header */}
-            <div style={{ padding: "22px 26px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                  <span style={{ ...kategoriColor[selected.kategori], fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 999 }}>{selected.kategori}</span>
-                  {selected.isFlyer && <span style={{ background: "#ede9fe", color: "#7c3aed", fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 999 }}>Flyer Resmi</span>}
-                  <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{selected.tanggal}</span>
-                </div>
-                <h2 style={{ fontSize: 20, fontWeight: 900, color: "var(--color-text-primary)", margin: 0, lineHeight: 1.3 }}>{selected.judul}</h2>
-              </div>
-              <button onClick={() => setSelected(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)", marginLeft: 16, flexShrink: 0 }}>✕</button>
-            </div>
+      <Modal open onClose={() => setSelected(null)} title="Detail Pengumuman" maxWidth={640}>
+        {/* Modal Header */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <span style={{ ...kategoriColor[selected?.kategori || ""], fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 999 }}>{selected?.kategori}</span>
+            {selected?.isFlyer && <span style={{ background: "#ede9fe", color: "#7c3aed", fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 999 }}>Flyer Resmi</span>}
+            <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{selected?.tanggal}</span>
+          </div>
+          <h2 style={{ fontSize: 20, fontWeight: 900, color: "var(--color-text-primary)", margin: 0, lineHeight: 1.3 }}>{selected?.judul}</h2>
+        </div>
 
-            <div style={{ padding: "20px 26px 26px", display: "flex", flexDirection: "column", gap: 18 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
               {/* Flyer / Poster Visual (jika ada) */}
-              {selected.isFlyer && (
+              {selected?.isFlyer && (
                 <div style={{ borderRadius: 14, overflow: "hidden", border: "2px solid #e2e8f0", background: "linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 35%, #f97316 100%)", padding: 24, textAlign: "center" }}>
                   {/* Simulated Flyer Design */}
                   <div style={{ marginBottom: 12 }}>
@@ -132,7 +129,7 @@ export default function OrangTuaPengumumanPage() {
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#fbbf24", marginTop: 4 }}>& Jadwal Kelas Pengganti</div>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: 14 }}>
                     <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: 8, padding: "10px 12px" }}>
                       <div style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", fontWeight: 700 }}>TANGGAL LIBUR</div>
                       <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", marginTop: 2 }}>28 Sep – 6 Okt 2026</div>
@@ -148,7 +145,7 @@ export default function OrangTuaPengumumanPage() {
                   </div>
 
                   <div style={{ marginTop: 10, fontSize: 10, color: "rgba(255,255,255,0.5)" }}>
-                    Diterbitkan oleh Manajemen BSD After School Club · {selected.tanggal}
+                    Diterbitkan oleh Manajemen BSD After School Club · {selected?.tanggal}
                   </div>
                 </div>
               )}
@@ -156,13 +153,12 @@ export default function OrangTuaPengumumanPage() {
               {/* Detail Teks Pengumuman */}
               <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "16px 18px", border: "1px solid var(--color-border)" }}>
                 <div style={{ fontSize: 11, fontWeight: 800, color: "var(--color-text-muted)", textTransform: "uppercase", marginBottom: 10 }}>Informasi Lengkap</div>
-                <pre style={{ fontSize: 13, color: "var(--color-text-primary)", whiteSpace: "pre-wrap", lineHeight: 1.7, fontFamily: "inherit", margin: 0 }}>{selected.detail}</pre>
+                <pre style={{ fontSize: 13, color: "var(--color-text-primary)", whiteSpace: "pre-wrap", lineHeight: 1.7, fontFamily: "inherit", margin: 0 }}>{selected?.detail}</pre>
               </div>
 
               <button className="btn btn-accent" onClick={() => setSelected(null)}>Tutup Pengumuman</button>
             </div>
-          </div>
-        </div>
+      </Modal>
       )}
     </div>
   );

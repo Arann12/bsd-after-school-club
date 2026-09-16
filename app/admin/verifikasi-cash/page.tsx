@@ -75,7 +75,7 @@ export default function AdminVerifikasiCashPage() {
       )}
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
         {[
           { label: "Menunggu Verifikasi", value: cashList.filter(c => c.status === "Menunggu Verifikasi").length, color: "#b45309", bg: "#fef3c7" },
           { label: "Terverifikasi Bulan Ini", value: cashList.filter(c => c.status === "Disetujui / Terverifikasi").length, color: "#059669", bg: "#d1fae5" },
@@ -160,7 +160,7 @@ export default function AdminVerifikasiCashPage() {
               />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 18 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 18 }}>
               <button className="btn btn-ghost" onClick={() => setSelectedCash(null)}>Batal</button>
               <button className="btn btn-accent" onClick={() => handleApprove(selectedCash.id)}>✓ Setujui & Verifikasi</button>
             </div>

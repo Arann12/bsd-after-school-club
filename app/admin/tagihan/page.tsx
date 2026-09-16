@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import Toast, { useToast } from "@/components/ui/Toast";
+import Modal from "@/components/ui/Modal";
 
 const daftarTagihan = [
   { id: "INV-2026-000001", siswa: "Andi Setiawan", idSiswa: "STD-2026-0001", program: "Calistung Level 1", pertemuan: "Pertemuan 7 & 8", jumlah: 100000, metode: "Cash", tanggal: "2 Sept 2026", status: "Menunggu Konfirmasi", jalur: "via Orang Tua" },
@@ -49,15 +51,10 @@ export default function AdminTagihanPage() {
   const getStatus = (t: typeof daftarTagihan[0]) =>
     sudahKonfirmasi.includes(t.id) ? "Lunas" : t.status;
 
-  const [notifMessage, setNotifMessage] = useState<string | null>(null);
-
-  const triggerNotif = (msg: string) => {
-    setNotifMessage(msg);
-    setTimeout(() => setNotifMessage(null), 3000);
-  };
+  const { toast, showToast } = useToast();
 
   const handleSaveCashManual = () => {
-    triggerNotif(`Pembayaran Cash Manual Rp ${cashAmount.toLocaleString("id-ID")} berhasil diinput!`);
+    showToast(`Pembayaran Cash Manual Rp ${cashAmount.toLocaleString("id-ID")} berhasil diinput!`);
     setShowInputCashModal(false);
     setCashNote("");
   };
@@ -65,20 +62,10 @@ export default function AdminTagihanPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
-        @keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
         .baris-tagihan:hover{background:#f8fafc!important;cursor:pointer}
       `}</style>
 
-      {/* Toast Notification Inline */}
-      {notifMessage && (
-        <div style={{ background: "#d1fae5", border: "1.5px solid #6ee7b7", borderRadius: 12, padding: "12px 18px", color: "#047857", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}>
-          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-          {notifMessage}
-        </div>
-      )}
+      <Toast toast={toast} />
 
       {/* Kepala Halaman */}
       <div className="page-header">
@@ -87,7 +74,7 @@ export default function AdminTagihanPage() {
           <p className="page-subtitle">Kelola tagihan seluruh siswa dan konfirmasi pembayaran cash.</p>
         </div>
         <div className="page-header-actions">
-          <button className="btn btn-outline" onClick={() => triggerNotif("Ekspor data tagihan berhasil diproses.")}>
+          <button className="btn btn-outline" onClick={() => showToast("Ekspor data tagihan berhasil diproses.")}>
             <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             Ekspor
           </button>
@@ -96,7 +83,7 @@ export default function AdminTagihanPage() {
       </div>
 
       {/* Kartu Statistik */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
         {[
           { label: "Total Tagihan",          value: daftarTagihan.length, warna: "#1d4ed8", bg: "#dbeafe" },
           { label: "Lunas",                  value: daftarTagihan.filter(t=>t.status==="Lunas").length + sudahKonfirmasi.length, warna: "#059669", bg: "#d1fae5" },
@@ -192,136 +179,103 @@ export default function AdminTagihanPage() {
       </div>
 
       {/* Modal Detail Tagihan */}
-      {dipilih && !showKonfirmasi && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn .2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 500, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,.25)", animation: "modalIn .25s cubic-bezier(0.16,1,0.3,1)", maxHeight: "90vh", overflowY: "auto" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Detail Tagihan</h2>
-              <button onClick={() => setDipilih(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
+      <Modal open={!!dipilih && !showKonfirmasi} onClose={() => setDipilih(null)} title="Detail Tagihan" maxWidth={500}>
+        {/* Nomor Invoice */}
+        <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "10px 16px", marginBottom: 16, fontFamily: "monospace", fontSize: 13, color: "var(--color-text-muted)", fontWeight: 600 }}>{dipilih?.id}</div>
 
-            {/* Nomor Invoice */}
-            <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "10px 16px", marginBottom: 16, fontFamily: "monospace", fontSize: 13, color: "var(--color-text-muted)", fontWeight: 600 }}>{dipilih.id}</div>
-
-            {/* Info Grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
-              {[
-                { label: "Nama Siswa", value: dipilih.siswa },
-                { label: "Program", value: dipilih.program },
-                { label: "Tagihan Pertemuan", value: dipilih.pertemuan },
-                { label: "Jumlah", value: `Rp ${dipilih.jumlah.toLocaleString("id")}` },
-                { label: "Metode Bayar", value: dipilih.metode },
-                { label: "Jalur Pembayaran", value: dipilih.jalur },
-                { label: "Tanggal Bayar", value: dipilih.tanggal },
-              ].map(f => (
-                <div key={f.label} style={{ background: "var(--color-bg)", borderRadius: 10, padding: "10px 14px", border: "1px solid var(--color-border)" }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>{f.label}</div>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--color-text-primary)" }}>{f.value}</div>
-                </div>
-              ))}
+        {/* Info Grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 16 }}>
+          {[
+            { label: "Nama Siswa", value: dipilih?.siswa },
+            { label: "Program", value: dipilih?.program },
+            { label: "Tagihan Pertemuan", value: dipilih?.pertemuan },
+            { label: "Jumlah", value: `Rp ${dipilih?.jumlah.toLocaleString("id")}` },
+            { label: "Metode Bayar", value: dipilih?.metode },
+            { label: "Jalur Pembayaran", value: dipilih?.jalur },
+            { label: "Tanggal Bayar", value: dipilih?.tanggal },
+          ].map(f => (
+            <div key={f.label} style={{ background: "var(--color-bg)", borderRadius: 10, padding: "10px 14px", border: "1px solid var(--color-border)" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>{f.label}</div>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--color-text-primary)" }}>{f.value}</div>
             </div>
-
-            {/* Status */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--color-bg)", borderRadius: 10, padding: "14px 16px", marginBottom: 20, border: "1px solid var(--color-border)" }}>
-              <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--color-text-secondary)" }}>Status Tagihan</span>
-              <span style={{ ...warnaStatus[getStatus(dipilih)], fontSize: 12, fontWeight: 700, padding: "4px 14px", borderRadius: 999 }}>{getStatus(dipilih)}</span>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: getStatus(dipilih) === "Menunggu Konfirmasi" ? "1fr 1fr" : "1fr", gap: 10 }}>
-              <button className="btn btn-ghost" onClick={() => setDipilih(null)}>Tutup</button>
-              {getStatus(dipilih) === "Menunggu Konfirmasi" && (
-                <button className="btn btn-accent" onClick={() => setShowKonfirmasi(true)}>Konfirmasi Pembayaran</button>
-              )}
-            </div>
-          </div>
+          ))}
         </div>
-      )}
+
+        {/* Status */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--color-bg)", borderRadius: 10, padding: "14px 16px", marginBottom: 20, border: "1px solid var(--color-border)" }}>
+          <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--color-text-secondary)" }}>Status Tagihan</span>
+          <span style={{ ...warnaStatus[getStatus(dipilih!)], fontSize: 12, fontWeight: 700, padding: "4px 14px", borderRadius: 999 }}>{getStatus(dipilih!)}</span>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: getStatus(dipilih!) === "Menunggu Konfirmasi" ? "1fr 1fr" : "1fr", gap: 10 }}>
+          <button className="btn btn-ghost" onClick={() => setDipilih(null)}>Tutup</button>
+          {getStatus(dipilih!) === "Menunggu Konfirmasi" && (
+            <button className="btn btn-accent" onClick={() => setShowKonfirmasi(true)}>Konfirmasi Pembayaran</button>
+          )}
+        </div>
+      </Modal>
 
       {/* Modal Konfirmasi Cash */}
-      {showKonfirmasi && dipilih && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 110, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn .2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 440, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,.25)", animation: "modalIn .25s cubic-bezier(0.16,1,0.3,1)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Konfirmasi Pembayaran</h2>
-              <button onClick={() => { setShowKonfirmasi(false); setDipilih(null); }} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
+      <Modal open={showKonfirmasi && !!dipilih} onClose={() => { setShowKonfirmasi(false); setDipilih(null); }} title="Konfirmasi Pembayaran" maxWidth={440}>
+        {/* Info Ringkas */}
+        <div style={{ background: "#fef3c7", borderRadius: 12, padding: "16px 18px", marginBottom: 20, border: "1px solid #fde68a" }}>
+          <div style={{ fontSize: 13, color: "#92400e", marginBottom: 4 }}>{dipilih?.id}</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: "#78350f" }}>{dipilih?.siswa}</div>
+          <div style={{ fontSize: 13, color: "#b45309", marginTop: 2 }}>{dipilih?.pertemuan} · {dipilih?.metode}</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#d97706", marginTop: 8 }}>Rp {dipilih?.jumlah.toLocaleString("id")}</div>
+        </div>
 
-            {/* Info Ringkas */}
-            <div style={{ background: "#fef3c7", borderRadius: 12, padding: "16px 18px", marginBottom: 20, border: "1px solid #fde68a" }}>
-              <div style={{ fontSize: 13, color: "#92400e", marginBottom: 4 }}>{dipilih.id}</div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#78350f" }}>{dipilih.siswa}</div>
-              <div style={{ fontSize: 13, color: "#b45309", marginTop: 2 }}>{dipilih.pertemuan} · {dipilih.metode}</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: "#d97706", marginTop: 8 }}>Rp {dipilih.jumlah.toLocaleString("id")}</div>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Nominal Diterima (Rp)</label>
-                <input className="form-input" type="number" defaultValue={dipilih.jumlah} />
-              </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Catatan Admin (opsional)</label>
-                <input className="form-input" placeholder="Contoh: Diterima tunai di kantor" />
-              </div>
-              <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "10px 14px", fontSize: 12.5, color: "#166534" }}>
-                Setelah dikonfirmasi, status tagihan berubah menjadi <strong>Lunas</strong> dan nomor transaksi akan digenerate otomatis.
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                <button className="btn btn-ghost" onClick={() => { setShowKonfirmasi(false); setDipilih(null); }}>Batal</button>
-                <button className="btn btn-accent" onClick={() => konfirmasi(dipilih.id)}>Konfirmasi Lunas</button>
-              </div>
-            </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label">Nominal Diterima (Rp)</label>
+            <input className="form-input" type="number" defaultValue={dipilih?.jumlah} />
+          </div>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label">Catatan Admin (opsional)</label>
+            <input className="form-input" placeholder="Contoh: Diterima tunai di kantor" />
+          </div>
+          <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "10px 14px", fontSize: 12.5, color: "#166534" }}>
+            Setelah dikonfirmasi, status tagihan berubah menjadi <strong>Lunas</strong> dan nomor transaksi akan digenerate otomatis.
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
+            <button className="btn btn-ghost" onClick={() => { setShowKonfirmasi(false); setDipilih(null); }}>Batal</button>
+            <button className="btn btn-accent" onClick={() => konfirmasi(dipilih!.id)}>Konfirmasi Lunas</button>
           </div>
         </div>
-      )}
+      </Modal>
       {/* Modal Input Cash Manual (Requirement #3) */}
-      {showInputCashModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 120, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn .2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 500, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,.25)", animation: "modalIn .25s cubic-bezier(0.16,1,0.3,1)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Input Pembayaran Cash Manual</h2>
-              <button onClick={() => setShowInputCashModal(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-muted)" }}>
-                <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
+      <Modal open={showInputCashModal} onClose={() => setShowInputCashModal(false)} title="Input Pembayaran Cash Manual" maxWidth={500}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Pilih Orang Tua / Anak</label>
+            <select className="select-control" style={{ width: "100%" }} value={selectedParentChild} onChange={e => setSelectedParentChild(e.target.value)}>
+              <option value="Budi Setiawan — Andi Setiawan (Calistung Level 1)">Budi Setiawan — Parent of Andi Setiawan (Calistung Level 1)</option>
+              <option value="Joko Santoso — Budi Santoso (English B1)">Joko Santoso — Parent of Budi Santoso (English B1)</option>
+              <option value="Dewi Kirana — Citra Kirana (Math Advance)">Dewi Kirana — Parent of Citra Kirana (Math Advance)</option>
+              <option value="Sari Pratama — Dian Pratama (Phonics Starter)">Sari Pratama — Parent of Dian Pratama (Phonics Starter)</option>
+            </select>
+          </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Pilih Orang Tua / Anak</label>
-                <select className="select-control" style={{ width: "100%" }} value={selectedParentChild} onChange={e => setSelectedParentChild(e.target.value)}>
-                  <option value="Budi Setiawan — Andi Setiawan (Calistung Level 1)">Budi Setiawan — Parent of Andi Setiawan (Calistung Level 1)</option>
-                  <option value="Joko Santoso — Budi Santoso (English B1)">Joko Santoso — Parent of Budi Santoso (English B1)</option>
-                  <option value="Dewi Kirana — Citra Kirana (Math Advance)">Dewi Kirana — Parent of Citra Kirana (Math Advance)</option>
-                  <option value="Sari Pratama — Dian Pratama (Phonics Starter)">Sari Pratama — Parent of Dian Pratama (Phonics Starter)</option>
-                </select>
-              </div>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Jumlah Uang Yang Dibayar (Rp)</label>
+            <input className="form-input" type="number" value={cashAmount} onChange={e => setCashAmount(Number(e.target.value))} placeholder="100000" />
+          </div>
 
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Jumlah Uang Yang Dibayar (Rp)</label>
-                <input className="form-input" type="number" value={cashAmount} onChange={e => setCashAmount(Number(e.target.value))} placeholder="100000" />
-              </div>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Catatan Pembayaran (Opsional)</label>
+            <input className="form-input" value={cashNote} onChange={e => setCashNote(e.target.value)} placeholder="Contoh: Diterima tunai oleh Kasir Admin" />
+          </div>
 
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Catatan Pembayaran (Opsional)</label>
-                <input className="form-input" value={cashNote} onChange={e => setCashNote(e.target.value)} placeholder="Contoh: Diterima tunai oleh Kasir Admin" />
-              </div>
+          <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 10, padding: "12px 14px", fontSize: 12, color: "#0369a1" }}>
+            Pembayaran tunai ini akan dicatat langsung sebagai transaksi <strong>Lunas (via Admin)</strong> dan masuk ke laporan keuangan.
+          </div>
 
-              <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 10, padding: "12px 14px", fontSize: 12, color: "#0369a1" }}>
-                Pembayaran tunai ini akan dicatat langsung sebagai transaksi <strong>Lunas (via Admin)</strong> dan masuk ke laporan keuangan.
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
-                <button className="btn btn-ghost" onClick={() => setShowInputCashModal(false)}>Batal</button>
-                <button className="btn btn-accent" onClick={handleSaveCashManual}>Simpan Cash Manual</button>
-              </div>
-            </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 4 }}>
+            <button className="btn btn-ghost" onClick={() => setShowInputCashModal(false)}>Batal</button>
+            <button className="btn btn-accent" onClick={handleSaveCashManual}>Simpan Cash Manual</button>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
