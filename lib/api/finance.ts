@@ -42,6 +42,18 @@ export async function deleteInvoice(id: string): Promise<void> {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  PAYMENT PLANS (TAGIHAN PER SESI / PAKET)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/** GET /payment-plans — mengambil daftar rencana pembayaran (per sesi / paket) */
+export async function getPaymentPlans(
+  params?: { page?: number; student_id?: string; enrollment_id?: string; status?: string; is_paid?: boolean; per_page?: number }
+): Promise<any> {
+  const { data } = await axiosInstance.get("/payment-plans", { params });
+  return data;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  PAYMENTS (PEMBAYARAN)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -55,9 +67,9 @@ export async function getPaymentMethods(panduan: boolean = true): Promise<any> {
 
 /** GET /payments */
 export async function getPayments(
-  params?: { page?: number; invoice_id?: string; status?: string }
-): Promise<PaginatedResponse<Payment>> {
-  const { data } = await axiosInstance.get<PaginatedResponse<Payment>>("/payments", { params });
+  params?: { page?: number; invoice_id?: string; status?: string; per_page?: number; student_id?: string; enrollment_id?: string; payment_plan_id?: string }
+): Promise<any> {
+  const { data } = await axiosInstance.get("/payments", { params });
   return data;
 }
 
