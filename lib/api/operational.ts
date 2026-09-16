@@ -10,41 +10,78 @@ import type { PaginatedResponse, ApiResponse } from "./students";
 //  ANNOUNCEMENTS (PENGUMUMAN)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+export interface BackendAnnouncement {
+  id: string;
+  title: string;
+  description: string;
+  poster_url?: string | null;
+  status: "draft" | "published" | "archived" | string;
+  published_at?: string | null;
+  created_at: string;
+  updated_at?: string;
+  created_by?: string;
+  targets?: { id: string; announcement_id: string; target_role: string }[];
+  author?: { id: string; name: string; email: string; role: string };
+}
+
 /** GET /announcements */
 export async function getAnnouncements(
-  params?: { page?: number; status?: string; target?: string }
-): Promise<PaginatedResponse<Announcement>> {
-  const { data } = await axiosInstance.get<PaginatedResponse<Announcement>>("/announcements", { params });
+  params?: { page?: number; per_page?: number; status?: string; search?: string }
+): Promise<any> {
+  const { data } = await axiosInstance.get("/announcements", { params });
   return data;
 }
 
 /** GET /announcements/:id */
-export async function getAnnouncement(id: string): Promise<Announcement> {
-  const { data } = await axiosInstance.get<ApiResponse<Announcement>>(`/announcements/${id}`);
+export async function getAnnouncement(id: string): Promise<any> {
+  const { data } = await axiosInstance.get(`/announcements/${id}`);
   return data.data;
 }
 
 /** POST /announcements */
-export async function createAnnouncement(payload: Omit<Announcement, "id" | "publishedAt">): Promise<Announcement> {
-  const { data } = await axiosInstance.post<ApiResponse<Announcement>>("/announcements", payload);
-  return data.data;
+export async function createAnnouncement(payload: {
+  title: string;
+  description: string;
+  status?: "draft" | "published" | "archived";
+  target_roles?: string[];
+  poster?: File | null;
+} | FormData): Promise<any> {
+  let body: any = payload;
+  let headers: Record<string, string> = {};
+
+  if (!(payload instanceof FormData) && payload.poster) {
+    const formData = new FormData();
+    formData.append("title", payload.title);
+    formData.append("description", payload.description);
+    if (payload.status) formData.append("status", payload.status);
+    if (payload.target_roles) {
+      payload.target_roles.forEach((r, idx) => formData.append(`target_roles[${idx}]`, r));
+    }
+    formData.append("poster", payload.poster);
+    body = formData;
+    headers["Content-Type"] = "multipart/form-data";
+  }
+
+  const { data } = await axiosInstance.post("/announcements", body, { headers });
+  return data;
 }
 
 /** PUT /announcements/:id */
-export async function updateAnnouncement(id: string, payload: Partial<Announcement>): Promise<Announcement> {
-  const { data } = await axiosInstance.put<ApiResponse<Announcement>>(`/announcements/${id}`, payload);
-  return data.data;
+export async function updateAnnouncement(id: string, payload: any): Promise<any> {
+  const { data } = await axiosInstance.put(`/announcements/${id}`, payload);
+  return data;
 }
 
 /** PATCH /announcements/:id/publish — ubah status ke Published */
-export async function publishAnnouncement(id: string): Promise<Announcement> {
-  const { data } = await axiosInstance.patch<ApiResponse<Announcement>>(`/announcements/${id}/publish`);
-  return data.data;
+export async function publishAnnouncement(id: string): Promise<any> {
+  const { data } = await axiosInstance.patch(`/announcements/${id}/publish`);
+  return data;
 }
 
 /** DELETE /announcements/:id */
-export async function deleteAnnouncement(id: string): Promise<void> {
-  await axiosInstance.delete(`/announcements/${id}`);
+export async function deleteAnnouncement(id: string): Promise<any> {
+  const { data } = await axiosInstance.delete(`/announcements/${id}`);
+  return data;
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -20,6 +20,27 @@ export function SkeletonCard() {
   );
 }
 
+/* ---- SkeletonCardGrid ---- */
+export function SkeletonCardGrid({ count = 3 }: { count?: number }) {
+  return (
+    <>
+      <style>{shimmerStyle}</style>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {Array.from({ length: count }).map((_, i) => (
+          <div key={i} style={{ background: "#fff", borderRadius: "var(--radius-lg)", border: "1px solid var(--color-border)", padding: 20, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <div className="skeleton" style={{ height: 16, width: 80, borderRadius: 999 }} />
+              <div className="skeleton" style={{ height: 14, width: 100 }} />
+            </div>
+            <div className="skeleton" style={{ height: 20, width: "70%" }} />
+            <div className="skeleton" style={{ height: 14, width: "90%" }} />
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
 /* ---- SkeletonStatGrid ---- */
 export function SkeletonStatGrid({ count = 4 }: { count?: number }) {
   return (

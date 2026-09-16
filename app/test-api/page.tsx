@@ -9,6 +9,7 @@ import {
   getClassSessions, submitAttendance,
   getPrograms, createProgram,
   getPayrolls, generatePayroll,
+  getAnnouncements, createAnnouncement, deleteAnnouncement,
 } from "@/lib/api";
 import type { AxiosError } from "axios";
 
@@ -89,6 +90,15 @@ const GROUPS = [
       { key: "payrolls_generate", label: "POST /teacher-payrolls/generate", method: "POST" },
     ],
   },
+  {
+    title: "📢 Pengumuman",
+    color: "#a855f7",
+    tests: [
+      { key: "announcements_get",    label: "GET    /announcements",    method: "GET"    },
+      { key: "announcements_post",   label: "POST   /announcements",    method: "POST"   },
+      { key: "announcements_delete", label: "DELETE /announcements/:id", method: "DELETE" },
+    ],
+  },
 ];
 
 export default function TestApiPage() {
@@ -99,6 +109,7 @@ export default function TestApiPage() {
   const [createdStudentId, setCreatedStudentId] = useState<string>("");
   const [firstSessionId,   setFirstSessionId]   = useState<string>("");
   const [firstTeacherId,   setFirstTeacherId]   = useState<string>("");
+  const [createdAnnouncementId, setCreatedAnnouncementId] = useState<string>("");
 
   const set = (key: string, r: Partial<TestResult>) =>
     setResults((p) => {
@@ -304,6 +315,35 @@ export default function TestApiPage() {
           break;
         }
 
+        // ── Announcements ───────────────────────────────────
+        case "announcements_get": {
+          const res = await getAnnouncements({ per_page: 5 });
+          const firstId = res?.data?.data?.[0]?.id || res?.data?.[0]?.id || "";
+          if (firstId) setCreatedAnnouncementId(firstId);
+          ok(res);
+          break;
+        }
+        case "announcements_post": {
+          const ts = Date.now();
+          const res = await createAnnouncement({
+            title: `Pengumuman Test ${ts}`,
+            description: `Ini adalah deskripsi konten pengumuman otomatis yang dibuat via test-api pada ${new Date().toLocaleString("id-ID")}.`,
+            status: "published",
+            target_roles: ["parent", "teacher"],
+          });
+          const newId = res?.data?.id || res?.id || "";
+          if (newId) setCreatedAnnouncementId(newId);
+          ok(res);
+          break;
+        }
+        case "announcements_delete": {
+          if (!createdAnnouncementId) throw new Error("Jalankan GET atau POST pengumuman dulu untuk mendapatkan ID");
+          const res = await deleteAnnouncement(createdAnnouncementId);
+          setCreatedAnnouncementId("");
+          ok(res || { message: `Pengumuman ${createdAnnouncementId} berhasil dihapus` });
+          break;
+        }
+
         default:
           throw new Error(`Test "${key}" tidak dikenal`);
       }
@@ -356,7 +396,8 @@ export default function TestApiPage() {
           📌 <strong>Context tersimpan</strong>&nbsp;—&nbsp;
           {createdStudentId && <>Student ID: <code style={{ color: "#4ade80" }}>{createdStudentId}</code>&nbsp;&nbsp;</>}
           {firstSessionId && <>Session ID: <code style={{ color: "#f472b6" }}>{firstSessionId}</code>&nbsp;&nbsp;</>}
-          {firstTeacherId && <>Teacher ID: <code style={{ color: "#fb923c" }}>{firstTeacherId}</code></>}
+          {firstTeacherId && <>Teacher ID: <code style={{ color: "#fb923c" }}>{firstTeacherId}</code>&nbsp;&nbsp;</>}
+          {createdAnnouncementId && <>Announcement ID: <code style={{ color: "#a855f7" }}>{createdAnnouncementId}</code></>}
         </div>
       )}
 
