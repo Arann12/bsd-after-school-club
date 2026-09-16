@@ -48,8 +48,8 @@ export default function AdminTagihanPage() {
     setDipilih(null);
   };
 
-  const getStatus = (t: typeof daftarTagihan[0]) =>
-    sudahKonfirmasi.includes(t.id) ? "Lunas" : t.status;
+  const getStatus = (t: typeof daftarTagihan[0] | null) =>
+    t ? (sudahKonfirmasi.includes(t.id) ? "Lunas" : t.status) : "Menunggu Konfirmasi";
 
   const { toast, showToast } = useToast();
 
@@ -189,7 +189,7 @@ export default function AdminTagihanPage() {
             { label: "Nama Siswa", value: dipilih?.siswa },
             { label: "Program", value: dipilih?.program },
             { label: "Tagihan Pertemuan", value: dipilih?.pertemuan },
-            { label: "Jumlah", value: `Rp ${dipilih?.jumlah.toLocaleString("id")}` },
+            { label: "Jumlah", value: `Rp ${dipilih?.jumlah ? dipilih.jumlah.toLocaleString("id") : "0"}` },
             { label: "Metode Bayar", value: dipilih?.metode },
             { label: "Jalur Pembayaran", value: dipilih?.jalur },
             { label: "Tanggal Bayar", value: dipilih?.tanggal },
@@ -204,12 +204,12 @@ export default function AdminTagihanPage() {
         {/* Status */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--color-bg)", borderRadius: 10, padding: "14px 16px", marginBottom: 20, border: "1px solid var(--color-border)" }}>
           <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--color-text-secondary)" }}>Status Tagihan</span>
-          <span style={{ ...warnaStatus[getStatus(dipilih!)], fontSize: 12, fontWeight: 700, padding: "4px 14px", borderRadius: 999 }}>{getStatus(dipilih!)}</span>
+          <span style={{ ...warnaStatus[getStatus(dipilih)], fontSize: 12, fontWeight: 700, padding: "4px 14px", borderRadius: 999 }}>{getStatus(dipilih)}</span>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: getStatus(dipilih!) === "Menunggu Konfirmasi" ? "1fr 1fr" : "1fr", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: getStatus(dipilih) === "Menunggu Konfirmasi" ? "1fr 1fr" : "1fr", gap: 10 }}>
           <button className="btn btn-ghost" onClick={() => setDipilih(null)}>Tutup</button>
-          {getStatus(dipilih!) === "Menunggu Konfirmasi" && (
+          {getStatus(dipilih) === "Menunggu Konfirmasi" && (
             <button className="btn btn-accent" onClick={() => setShowKonfirmasi(true)}>Konfirmasi Pembayaran</button>
           )}
         </div>
@@ -222,7 +222,7 @@ export default function AdminTagihanPage() {
           <div style={{ fontSize: 13, color: "#92400e", marginBottom: 4 }}>{dipilih?.id}</div>
           <div style={{ fontSize: 16, fontWeight: 800, color: "#78350f" }}>{dipilih?.siswa}</div>
           <div style={{ fontSize: 13, color: "#b45309", marginTop: 2 }}>{dipilih?.pertemuan} · {dipilih?.metode}</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#d97706", marginTop: 8 }}>Rp {dipilih?.jumlah.toLocaleString("id")}</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#d97706", marginTop: 8 }}>Rp {dipilih?.jumlah ? dipilih.jumlah.toLocaleString("id") : "0"}</div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>

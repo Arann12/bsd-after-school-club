@@ -7,6 +7,7 @@ import type {
   Student, Parent, Teacher, Program, ClassRoom, Schedule,
   Invoice, CashVerification, HonorRecord, Enrollment,
   Announcement, InventoryItem, Logbook, Certificate,
+  PaymentStatus,
 } from "./types";
 
 /* ======================== STUDENTS ======================== */
@@ -91,16 +92,29 @@ export const todaySchedules: Schedule[] = [
   { id: "SCH-006", classId: "KLS-2026-0011", className: "KLS-K", program: "Math", level: "Basic", teacher: "Mr. Dimas", day: "Senin", date: "2026-09-08", timeStart: "15:00", timeEnd: "16:00", room: "Ruang D", status: "Selesai" },
 ];
 
+export interface InvoiceItem {
+  id: string;
+  siswa: string;
+  idSiswa: string;
+  program: string;
+  pertemuan: string;
+  jumlah: number;
+  metode: string;
+  tanggal: string;
+  status: PaymentStatus;
+  jalur: string;
+}
+
 /* ======================== INVOICES ======================== */
-export const invoices = [
-  { id: "INV-2026-000001", siswa: "Andi Setiawan", idSiswa: "STD-2026-0001", program: "Calistung Level 1", pertemuan: "Pertemuan 7 & 8", jumlah: 100000, metode: "Cash", tanggal: "2 Sept 2026", status: "Menunggu Konfirmasi" as const, jalur: "via Orang Tua" },
-  { id: "INV-2026-000002", siswa: "Budi Santoso", idSiswa: "STD-2026-0002", program: "English B1", pertemuan: "Pertemuan 4", jumlah: 75000, metode: "QRIS", tanggal: "1 Sept 2026", status: "Lunas" as const, jalur: "via Orang Tua" },
-  { id: "INV-2026-000003", siswa: "Citra Kirana", idSiswa: "STD-2026-0003", program: "Math Advance", pertemuan: "Pertemuan 9 & 10", jumlah: 120000, metode: "Cash", tanggal: "31 Agt 2026", status: "Menunggu Konfirmasi" as const, jalur: "via Orang Tua" },
-  { id: "INV-2026-000004", siswa: "Dian Pratama", idSiswa: "STD-2026-0004", program: "Phonics Starter", pertemuan: "Pertemuan 3", jumlah: 50000, metode: "–", tanggal: "–", status: "Overdue" as const, jalur: "–" },
-  { id: "INV-2026-000005", siswa: "Eko Wijaya", idSiswa: "STD-2026-0005", program: "Calistung Level 2", pertemuan: "Pertemuan 11 & 12", jumlah: 100000, metode: "Cash", tanggal: "28 Agt 2026", status: "Lunas" as const, jalur: "via Admin" },
-  { id: "INV-2026-000006", siswa: "Fitri Handayani", idSiswa: "STD-2026-0006", program: "English B1", pertemuan: "Pertemuan 8", jumlah: 75000, metode: "Transfer Mandiri", tanggal: "29 Agt 2026", status: "Lunas" as const, jalur: "via Orang Tua" },
-  { id: "INV-2026-000007", siswa: "Gilang Ramadan", idSiswa: "STD-2026-0007", program: "Math Advance", pertemuan: "Pertemuan 5", jumlah: 60000, metode: "VA BCA", tanggal: "28 Agt 2026", status: "Partially Paid" as const, jalur: "via Orang Tua" },
-  { id: "INV-2026-000008", siswa: "Hana Pertiwi", idSiswa: "STD-2026-0008", program: "Phonics Starter", pertemuan: "Pertemuan 1 & 2", jumlah: 100000, metode: "–", tanggal: "–", status: "Overdue" as const, jalur: "–" },
+export const invoices: InvoiceItem[] = [
+  { id: "INV-2026-000001", siswa: "Andi Setiawan", idSiswa: "STD-2026-0001", program: "Calistung Level 1", pertemuan: "Pertemuan 7 & 8", jumlah: 100000, metode: "Cash", tanggal: "2 Sept 2026", status: "Menunggu Konfirmasi", jalur: "via Orang Tua" },
+  { id: "INV-2026-000002", siswa: "Budi Santoso", idSiswa: "STD-2026-0002", program: "English B1", pertemuan: "Pertemuan 4", jumlah: 75000, metode: "QRIS", tanggal: "1 Sept 2026", status: "Lunas", jalur: "via Orang Tua" },
+  { id: "INV-2026-000003", siswa: "Citra Kirana", idSiswa: "STD-2026-0003", program: "Math Advance", pertemuan: "Pertemuan 9 & 10", jumlah: 120000, metode: "Cash", tanggal: "31 Agt 2026", status: "Menunggu Konfirmasi", jalur: "via Orang Tua" },
+  { id: "INV-2026-000004", siswa: "Dian Pratama", idSiswa: "STD-2026-0004", program: "Phonics Starter", pertemuan: "Pertemuan 3", jumlah: 50000, metode: "–", tanggal: "–", status: "Overdue", jalur: "–" },
+  { id: "INV-2026-000005", siswa: "Eko Wijaya", idSiswa: "STD-2026-0005", program: "Calistung Level 2", pertemuan: "Pertemuan 11 & 12", jumlah: 100000, metode: "Cash", tanggal: "28 Agt 2026", status: "Lunas", jalur: "via Admin" },
+  { id: "INV-2026-000006", siswa: "Fitri Handayani", idSiswa: "STD-2026-0006", program: "English B1", pertemuan: "Pertemuan 8", jumlah: 75000, metode: "Transfer Mandiri", tanggal: "29 Agt 2026", status: "Lunas", jalur: "via Orang Tua" },
+  { id: "INV-2026-000007", siswa: "Gilang Ramadan", idSiswa: "STD-2026-0007", program: "Math Advance", pertemuan: "Pertemuan 5", jumlah: 60000, metode: "VA BCA", tanggal: "28 Agt 2026", status: "Partially Paid", jalur: "via Orang Tua" },
+  { id: "INV-2026-000008", siswa: "Hana Pertiwi", idSiswa: "STD-2026-0008", program: "Phonics Starter", pertemuan: "Pertemuan 1 & 2", jumlah: 100000, metode: "–", tanggal: "–", status: "Overdue", jalur: "–" },
 ];
 
 /* ======================== CASH VERIFICATIONS ======================== */
@@ -165,35 +179,44 @@ export const adminAccounts = [
   { id: "ADM-0002", name: "Admin Dina", email: "dina.admin@bsdafterschool.com", role: "Admin", status: "Aktif", joinDate: "2025-06-01" },
 ];
 
+export interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  type: "warning" | "info" | "error" | "success";
+  read: boolean;
+  createdAt: string;
+  href: string;
+}
+
 /* ======================== NOTIFICATIONS ======================== */
-export const notificationsByRole: Record<string, typeof notifications_owner> = {
+export const notificationsByRole: Record<string, NotificationItem[]> = {
   owner: [
-    { id: "NOT-O01", title: "Cash Verification Pending", message: "2 pembayaran cash menunggu verifikasi Anda", type: "warning" as const, read: false, createdAt: "2026-09-08T10:30:00", href: "/owner/verifikasi-cash" },
-    { id: "NOT-O02", title: "New Enrollment", message: "Naura Azzahra mendaftar program Calistung", type: "info" as const, read: false, createdAt: "2026-09-07T08:00:00", href: "/owner/pendaftaran" },
-    { id: "NOT-O03", title: "Overdue Payment", message: "Hana Pertiwi — tagihan Rp 100.000 overdue 5 hari", type: "error" as const, read: true, createdAt: "2026-09-05T09:00:00", href: "/owner/tagihan" },
-    { id: "NOT-O04", title: "Honor Submitted", message: "Ms. Sarah — honor Rp 1.450.000 belum dibayar", type: "info" as const, read: true, createdAt: "2026-09-04T16:00:00", href: "/owner/honor" },
+    { id: "NOT-O01", title: "Cash Verification Pending", message: "2 pembayaran cash menunggu verifikasi Anda", type: "warning", read: false, createdAt: "2026-09-08T10:30:00", href: "/owner/verifikasi-cash" },
+    { id: "NOT-O02", title: "New Enrollment", message: "Naura Azzahra mendaftar program Calistung", type: "info", read: false, createdAt: "2026-09-07T08:00:00", href: "/owner/pendaftaran" },
+    { id: "NOT-O03", title: "Overdue Payment", message: "Hana Pertiwi — tagihan Rp 100.000 overdue 5 hari", type: "error", read: true, createdAt: "2026-09-05T09:00:00", href: "/owner/tagihan" },
+    { id: "NOT-O04", title: "Honor Submitted", message: "Ms. Sarah — honor Rp 1.450.000 belum dibayar", type: "info", read: true, createdAt: "2026-09-04T16:00:00", href: "/owner/honor" },
   ],
   admin: [
-    { id: "NOT-A01", title: "Verifikasi Cash Diperlukan", message: "3 pembayaran cash dari orang tua menunggu verifikasi", type: "warning" as const, read: false, createdAt: "2026-09-08T11:00:00", href: "/admin/verifikasi-cash" },
-    { id: "NOT-A02", title: "Pendaftaran Baru", message: "Raka Pratama mendaftar program English Starter", type: "info" as const, read: false, createdAt: "2026-09-07T09:30:00", href: "/admin/pendaftaran" },
-    { id: "NOT-A03", title: "Inventaris Perlu Diperbaiki", message: "2 meja dan 1 kursi di ruang Phonics perlu perbaikan", type: "warning" as const, read: true, createdAt: "2026-09-06T14:00:00", href: "/admin/inventaris" },
-    { id: "NOT-A04", title: "Tagihan Overdue", message: "5 tagihan belum dibayar melewati jatuh tempo", type: "error" as const, read: true, createdAt: "2026-09-05T08:00:00", href: "/admin/tagihan" },
+    { id: "NOT-A01", title: "Verifikasi Cash Diperlukan", message: "3 pembayaran cash dari orang tua menunggu verifikasi", type: "warning", read: false, createdAt: "2026-09-08T11:00:00", href: "/admin/verifikasi-cash" },
+    { id: "NOT-A02", title: "Pendaftaran Baru", message: "Raka Pratama mendaftar program English Starter", type: "info", read: false, createdAt: "2026-09-07T09:30:00", href: "/admin/pendaftaran" },
+    { id: "NOT-A03", title: "Inventaris Perlu Diperbaiki", message: "2 meja dan 1 kursi di ruang Phonics perlu perbaikan", type: "warning", read: true, createdAt: "2026-09-06T14:00:00", href: "/admin/inventaris" },
+    { id: "NOT-A04", title: "Tagihan Overdue", message: "5 tagihan belum dibayar melewati jatuh tempo", type: "error", read: true, createdAt: "2026-09-05T08:00:00", href: "/admin/tagihan" },
   ],
   guru: [
-    { id: "NOT-G01", title: "Jadwal Mengajar Hari Ini", message: "Anda memiliki 3 sesi mengajar hari ini: Phonics A, Calistung B, English C", type: "info" as const, read: false, createdAt: "2026-09-09T07:00:00", href: "/guru/kelas" },
-    { id: "NOT-G02", title: "Logbook Belum Diisi", message: "Sesi Calistung Level 1 — 9 Sept 2026 belum ada catatan logbook", type: "warning" as const, read: false, createdAt: "2026-09-09T08:30:00", href: "/guru/logbook" },
-    { id: "NOT-G03", title: "Honor Bulanan Siap", message: "Honor September Anda: Rp 1.450.000 — menunggu approval owner", type: "info" as const, read: true, createdAt: "2026-09-08T16:00:00", href: "/guru/honor" },
-    { id: "NOT-G04", title: "Progress Siswa Update", message: "Andi Setiawan mencapai 70% progress program Calistung", type: "success" as const, read: true, createdAt: "2026-09-07T15:00:00", href: "/guru/progress" },
+    { id: "NOT-G01", title: "Jadwal Mengajar Hari Ini", message: "Anda memiliki 3 sesi mengajar hari ini: Phonics A, Calistung B, English C", type: "info", read: false, createdAt: "2026-09-09T07:00:00", href: "/guru/kelas" },
+    { id: "NOT-G02", title: "Logbook Belum Diisi", message: "Sesi Calistung Level 1 — 9 Sept 2026 belum ada catatan logbook", type: "warning", read: false, createdAt: "2026-09-09T08:30:00", href: "/guru/logbook" },
+    { id: "NOT-G03", title: "Honor Bulanan Siap", message: "Honor September Anda: Rp 1.450.000 — menunggu approval owner", type: "info", read: true, createdAt: "2026-09-08T16:00:00", href: "/guru/honor" },
+    { id: "NOT-G04", title: "Progress Siswa Update", message: "Andi Setiawan mencapai 70% progress program Calistung", type: "success", read: true, createdAt: "2026-09-07T15:00:00", href: "/guru/progress" },
   ],
   orangTua: [
-    { id: "NOT-P01", title: "Tagihan Pembayaran", message: "Tagihan pertemuan 7 & 8 sebesar Rp 100.000 belum dibayar", type: "warning" as const, read: false, createdAt: "2026-09-08T10:00:00", href: "/orang-tua/pembayaran" },
-    { id: "NOT-P02", title: "Pengumuman Baru", message: "Jadwal libur nasional 17 Agustus — sesi digeser", type: "info" as const, read: false, createdAt: "2026-09-07T09:00:00", href: "/orang-tua/pengumuman" },
-    { id: "NOT-P03", title: "Pembayaran Berhasil", message: "Pembayaran Virtual Account BCA Rp 250.000 telah terverifikasi", type: "success" as const, read: true, createdAt: "2026-09-06T14:00:00", href: "/orang-tua/pembayaran" },
-    { id: "NOT-P04", title: "Logbook Anak", message: "Ms. Sarah menulis catatan untuk sesi Andi — Membaca Kalimat Sederhana", type: "info" as const, read: true, createdAt: "2026-09-05T16:00:00", href: "/orang-tua/absensi" },
+    { id: "NOT-P01", title: "Tagihan Pembayaran", message: "Tagihan pertemuan 7 & 8 sebesar Rp 100.000 belum dibayar", type: "warning", read: false, createdAt: "2026-09-08T10:00:00", href: "/orang-tua/pembayaran" },
+    { id: "NOT-P02", title: "Pengumuman Baru", message: "Jadwal libur nasional 17 Agustus — sesi digeser", type: "info", read: false, createdAt: "2026-09-07T09:00:00", href: "/orang-tua/pengumuman" },
+    { id: "NOT-P03", title: "Pembayaran Berhasil", message: "Pembayaran Virtual Account BCA Rp 250.000 telah terverifikasi", type: "success", read: true, createdAt: "2026-09-06T14:00:00", href: "/orang-tua/pembayaran" },
+    { id: "NOT-P04", title: "Logbook Anak", message: "Ms. Sarah menulis catatan untuk sesi Andi — Membaca Kalimat Sederhana", type: "info", read: true, createdAt: "2026-09-05T16:00:00", href: "/orang-tua/absensi" },
   ],
 };
-const notifications_owner = notificationsByRole.owner;
-export const notifications = notifications_owner;
+export const notifications: NotificationItem[] = notificationsByRole.owner;
 
 /* ======================== REVENUE SUMMARY ======================== */
 export const revenueSummary = {

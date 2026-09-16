@@ -89,8 +89,8 @@ export default function OwnerSiswaPage() {
 
       <DataTable
         columns={columns}
-        data={filtered as Record<string, unknown>[]}
-        rowKey={r => r.id as string}
+        data={filtered}
+        rowKey={r => r.id}
         searchPlaceholder="Cari nama siswa, ortu, guru, atau ID..."
         filters={[
           { label: "Status", values: ["Semua", "Trial", "Aktif", "On Leave", "Nonaktif", "Graduated"] },

@@ -101,7 +101,10 @@ export default function TestApiPage() {
   const [firstTeacherId,   setFirstTeacherId]   = useState<string>("");
 
   const set = (key: string, r: Partial<TestResult>) =>
-    setResults((p) => ({ ...p, [key]: { status: "idle", ...p[key], ...r } }));
+    setResults((p) => {
+      const prev = p[key] ?? { status: "idle" };
+      return { ...p, [key]: { ...prev, ...r } };
+    });
 
   const runTest = async (key: string) => {
     set(key, { status: "loading" });
@@ -151,7 +154,7 @@ export default function TestApiPage() {
             school_name:  "SD Test",
             school_grade: "6",
             status:       "Trial",
-          } as Parameters<typeof createStudent>[0]);
+          } as any);
           const newId = (res as { id?: string }).id ?? "";
           if (newId) setCreatedStudentId(newId);
           ok(res);
@@ -163,7 +166,7 @@ export default function TestApiPage() {
           const res = await updateStudent(createdStudentId, {
             school_grade: "5",
             status:       "Aktif",
-          } as Parameters<typeof updateStudent>[1]);
+          } as any);
           ok(res);
           break;
         }
@@ -192,7 +195,7 @@ export default function TestApiPage() {
             email:    `guru.test.${ts}@bsd.test`,
             password: "password123",
             phone:    "08109999999",
-          } as Parameters<typeof createTeacher>[0]);
+          } as any);
           const newTeacherId = (res as { id?: string }).id ?? "";
           if (newTeacherId) setFirstTeacherId(newTeacherId);
           ok(res);
@@ -218,7 +221,7 @@ export default function TestApiPage() {
             program_level_id: firstLevel,
             name:             "Kelas Test " + Date.now(),
             capacity:         15,
-          } as Parameters<typeof createClass>[0]);
+          } as any);
           ok(res);
           break;
         }

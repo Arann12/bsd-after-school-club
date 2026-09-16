@@ -66,11 +66,11 @@ export default function OwnerTagihanPage() {
 
       <DataTable
         columns={columns}
-        data={invoices as Record<string, unknown>[]}
-        rowKey={r => r.id as string}
+        data={invoices}
+        rowKey={r => r.id}
         searchPlaceholder="Cari siswa, invoice, atau program..."
         filters={[{ label: "Status", values: ["Semua", "Lunas", "Menunggu Konfirmasi", "Partially Paid", "Belum Bayar", "Overdue"] }]}
-        onRowClick={r => setSelected(r as typeof invoices[0])}
+        onRowClick={r => setSelected(r)}
       />
 
       {/* Detail Modal */}
