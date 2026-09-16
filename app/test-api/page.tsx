@@ -150,7 +150,7 @@ export default function TestApiPage() {
             full_name:    "Test Siswa " + Date.now(),
             school_name:  "SD Test",
             school_grade: "6",
-            status:       "trial",
+            status:       "Trial",
           } as Parameters<typeof createStudent>[0]);
           const newId = (res as { id?: string }).id ?? "";
           if (newId) setCreatedStudentId(newId);
@@ -162,7 +162,7 @@ export default function TestApiPage() {
           // Field sesuai StudentController::update() — semua 'sometimes'
           const res = await updateStudent(createdStudentId, {
             school_grade: "5",
-            status:       "active",
+            status:       "Aktif",
           } as Parameters<typeof updateStudent>[1]);
           ok(res);
           break;
