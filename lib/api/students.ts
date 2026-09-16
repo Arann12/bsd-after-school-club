@@ -109,7 +109,7 @@ export async function unlinkStudentFromParent(parentId: string, studentId: strin
 
 /** GET /enrollments */
 export async function getEnrollments(
-  params?: { page?: number; status?: string }
+  params?: { page?: number; status?: string; per_page?: number; search?: string }
 ): Promise<PaginatedResponse<Enrollment>> {
   const { data } = await axiosInstance.get<PaginatedResponse<Enrollment>>("/enrollments", { params });
   return data;

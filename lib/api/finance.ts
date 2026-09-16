@@ -108,7 +108,103 @@ export async function createPayment(payload: Omit<Payment, "id">): Promise<Payme
 //  CASH VERIFICATION (VERIFIKASI CASH)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-/** GET /cash-verifications */
+export interface BackendCashTransaction {
+  id: string;
+  cash_code: string;
+  payment_plan_id: string;
+  payment_id?: string;
+  enrollment_id: string;
+  student_id: string;
+  amount: number;
+  status: "menunggu_konfirmasi_admin" | "paid" | "rejected" | string;
+  submitted_by: string;
+  submitted_at: string;
+  verified_by?: string | null;
+  verified_at?: string | null;
+  receipt_number?: string | null;
+  proof_image?: string | null;
+  notes?: string | null;
+  admin_notes?: string | null;
+  payment_plan?: {
+    id: string;
+    session_number: number;
+    amount: number;
+    due_date: string;
+    is_paid: boolean;
+    status: string;
+  };
+  payment?: {
+    id: string;
+    payment_code: string;
+    amount: number;
+    payment_status: string;
+  };
+  enrollment?: {
+    id: string;
+    student?: { id: string; full_name: string; student_code: string };
+    program?: { id: string; name: string };
+  };
+  submitter?: { id: string; name: string; email: string };
+  verifier?: { id: string; name: string; email: string };
+}
+
+/** GET /cash-transactions — mengambil daftar transaksi cash dari backend */
+export async function getCashTransactions(
+  params?: { page?: number; status?: string; per_page?: number; student_id?: string; enrollment_id?: string; search?: string }
+): Promise<any> {
+  const { data } = await axiosInstance.get("/cash-transactions", { params });
+  return data;
+}
+
+/** GET /cash-transactions/:id */
+export async function getCashTransaction(id: string): Promise<any> {
+  const { data } = await axiosInstance.get(`/cash-transactions/${id}`);
+  return data;
+}
+
+/** POST /cash-transactions/submit — pengajuan pembayaran cash oleh ortu/siswa */
+export async function submitCashTransaction(payload: {
+  payment_plan_id: string;
+  receipt_number?: string;
+  notes?: string;
+  proof_image?: File | null;
+}): Promise<any> {
+  let body: any = payload;
+  let headers: Record<string, string> = {};
+
+  if (payload.proof_image) {
+    const formData = new FormData();
+    formData.append("payment_plan_id", payload.payment_plan_id);
+    if (payload.receipt_number) formData.append("receipt_number", payload.receipt_number);
+    if (payload.notes) formData.append("notes", payload.notes);
+    formData.append("proof_image", payload.proof_image);
+    body = formData;
+    headers["Content-Type"] = "multipart/form-data";
+  }
+
+  const { data } = await axiosInstance.post("/cash-transactions/submit", body, { headers });
+  return data;
+}
+
+/** POST /cash-transactions/:id/confirm — konfirmasi dan ACC penerimaan uang tunai fisik oleh Admin/Owner */
+export async function confirmCashTransaction(
+  id: string,
+  payload?: { admin_notes?: string; receipt_number?: string }
+): Promise<any> {
+  const { data } = await axiosInstance.post(`/cash-transactions/${id}/confirm`, payload || {});
+  return data;
+}
+
+/** POST /cash-transactions/:id/reject — tolak pembayaran cash oleh Admin/Owner */
+export async function rejectCashTransaction(
+  id: string,
+  payload: { admin_notes?: string; notes?: string }
+): Promise<any> {
+  const { data } = await axiosInstance.post(`/cash-transactions/${id}/reject`, payload);
+  return data;
+}
+
+/** GET /cash-verifications (legacy alias) */
 export async function getCashVerifications(
   params?: { page?: number; status?: string }
 ): Promise<PaginatedResponse<CashVerification>> {
