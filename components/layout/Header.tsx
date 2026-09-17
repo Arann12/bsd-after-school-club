@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { clearAllAuth, getLocalUser, getLoginRoute } from "@/lib/api/authHelpers";
 
 interface HeaderProps {
   userName?: string;
@@ -42,6 +43,12 @@ export default function Header({
     const next = !sidebarOpen;
     setSidebarOpen(next);
     document.querySelector(".sidebar")?.classList.toggle("open", next);
+  };
+
+  const handleLogout = () => {
+    const user = getLocalUser(); // ambil role dulu sebelum clear
+    clearAllAuth();
+    window.location.href = getLoginRoute(user?.role);
   };
 
   let profileLink = "/owner/profil";
@@ -330,9 +337,8 @@ export default function Header({
 
                 <div style={{ height: 1, background: "var(--color-border-light)", margin: "4px 0" }} />
 
-                <Link
-                  href="/"
-                  onClick={() => setUserMenuOpen(false)}
+                <button
+                  onClick={() => { setUserMenuOpen(false); handleLogout(); }}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -344,6 +350,11 @@ export default function Header({
                     color: "var(--color-danger)",
                     textDecoration: "none",
                     transition: "background 0.15s",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    width: "100%",
+                    textAlign: "left",
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.background = "#fee2e2")}
                   onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
@@ -354,7 +365,7 @@ export default function Header({
                     <line x1="21" y1="12" x2="9" y2="12" />
                   </svg>
                   <span>Keluar</span>
-                </Link>
+                </button>
               </div>
             </div>
           )}
