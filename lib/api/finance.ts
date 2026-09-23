@@ -53,6 +53,18 @@ export async function getPaymentPlans(
   return data;
 }
 
+/** POST /payment-plans — membuat tagihan baru (manual) untuk enrollment siswa */
+export async function createPaymentPlan(payload: {
+  enrollment_id: string;
+  session_number: number;
+  amount: number;
+  due_date: string;
+  status?: string;
+}): Promise<any> {
+  const { data } = await axiosInstance.post("/payment-plans", payload);
+  return data;
+}
+
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  PAYMENTS (PEMBAYARAN)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

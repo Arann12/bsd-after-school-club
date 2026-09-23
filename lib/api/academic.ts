@@ -108,7 +108,7 @@ export async function deleteLevel(programId: string, levelId: string): Promise<v
 
 /** GET /classrooms */
 export async function getClasses(
-  params?: { page?: number; program?: string; teacher?: string; status?: string }
+  params?: { page?: number; per_page?: number; search?: string; program?: string; teacher?: string; status?: string }
 ): Promise<PaginatedResponse<ClassRoom>> {
   const { data } = await axiosInstance.get<PaginatedResponse<ClassRoom>>("/classrooms", { params });
   return data;

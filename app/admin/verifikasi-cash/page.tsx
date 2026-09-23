@@ -31,7 +31,7 @@ export interface CashVerificationItem {
 export default function AdminVerifikasiCashPage() {
   const { toast, showToast } = useToast();
   const [cashList, setCashList] = useState<CashVerificationItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [selectedCash, setSelectedCash] = useState<CashVerificationItem | null>(null);
   const [modalMode, setModalMode] = useState<"confirm" | "reject" | "detail">("confirm");
@@ -205,7 +205,7 @@ export default function AdminVerifikasiCashPage() {
           <p className="page-subtitle">Persetujuan & konfirmasi fisik atas uang tunai yang diterima oleh Kasir / Admin di kantor.</p>
         </div>
         <div className="page-header-actions">
-          <button className="btn btn-outline" onClick={loadData} disabled={loading}>
+          <button className="btn btn-outline" onClick={loadData} disabled={loading} suppressHydrationWarning>
             <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
               <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
             </svg>

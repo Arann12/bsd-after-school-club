@@ -115,10 +115,22 @@ export async function getEnrollments(
   return data;
 }
 
+export interface CreateEnrollmentPayload {
+  student_id: string;
+  classroom_id: string;
+  start_date: string;
+  total_sessions: number;
+  sessions_per_week?: number;
+  payment_scheme: "package" | "per_session" | "monthly";
+  total_amount?: number;
+  amount_per_session?: number;
+  installments?: number;
+}
+
 /** POST /enrollments */
-export async function createEnrollment(payload: Omit<Enrollment, "id" | "submittedAt">): Promise<Enrollment> {
-  const { data } = await axiosInstance.post<ApiResponse<Enrollment>>("/enrollments", payload);
-  return data.data;
+export async function createEnrollment(payload: CreateEnrollmentPayload | any): Promise<any> {
+  const { data } = await axiosInstance.post("/enrollments", payload);
+  return data;
 }
 
 /** PATCH /enrollments/:id/approve */

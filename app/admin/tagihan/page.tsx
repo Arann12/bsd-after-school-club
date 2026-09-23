@@ -4,7 +4,11 @@ import { useState, useEffect, useCallback } from "react";
 import Toast, { useToast } from "@/components/ui/Toast";
 import Modal from "@/components/ui/Modal";
 import { SkeletonTable } from "@/components/ui/Skeleton";
-import { getPaymentPlans, submitCashTransaction, confirmCashTransaction } from "@/lib/api/finance";
+import {
+  getPaymentPlans,
+  submitCashTransaction,
+  confirmCashTransaction,
+} from "@/lib/api/finance";
 import { getEnrollments } from "@/lib/api/students";
 
 export interface TagihanItem {
@@ -35,11 +39,13 @@ const warnaStatus: Record<string, { bg: string; color: string }> = {
 export default function AdminTagihanPage() {
   const { toast, showToast } = useToast();
   const [daftarTagihan, setDaftarTagihan] = useState<TagihanItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [cari, setCari] = useState("");
   const [filterStatus, setFilterStatus] = useState("Semua");
   const [dipilih, setDipilih] = useState<TagihanItem | null>(null);
+
+  // Modal State: Input Cash Manual
   const [showInputCashModal, setShowInputCashModal] = useState(false);
   const [enrollmentsList, setEnrollmentsList] = useState<any[]>([]);
   const [selectedEnrollmentId, setSelectedEnrollmentId] = useState("");
@@ -205,14 +211,16 @@ export default function AdminTagihanPage() {
           <h1 className="page-title">Tagihan & Pembayaran Siswa</h1>
           <p className="page-subtitle">Monitoring data tagihan paket per sesi dan status pembayaran real-time.</p>
         </div>
-        <div className="page-header-actions">
-          <button className="btn btn-outline" onClick={loadData} disabled={loading}>
+        <div className="page-header-actions" style={{ display: "flex", gap: 10 }}>
+          <button className="btn btn-outline" onClick={loadData} disabled={loading} suppressHydrationWarning>
             <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
               <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
             </svg>
             Refresh
           </button>
-          <button className="btn btn-accent" onClick={() => setShowInputCashModal(true)}>+ Input Cash Manual</button>
+          <button className="btn btn-accent" onClick={() => setShowInputCashModal(true)}>
+            + Input Cash Manual
+          </button>
         </div>
       </div>
 
@@ -325,7 +333,7 @@ export default function AdminTagihanPage() {
                 Belum ada data tagihan
               </div>
               <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
-                Tagihan akan otomatis dibuat saat siswa didaftarkan ke dalam paket program kelas.
+                Tagihan otomatis dibuat saat siswa didaftarkan ke paket program di menu Pendaftaran.
               </div>
             </div>
           )}
@@ -377,7 +385,7 @@ export default function AdminTagihanPage() {
               >
                 {enrollmentsList.map((en) => (
                   <option key={en.id} value={en.id}>
-                    {en.student?.full_name || "Siswa"} — {en.program?.name || "Program"} ({en.status || "Aktif"})
+                    {en.student?.full_name || "Siswa"} — {en.program?.name || "Program"}
                   </option>
                 ))}
               </select>
