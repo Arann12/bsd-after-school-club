@@ -4,7 +4,7 @@
 
 import axiosInstance from "./axiosInstance";
 import type { Announcement, InventoryItem, Notification } from "../types";
-import type { PaginatedResponse, ApiResponse } from "./students";
+import type { PaginatedResponse, ApiResponse } from "./types";
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  ANNOUNCEMENTS (PENGUMUMAN)

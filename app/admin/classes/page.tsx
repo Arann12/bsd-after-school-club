@@ -1,307 +1,364 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Modal from "@/components/ui/Modal";
+import { 
+  getClassrooms, createClassroom, updateClassroom, deleteClassroom,
+  assignTeacherToClassroom, removeTeacherFromClassroom,
+  getPrograms, type Classroom, type Program, type ClassTeacher
+} from "@/lib/api/academic";
+import { getTeachers, type Teacher } from "@/lib/api/teachers";
 
-export interface ClassItem {
-  id: string;
-  name: string;
-  program: string;
-  level: string;
-  guru: string;
-  guruHp: string;
-  ruangan: string;
-  jadwalHari: string;
-  jadwalJam: string;
-  kapasitas: number;
-  terisi: number;
-  status: "Aktif" | "Penuh" | "Selesai";
-  siswaList: { id: string; name: string; parent: string; parentPhone: string; statusBayar: string }[];
-}
+export default function ClassesPage() {
+  // Data State
+  const [classrooms, setClassrooms] = useState<Classroom[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-const initialClasses: ClassItem[] = [
-  {
-    id: "KLS-A",
-    name: "Kelas A — Calistung Basic",
-    program: "Calistung",
-    level: "Level 1",
-    guru: "Ms. Sarah",
-    guruHp: "081299887766",
-    ruangan: "Ruang A (Lantai 1)",
-    jadwalHari: "Senin & Rabu",
-    jadwalJam: "14:00 – 15:00 WIB",
-    kapasitas: 8,
-    terisi: 2,
-    status: "Aktif",
-    siswaList: [
-      { id: "STD-2026-0001", name: "Andi Setiawan", parent: "Budi Setiawan", parentPhone: "081234567890", statusBayar: "Lunas" },
-      { id: "STD-2026-0009", name: "Ivan Kurnia", parent: "Lestari Kurnia", parentPhone: "081888990011", statusBayar: "Belum Bayar" },
-    ],
-  },
-  {
-    id: "KLS-B",
-    name: "Kelas B — English Intermediate",
-    program: "English",
-    level: "Level 2 (B1)",
-    guru: "Mr. Andi",
-    guruHp: "081388776655",
-    ruangan: "Ruang B (Lantai 1)",
-    jadwalHari: "Selasa & Kamis",
-    jadwalJam: "15:30 – 16:30 WIB",
-    kapasitas: 8,
-    terisi: 2,
-    status: "Aktif",
-    siswaList: [
-      { id: "STD-2026-0002", name: "Budi Santoso", parent: "Hendra Santoso", parentPhone: "081987654321", statusBayar: "Belum Bayar" },
-      { id: "STD-2026-0006", name: "Fitri Handayani", parent: "Rina Handayani", parentPhone: "081399887766", statusBayar: "Lunas" },
-    ],
-  },
-  {
-    id: "KLS-C",
-    name: "Kelas C — Math Advance",
-    program: "Math",
-    level: "Level 3 (Advance)",
-    guru: "Ms. Nina",
-    guruHp: "081477665544",
-    ruangan: "Ruang Lab Math (Lantai 2)",
-    jadwalHari: "Rabu & Jumat",
-    jadwalJam: "16:00 – 17:00 WIB",
-    kapasitas: 8,
-    terisi: 2,
-    status: "Aktif",
-    siswaList: [
-      { id: "STD-2026-0003", name: "Citra Kirana", parent: "Dewi Kirana", parentPhone: "085678901234", statusBayar: "Lunas" },
-      { id: "STD-2026-0007", name: "Gilang Ramadan", parent: "Ahmad Ramadan", parentPhone: "081555443322", statusBayar: "Lunas" },
-    ],
-  },
-  {
-    id: "KLS-D",
-    name: "Kelas D — Phonics Starter",
-    program: "Phonics",
-    level: "Level 1 (Starter)",
-    guru: "Ms. Sarah",
-    guruHp: "081299887766",
-    ruangan: "Ruang Phonics (Lantai 1)",
-    jadwalHari: "Sabtu",
-    jadwalJam: "10:00 – 11:30 WIB",
-    kapasitas: 8,
-    terisi: 2,
-    status: "Aktif",
-    siswaList: [
-      { id: "STD-2026-0004", name: "Dian Pratama", parent: "Sari Pratama", parentPhone: "082112233445", statusBayar: "Belum Bayar" },
-      { id: "STD-2026-0008", name: "Hana Pertiwi", parent: "Siska Pertiwi", parentPhone: "081777889900", statusBayar: "Overdue" },
-    ],
-  },
-  {
-    id: "KLS-E",
-    name: "Kelas E — Calistung Level 2",
-    program: "Calistung",
-    level: "Level 2",
-    guru: "Mr. Budi",
-    guruHp: "081566554433",
-    ruangan: "Ruang A (Lantai 1)",
-    jadwalHari: "Selasa & Kamis",
-    jadwalJam: "14:00 – 15:00 WIB",
-    kapasitas: 8,
-    terisi: 1,
-    status: "Aktif",
-    siswaList: [
-      { id: "STD-2026-0005", name: "Eko Wijaya", parent: "Joko Wijaya", parentPhone: "081987654322", statusBayar: "Lunas" },
-    ],
-  },
-];
-
-export default function AdminClassesPage() {
-  const [classesList, setClassesList] = useState<ClassItem[]>(initialClasses);
-  const [cari, setCari] = useState("");
-  const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
+  // Classroom Modal Form
   const [showModal, setShowModal] = useState(false);
+  const [editingClass, setEditingClass] = useState<Classroom | null>(null);
+  
+  // For hierarchical selection
+  const [selectedProgramId, setSelectedProgramId] = useState("");
+  const [formData, setFormData] = useState({
+    program_level_id: "",
+    name: "",
+    capacity: 20,
+    status: "active"
+  });
+  const [saving, setSaving] = useState(false);
 
-  const terfilter = classesList.filter(c =>
-    c.name.toLowerCase().includes(cari.toLowerCase()) ||
-    c.guru.toLowerCase().includes(cari.toLowerCase()) ||
-    c.program.toLowerCase().includes(cari.toLowerCase())
-  );
+  // Assign Teacher Modal Form
+  const [showTeacherModal, setShowTeacherModal] = useState(false);
+  const [activeClassroom, setActiveClassroom] = useState<Classroom | null>(null);
+  const [teacherForm, setTeacherForm] = useState({
+    teacher_id: "",
+    effective_from: new Date().toISOString().split("T")[0],
+    role: "primary" as "primary" | "assistant"
+  });
+  const [assigning, setAssigning] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [clsRes, progRes, tchrRes] = await Promise.all([
+        getClassrooms({ per_page: 50 }),
+        getPrograms({ per_page: 100 }), // need all for dropdown
+        getTeachers({ per_page: 100 })  // need all for dropdown
+      ]);
+      setClassrooms(clsRes.data);
+      setPrograms(progRes.data);
+      setTeachers(tchrRes.data);
+
+      // Refresh activeClassroom if modal is open
+      if (activeClassroom) {
+        const updated = clsRes.data.find(c => c.id === activeClassroom.id);
+        if (updated) setActiveClassroom(updated);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError("Gagal memuat data kelas.");
+    } finally {
+      setLoading(false);
+    }
+  }, [activeClassroom]);
+
+  useEffect(() => {
+    fetchData();
+  }, []); // Only fetch on mount
+
+  // ==========================================
+  // CLASSROOM HANDLERS
+  // ==========================================
+  const handleOpenModal = (classroom?: Classroom) => {
+    if (classroom) {
+      setEditingClass(classroom);
+      setSelectedProgramId(classroom.programLevel?.programId || "");
+      setFormData({
+        program_level_id: classroom.programLevelId,
+        name: classroom.name,
+        capacity: classroom.capacity,
+        status: classroom.status,
+      });
+    } else {
+      setEditingClass(null);
+      setSelectedProgramId("");
+      setFormData({
+        program_level_id: "",
+        name: "",
+        capacity: 20,
+        status: "active"
+      });
+    }
+    setShowModal(true);
+  };
+
+  const handleSaveClassroom = async () => {
+    if (!formData.name || !formData.program_level_id) {
+      return alert("Nama dan Level wajib diisi!");
+    }
+    setSaving(true);
+    try {
+      if (editingClass) {
+        await updateClassroom(editingClass.id, formData);
+      } else {
+        await createClassroom(formData);
+      }
+      setShowModal(false);
+      fetchData();
+    } catch (err: any) {
+      console.error(err);
+      alert("Gagal menyimpan data kelas: " + (err.response?.data?.message || err.message));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteClassroom = async (id: string) => {
+    if (!confirm("Yakin ingin menonaktifkan kelas ini?")) return;
+    try {
+      await deleteClassroom(id);
+      fetchData();
+    } catch (err: any) {
+      alert("Gagal menonaktifkan kelas.");
+    }
+  };
+
+  // ==========================================
+  // ASSIGN TEACHER HANDLERS
+  // ==========================================
+  const handleOpenTeacherModal = (classroom: Classroom) => {
+    setActiveClassroom(classroom);
+    setTeacherForm({
+      teacher_id: "",
+      effective_from: new Date().toISOString().split("T")[0],
+      role: "primary"
+    });
+    setShowTeacherModal(true);
+  };
+
+  const handleAssignTeacher = async () => {
+    if (!activeClassroom || !teacherForm.teacher_id) return alert("Pilih guru terlebih dahulu!");
+    setAssigning(true);
+    try {
+      await assignTeacherToClassroom(activeClassroom.id, teacherForm);
+      setTeacherForm({ ...teacherForm, teacher_id: "" });
+      fetchData(); // Will refresh list and activeClassroom
+    } catch (err: any) {
+      console.error(err);
+      alert("Gagal mengassign guru: " + (err.response?.data?.message || err.message));
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  const handleRemoveTeacher = async (teacherId: string) => {
+    if (!activeClassroom) return;
+    if (!confirm("Yakin ingin melepas guru ini dari kelas?")) return;
+    try {
+      await removeTeacherFromClassroom(activeClassroom.id, teacherId);
+      fetchData();
+    } catch (err: any) {
+      alert("Gagal melepas guru.");
+    }
+  };
+
+  // derived data for dropdowns
+  const availableLevels = programs.find(p => p.id === selectedProgramId)?.levels || [];
+
+  if (loading && classrooms.length === 0) return <div style={{ padding: 24 }}>Memuat data kelas...</div>;
+  if (error) return <div style={{ padding: 24, color: "var(--color-danger)" }}>{error}</div>;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <style>{`
-        .cls-card { transition: all 0.2s ease; cursor: pointer; }
-        .cls-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important; transform: translateY(-2px); }
-      `}</style>
-
-      {/* Header */}
-      <div className="page-header">
+    <div style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <div>
-          <h1 className="page-title">Manajemen Kelas</h1>
-          <p className="page-subtitle">Daftar kelas aktif, guru pengajar, dan seluruh siswa yang terdaftar di setiap kelas.</p>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Manajemen Kelas</h1>
+          <p style={{ color: "var(--color-text-secondary)", margin: "4px 0 0 0", fontSize: 14 }}>Kelola kelas belajar, penugasan guru, dan pantau kapasitas.</p>
         </div>
-        <button className="btn btn-accent" onClick={() => { setSelectedClass(null); setShowModal(true); }}>
-          + Buat Kelas Baru
-        </button>
+        <button className="btn btn-primary" onClick={() => handleOpenModal()}>+ Buat Kelas Baru</button>
       </div>
 
-      {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
-        {[
-          { label: "Total Kelas", value: classesList.length, color: "#1d4ed8", bg: "#dbeafe" },
-          { label: "Kelas Aktif", value: classesList.filter(c => c.status === "Aktif").length, color: "#059669", bg: "#d1fae5" },
-          { label: "Total Siswa Terdistribusi", value: classesList.reduce((a, c) => a + c.terisi, 0), color: "#7c3aed", bg: "#ede9fe" },
-        ].map(c => (
-          <div key={c.label} className="stat-card" style={{ gap: 8 }}>
-            <span className="stat-card-label">{c.label}</span>
-            <div className="stat-card-value" style={{ fontSize: 28, color: c.color }}>{c.value}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Search Bar dengan Icon */}
-      <div className="card">
-        <div className="card-body" style={{ padding: "14px 20px" }}>
-          <div style={{ position: "relative", maxWidth: 400 }}>
-            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-            <input className="search-input" style={{ paddingLeft: 38, width: "100%" }} placeholder="Cari nama kelas, guru, atau program..." value={cari} onChange={e => setCari(e.target.value)} />
-          </div>
-        </div>
-      </div>
-
-      {/* Grid Class Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 16 }}>
-        {terfilter.map(c => (
-          <div
-            key={c.id}
-            className="card cls-card"
-            style={{ padding: "20px 22px", display: "flex", flexDirection: "column", gap: 14 }}
-            onClick={() => setSelectedClass(c)}
-          >
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-              <div>
-                <span style={{ fontSize: 11, fontFamily: "monospace", color: "var(--color-text-muted)" }}>{c.id}</span>
-                <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--color-text-primary)", margin: "2px 0 0" }}>{c.name}</h3>
-              </div>
-              <span style={{ background: "#d1fae5", color: "#059669", fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999 }}>{c.status}</span>
-            </div>
-
-            {/* GURU PENGAJAR (Requirement #8) */}
-            <div style={{ background: "#ede9fe", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#7c3aed", color: "#fff", fontWeight: 800, fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {c.guru[0]}
-                </div>
-                <div>
-                  <div style={{ fontSize: 10, color: "#6d28d9", fontWeight: 800, textTransform: "uppercase" }}>Guru Pengajar</div>
-                  <div style={{ fontSize: 13.5, fontWeight: 800, color: "#4c1d95" }}>{c.guru}</div>
-                </div>
-              </div>
-              <a href={`https://wa.me/62${c.guruHp.replace(/^0/, "")}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: 11, fontWeight: 700, color: "#6d28d9", background: "#fff", padding: "4px 8px", borderRadius: 6, textDecoration: "none" }}>
-                WA Guru
-              </a>
-            </div>
-
-            {/* Program & Jadwal */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 8, fontSize: 12 }}>
-              <div style={{ background: "var(--color-bg)", padding: 8, borderRadius: 6 }}>
-                <span style={{ color: "var(--color-text-muted)", display: "block", fontSize: 10 }}>Program & Level</span>
-                <strong style={{ color: "var(--color-text-primary)" }}>{c.program} — {c.level}</strong>
-              </div>
-              <div style={{ background: "var(--color-bg)", padding: 8, borderRadius: 6 }}>
-                <span style={{ color: "var(--color-text-muted)", display: "block", fontSize: 10 }}>Jadwal & Ruang</span>
-                <strong style={{ color: "var(--color-text-primary)" }}>{c.jadwalHari} ({c.jadwalJam})</strong>
-              </div>
-            </div>
-
-            {/* DAFTAR SISWA PREVIEW (Requirement #8) */}
-            <div style={{ borderTop: "1px solid var(--color-border-light)", paddingTop: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 800, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
-                  👨‍🎓 Siswa Terdaftar ({c.siswaList.length} / {c.kapasitas})
-                </span>
-                <span style={{ fontSize: 11, color: "var(--color-primary)", fontWeight: 700 }}>Klik untuk Detail &rarr;</span>
-              </div>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {c.siswaList.map(s => (
-                  <span key={s.id} style={{ background: "#e0f2fe", color: "#0369a1", fontSize: 11.5, fontWeight: 700, padding: "3px 10px", borderRadius: 999 }}>
-                    {s.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* MODAL DETAIL KELAS & SISWA INSIDE (Requirement #8) */}
-      <Modal open={!!selectedClass} onClose={() => setSelectedClass(null)} title={selectedClass ? `Detail Kelas — ${selectedClass.name}` : ""} maxWidth={620}>
-        {selectedClass && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {/* Header Info Guru & Jadwal */}
-            <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "16px 20px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 800, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Guru Pengajar</div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "var(--color-primary)", marginTop: 2 }}>👩‍🏫 {selectedClass.guru}</div>
-                <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>{selectedClass.guruHp}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 800, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Jadwal & Ruangan</div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: "var(--color-text-primary)", marginTop: 2 }}>{selectedClass.jadwalHari}</div>
-                <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>{selectedClass.jadwalJam} ({selectedClass.ruangan})</div>
-              </div>
-            </div>
-
-            {/* RINCIAN DAFTAR SISWA DI KELAS INI (Requirement #8) */}
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: "var(--color-text-primary)", marginBottom: 10 }}>
-                👨‍🎓 Daftar Siswa Terdaftar di {selectedClass.id} ({selectedClass.siswaList.length} Anak)
-              </div>
-
-              {selectedClass.siswaList.length === 0 ? (
-                <div style={{ background: "var(--color-bg)", padding: 20, borderRadius: 10, textAlign: "center", color: "var(--color-text-muted)", fontSize: 13 }}>
-                  Belum ada siswa yang dimasukkan ke kelas ini.
-                </div>
-              ) : (
-                <div style={{ border: "1px solid var(--color-border)", borderRadius: 12, overflow: "hidden" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
-                    <thead>
-                      <tr style={{ background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}>
-                        <th style={{ padding: "10px 14px", fontSize: 11, color: "var(--color-text-muted)" }}>ID Siswa</th>
-                        <th style={{ padding: "10px 14px", fontSize: 11, color: "var(--color-text-muted)" }}>Nama Siswa</th>
-                        <th style={{ padding: "10px 14px", fontSize: 11, color: "var(--color-text-muted)" }}>Orang Tua</th>
-                        <th style={{ padding: "10px 14px", fontSize: 11, color: "var(--color-text-muted)" }}>Status Bayar</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedClass.siswaList.map((s, idx) => (
-                        <tr key={s.id} style={{ borderBottom: idx < selectedClass.siswaList.length - 1 ? "1px solid var(--color-border-light)" : "none" }}>
-                          <td style={{ padding: "12px 14px", fontFamily: "monospace", fontSize: 12, color: "var(--color-text-muted)" }}>{s.id}</td>
-                          <td style={{ padding: "12px 14px", fontWeight: 700, color: "var(--color-text-primary)" }}>{s.name}</td>
-                          <td style={{ padding: "12px 14px", color: "var(--color-text-secondary)" }}>
-                            <div>{s.parent}</div>
-                            <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>{s.parentPhone}</div>
-                          </td>
-                          <td style={{ padding: "12px 14px" }}>
-                            <span style={{
-                              background: s.statusBayar === "Lunas" ? "#d1fae5" : "#fee2e2",
-                              color: s.statusBayar === "Lunas" ? "#059669" : "#dc2626",
-                              fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 999
-                            }}>
-                              {s.statusBayar}
+      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+          <thead style={{ background: "#f8fafc", borderBottom: "1px solid var(--color-border-light)" }}>
+            <tr>
+              <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Kode / Nama Kelas</th>
+              <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Program & Level</th>
+              <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Guru Aktif</th>
+              <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Kapasitas</th>
+              <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {classrooms.length === 0 ? (
+              <tr><td colSpan={5} style={{ textAlign: "center", padding: 24, color: "var(--color-text-muted)" }}>Tidak ada data kelas.</td></tr>
+            ) : (
+              classrooms.map((cls, i) => {
+                const activeTeachers = cls.teachers.filter(t => !t.effectiveUntil);
+                return (
+                  <tr key={cls.id} style={{ borderBottom: i < classrooms.length - 1 ? "1px solid var(--color-border-light)" : "none" }}>
+                    <td style={{ padding: "14px 16px" }}>
+                      <div style={{ fontFamily: "monospace", fontSize: 11, color: "var(--color-text-muted)" }}>{cls.classCode}</div>
+                      <div style={{ fontWeight: 800, color: "var(--color-text-primary)", fontSize: 14 }}>{cls.name}</div>
+                      <span style={{ fontSize: 11, padding: "2px 6px", borderRadius: 4, background: cls.status === 'active' ? "#d1fae5" : "#f1f5f9", color: cls.status === 'active' ? "#059669" : "#64748b" }}>
+                        {cls.status.toUpperCase()}
+                      </span>
+                    </td>
+                    <td style={{ padding: "14px 16px" }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text-primary)" }}>{cls.programLevel?.name}</div>
+                      <div style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>{programs.find(p => p.id === cls.programLevel?.programId)?.name || "-"}</div>
+                    </td>
+                    <td style={{ padding: "14px 16px" }}>
+                      {activeTeachers.length > 0 ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                          {activeTeachers.map(t => (
+                            <span key={t.id} style={{ fontSize: 12, fontWeight: 600, color: t.role === 'primary' ? "#0369a1" : "#4f46e5", background: t.role === 'primary' ? "#e0f2fe" : "#e0e7ff", padding: "2px 8px", borderRadius: 4, width: "max-content" }}>
+                              {t.name} ({t.role})
                             </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: 12, color: "var(--color-danger)" }}>Belum Ada</span>
+                      )}
+                    </td>
+                    <td style={{ padding: "14px 16px" }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: cls.activeStudentsCount >= cls.capacity ? "var(--color-danger)" : "var(--color-text-primary)" }}>
+                        {cls.activeStudentsCount} / {cls.capacity} Siswa
+                      </div>
+                      <div style={{ width: "100%", height: 6, background: "#f1f5f9", borderRadius: 3, marginTop: 4, overflow: "hidden" }}>
+                        <div style={{ height: "100%", background: cls.activeStudentsCount >= cls.capacity ? "var(--color-danger)" : "#3b82f6", width: `${Math.min((cls.activeStudentsCount / cls.capacity) * 100, 100)}%` }}></div>
+                      </div>
+                    </td>
+                    <td style={{ padding: "14px 16px" }}>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => handleOpenTeacherModal(cls)}>Assign Guru</button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => handleOpenModal(cls)}>Edit</button>
+                        <button className="btn btn-ghost btn-sm" style={{ color: "var(--color-danger)" }} onClick={() => handleDeleteClassroom(cls.id)}>Hapus</button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* MODAL KELAS */}
+      <Modal open={showModal} onClose={() => setShowModal(false)} title={editingClass ? "Edit Kelas" : "Buat Kelas Baru"} maxWidth={500}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label">Nama Kelas *</label>
+            <input className="form-input" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Cth: Kelas A - Calistung" />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Program *</label>
+              <select className="form-input" value={selectedProgramId} onChange={e => { setSelectedProgramId(e.target.value); setFormData({ ...formData, program_level_id: "" }); }}>
+                <option value="">-- Pilih Program --</option>
+                {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Level *</label>
+              <select className="form-input" value={formData.program_level_id} onChange={e => setFormData({ ...formData, program_level_id: e.target.value })} disabled={!selectedProgramId}>
+                <option value="">-- Pilih Level --</option>
+                {availableLevels.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Kapasitas Maksimal</label>
+              <input type="number" className="form-input" value={formData.capacity} onChange={e => setFormData({ ...formData, capacity: parseInt(e.target.value) || 0 })} min={1} max={100} />
+            </div>
+            {editingClass && (
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Status</label>
+                <select className="form-input" value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+            <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setShowModal(false)} disabled={saving}>Batal</button>
+            <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleSaveClassroom} disabled={saving}>{saving ? "Menyimpan..." : "Simpan Data"}</button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* MODAL ASSIGN GURU */}
+      <Modal open={showTeacherModal} onClose={() => setShowTeacherModal(false)} title={`Assign Guru: ${activeClassroom?.name}`} maxWidth={540}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          
+          {/* Daftar Guru Aktif */}
+          <div>
+            <h4 style={{ margin: "0 0 10px 0", fontSize: 13, color: "var(--color-text-secondary)" }}>Guru yang Ditugaskan Saat Ini</h4>
+            <div style={{ border: "1px solid var(--color-border-light)", borderRadius: 8, overflow: "hidden" }}>
+              {(!activeClassroom?.teachers || activeClassroom.teachers.filter(t => !t.effectiveUntil).length === 0) ? (
+                <div style={{ padding: 16, textAlign: "center", color: "var(--color-text-muted)", fontSize: 13 }}>Belum ada guru aktif di kelas ini.</div>
+              ) : (
+                activeClassroom.teachers.filter(t => !t.effectiveUntil).map((t, i, arr) => (
+                  <div key={t.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 16px", borderBottom: i < arr.length - 1 ? "1px solid var(--color-border-light)" : "none", background: "#fff" }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: "var(--color-text-primary)" }}>{t.name}</div>
+                      <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>Role: {t.role} • Sejak: {t.effectiveFrom}</div>
+                    </div>
+                    <button className="btn btn-ghost btn-sm" style={{ color: "var(--color-danger)" }} onClick={() => handleRemoveTeacher(t.teacherId)}>Lepaskan</button>
+                  </div>
+                ))
               )}
             </div>
+          </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 8 }}>
-              <button className="btn btn-ghost" onClick={() => setSelectedClass(null)}>Tutup</button>
-              <button className="btn btn-accent" onClick={() => setSelectedClass(null)}>+ Masukkan Siswa</button>
+          {/* Form Assign Baru */}
+          <div style={{ background: "#f8fafc", padding: 16, borderRadius: 8, border: "1px dashed var(--color-border)" }}>
+            <h4 style={{ margin: "0 0 12px 0", fontSize: 14, color: "var(--color-text-primary)" }}>Tugaskan Guru Baru</h4>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: 12 }}>Pilih Guru</label>
+                <select className="form-input" value={teacherForm.teacher_id} onChange={e => setTeacherForm({ ...teacherForm, teacher_id: e.target.value })}>
+                  <option value="">-- Pilih Guru --</option>
+                  {teachers.map(t => (
+                    <option key={t.id} value={t.id}>{t.name} ({t.teacherCode})</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontSize: 12 }}>Role</label>
+                  <select className="form-input" value={teacherForm.role} onChange={e => setTeacherForm({ ...teacherForm, role: e.target.value as "primary" | "assistant" })}>
+                    <option value="primary">Primary (Guru Utama)</option>
+                    <option value="assistant">Assistant (Asisten Guru)</option>
+                  </select>
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ fontSize: 12 }}>Efektif Mulai</label>
+                  <input type="date" className="form-input" value={teacherForm.effective_from} onChange={e => setTeacherForm({ ...teacherForm, effective_from: e.target.value })} />
+                </div>
+              </div>
+              <div style={{ marginTop: 6 }}>
+                <button className="btn btn-primary btn-sm" style={{ width: "100%" }} onClick={handleAssignTeacher} disabled={assigning}>
+                  {assigning ? "Menugaskan..." : "Tugaskan Guru Ini"}
+                </button>
+              </div>
             </div>
           </div>
-        )}
+          
+        </div>
       </Modal>
+
     </div>
   );
 }

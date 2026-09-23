@@ -1,317 +1,375 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/ui/Modal";
-
-export interface OrangTuaData {
-  id: string;
-  nama: string;
-  hp: string;
-  email: string;
-  alamat: string;
-  pekerjaan: string;
-  anak: string[];
-  totalTagihan: number;
-  tglMulaiBayar: string;
-  batasWaktuBayar: string;
-  statusTagihan: "Lunas" | "Belum Bayar" | "Overdue" | "Menunggu Konfirmasi";
-  terdaftar: string;
-  metodePembayaran: string;
-}
-
-const daftarOrangTua: OrangTuaData[] = [
-  {
-    id: "PAR-001",
-    nama: "Budi Setiawan",
-    hp: "081234567890",
-    email: "budi.setiawan@email.com",
-    alamat: "Jl. BSD Raya Utama No. 12, Tangerang Selatan",
-    pekerjaan: "Wiraswasta",
-    anak: ["Andi Setiawan"],
-    totalTagihan: 600000,
-    tglMulaiBayar: "01 Sep 2026",
-    batasWaktuBayar: "10 Sep 2026",
-    statusTagihan: "Lunas",
-    terdaftar: "12 Jan 2026",
-    metodePembayaran: "Virtual Account BCA",
-  },
-  {
-    id: "PAR-002",
-    nama: "Joko Santoso",
-    hp: "081987654321",
-    email: "joko.santoso@email.com",
-    alamat: "Griya Asri BSD Block C4/15, Tangerang",
-    pekerjaan: "Karyawan Swasta",
-    anak: ["Budi Santoso", "Eko Wijaya"],
-    totalTagihan: 1200000,
-    tglMulaiBayar: "01 Sep 2026",
-    batasWaktuBayar: "10 Sep 2026",
-    statusTagihan: "Lunas",
-    terdaftar: "15 Feb 2026",
-    metodePembayaran: "QRIS",
-  },
-  {
-    id: "PAR-003",
-    nama: "Dewi Kirana",
-    hp: "085678901234",
-    email: "dewi.kirana@email.com",
-    alamat: "Cluster Greenwich BSD No. 88, Tangerang Selatan",
-    pekerjaan: "Dokter",
-    anak: ["Citra Kirana"],
-    totalTagihan: 720000,
-    tglMulaiBayar: "01 Sep 2026",
-    batasWaktuBayar: "10 Sep 2026",
-    statusTagihan: "Lunas",
-    terdaftar: "01 Mar 2026",
-    metodePembayaran: "Transfer Mandiri",
-  },
-  {
-    id: "PAR-004",
-    nama: "Sari Pratama",
-    hp: "082112233445",
-    email: "sari.pratama@email.com",
-    alamat: "Jl. Serpong Park C3 No. 5, Tangerang Selatan",
-    pekerjaan: "Arsitek",
-    anak: ["Dian Pratama"],
-    totalTagihan: 500000,
-    tglMulaiBayar: "01 Sep 2026",
-    batasWaktuBayar: "10 Sep 2026",
-    statusTagihan: "Belum Bayar",
-    terdaftar: "10 Apr 2026",
-    metodePembayaran: "Belum Dipilih",
-  },
-  {
-    id: "PAR-005",
-    nama: "Siska Pertiwi",
-    hp: "081777889900",
-    email: "siska.pertiwi@email.com",
-    alamat: "Vanya Park BSD Cluster Askara No. 22",
-    pekerjaan: "Desainer",
-    anak: ["Hana Pertiwi"],
-    totalTagihan: 500000,
-    tglMulaiBayar: "25 Agt 2026",
-    batasWaktuBayar: "05 Sep 2026",
-    statusTagihan: "Overdue",
-    terdaftar: "05 Mei 2026",
-    metodePembayaran: "Belum Dipilih",
-  },
-];
+import { getParents, createParent, updateParent, deleteParent, Parent, attachStudentToParent, detachStudentFromParent } from "@/lib/api/parents";
+import { getStudents, Student } from "@/lib/api/students";
+import { SkeletonTable } from "@/components/ui/Skeleton";
 
 export default function AdminOrangTuaPage() {
-  const [cari, setCari] = useState("");
-  const [selectedOrangTua, setSelectedOrangTua] = useState<OrangTuaData | null>(null);
+  const [parents, setParents] = useState<Parent[]>([]);
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const terfilter = daftarOrangTua.filter(o =>
-    o.nama.toLowerCase().includes(cari.toLowerCase()) ||
-    o.hp.includes(cari) ||
-    o.email.toLowerCase().includes(cari.toLowerCase()) ||
-    o.anak.some(a => a.toLowerCase().includes(cari.toLowerCase()))
-  );
+  const [showModal, setShowModal] = useState(false);
+  const [editingParent, setEditingParent] = useState<Parent | null>(null);
+
+  // Form State
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    relationship: "Orang Tua",
+    address: "",
+    student_id: "",
+  });
+
+  const [saving, setSaving] = useState(false);
+
+  // Detail / Attach Student State
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedParent, setSelectedParent] = useState<Parent | null>(null);
+  
+  const [showAttachModal, setShowAttachModal] = useState(false);
+  const [attachForm, setAttachForm] = useState({ student_id: "", relationship: "Orang Tua", is_primary: true });
+  const [attaching, setAttaching] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [parentsRes, studentsRes] = await Promise.all([
+        getParents({ per_page: 50 }),
+        getStudents({ per_page: 100 })
+      ]);
+      setParents(parentsRes.data);
+      setAllStudents(studentsRes.data);
+    } catch (err: any) {
+      console.error(err);
+      setError("Gagal memuat data orang tua.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const handleOpenModal = (parent?: Parent) => {
+    if (parent) {
+      setEditingParent(parent);
+      setFormData({
+        name: parent.name,
+        email: parent.email,
+        phone: parent.phone || "",
+        password: "", // Password dikosongkan saat edit, hanya diisi jika ingin diubah
+        relationship: parent.relationship || "Orang Tua",
+        address: parent.address || "",
+        student_id: "",
+      });
+    } else {
+      setEditingParent(null);
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        password: "",
+        relationship: "Orang Tua",
+        address: "",
+        student_id: "",
+      });
+    }
+    setShowModal(true);
+  };
+
+  const handleSave = async () => {
+    if (!formData.name || !formData.email) {
+      alert("Nama dan Email wajib diisi!");
+      return;
+    }
+    if (!editingParent && !formData.password) {
+      alert("Password wajib diisi untuk pengguna baru!");
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || null,
+        password: formData.password || undefined,
+        relationship: formData.relationship || null,
+        address: formData.address || null,
+      };
+
+      let parentId = editingParent?.id;
+      if (editingParent) {
+        await updateParent(editingParent.id, payload);
+      } else {
+        const newParent = await createParent(payload);
+        parentId = newParent.id;
+      }
+      
+      if (formData.student_id && parentId) {
+        try {
+          await attachStudentToParent(parentId, formData.student_id, formData.relationship || "Orang Tua", true);
+        } catch(e) {
+          console.error("Gagal mengaitkan siswa", e);
+        }
+      }
+      setShowModal(false);
+      fetchData();
+    } catch (err: any) {
+      console.error(err);
+      alert("Gagal menyimpan data orang tua: " + (err.response?.data?.message || err.message));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Yakin ingin menonaktifkan akun orang tua ini?")) return;
+    try {
+      await deleteParent(id);
+      fetchData();
+    } catch (err: any) {
+      alert("Gagal menonaktifkan: " + err.message);
+    }
+  };
+
+  const handleDetail = (parent: Parent) => {
+    setSelectedParent(parent);
+    setShowDetailModal(true);
+  };
+
+  const handleAttachStudent = async () => {
+    if (!selectedParent || !attachForm.student_id) return;
+    setAttaching(true);
+    try {
+      await attachStudentToParent(selectedParent.id, attachForm.student_id, attachForm.relationship, attachForm.is_primary);
+      setShowAttachModal(false);
+      // Refresh data to show newly attached student
+      await fetchData();
+      
+      // Update selected parent view locally if possible, or close detail and let user reopen
+      // For simplicity, we just close the detail modal so it re-fetches when opened again
+      setShowDetailModal(false); 
+      alert("Siswa berhasil dikaitkan!");
+    } catch (err: any) {
+      alert("Gagal mengaitkan siswa: " + (err.response?.data?.message || err.message));
+    } finally {
+      setAttaching(false);
+    }
+  };
+
+  const handleDetachStudent = async (studentId: string) => {
+    if (!selectedParent) return;
+    if (!confirm("Yakin ingin melepas kaitan siswa ini dari orang tua?")) return;
+    try {
+      await detachStudentFromParent(selectedParent.id, studentId);
+      setShowDetailModal(false);
+      fetchData();
+      alert("Kaitan siswa berhasil dilepas.");
+    } catch (err: any) {
+      alert("Gagal melepas siswa: " + err.message);
+    }
+  };
+
+  if (loading) return <SkeletonTable rows={5} cols={5} />;
+  if (error) return <div className="p-6 text-center text-red-500 font-bold">{error}</div>;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <style>{`
-        .row-hover:hover { background: #f8fafc !important; cursor: pointer; }
-      `}</style>
-
-      {/* Kepala Halaman */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">Kelola Data Orang Tua</h1>
-          <p className="page-subtitle">Rincian lengkap informasi orang tua, biaya tagihan, tanggal mulai bayar, dan batas waktu jatuh tempo.</p>
+          <h1 className="page-title">Kelola Orang Tua / Wali</h1>
+          <p className="page-subtitle">Manajemen master data akun orang tua BSD After School Club</p>
         </div>
+        <button className="btn btn-primary" onClick={() => handleOpenModal()}>+ Tambah Orang Tua</button>
       </div>
 
-      {/* Bar Pencarian dengan ICON SEARCH (Requirement #3) */}
-      <div className="card">
-        <div className="card-body" style={{ padding: "14px 20px" }}>
-          <div style={{ position: "relative", width: "100%" }}>
-            {/* Search Icon SVG */}
-            <svg
-              width={18}
-              height={18}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--color-primary)"
-              strokeWidth={2.2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }}
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              className="search-input"
-              style={{ paddingLeft: 42, width: "100%", fontSize: 14 }}
-              placeholder="Cari nama orang tua, No. WA, email, atau nama anak..."
-              value={cari}
-              onChange={e => setCari(e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Stat Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
-        {[
-          { label: "Total Akun Wali", value: daftarOrangTua.length, color: "#1d4ed8", bg: "#dbeafe" },
-          { label: "Tagihan Lunas", value: daftarOrangTua.filter(o => o.statusTagihan === "Lunas").length, color: "#059669", bg: "#d1fae5" },
-          { label: "Belum Bayar / Overdue", value: daftarOrangTua.filter(o => o.statusTagihan !== "Lunas").length, color: "#dc2626", bg: "#fee2e2" },
-        ].map(c => (
-          <div key={c.label} className="stat-card" style={{ gap: 8 }}>
-            <span className="stat-card-label">{c.label}</span>
-            <div className="stat-card-value" style={{ fontSize: 28, color: c.color }}>{c.value}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Tabel Data Orang Tua */}
       <div className="card" style={{ overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
             <thead>
-              <tr style={{ borderBottom: "1px solid var(--color-border)", background: "var(--color-bg)" }}>
-                {["ID Wali", "Nama Orang Tua", "No. WA / Email", "Anak Terhubung", "Biaya Tagihan", "Tanggal Mulai", "Batas Waktu Bayar", "Status", "Aksi"].map(h => (
-                  <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>{h}</th>
-                ))}
+              <tr style={{ background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Kode</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Nama</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Kontak</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Anak Terkait</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Status Akun</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
-              {terfilter.length === 0 ? (
-                <tr>
-                  <td colSpan={9} style={{ textAlign: "center", padding: "48px 16px", color: "var(--color-text-muted)", fontSize: 14 }}>
-                    Orang tua tidak ditemukan.
-                  </td>
-                </tr>
-              ) : terfilter.map((o, i) => (
-                <tr key={o.id} className="row-hover" style={{ borderBottom: i < terfilter.length - 1 ? "1px solid var(--color-border-light)" : "none" }} onClick={() => setSelectedOrangTua(o)}>
-                  <td style={{ padding: "14px 16px", fontFamily: "monospace", fontSize: 12, color: "var(--color-text-muted)", fontWeight: 600 }}>{o.id}</td>
-                  <td style={{ padding: "14px 16px", fontWeight: 700, fontSize: 13.5, color: "var(--color-text-primary)" }}>{o.nama}</td>
-                  <td style={{ padding: "14px 16px", fontSize: 13, color: "var(--color-text-secondary)" }}>
-                    <div>{o.hp}</div>
-                    <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>{o.email}</div>
-                  </td>
-                  <td style={{ padding: "14px 16px" }}>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      {o.anak.map(a => (
-                        <span key={a} style={{ background: "#e0f2fe", color: "#0369a1", fontSize: 11.5, fontWeight: 700, padding: "2px 8px", borderRadius: 999 }}>{a}</span>
-                      ))}
-                    </div>
-                  </td>
-                  <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 800, color: "var(--color-primary)" }}>
-                    Rp {o.totalTagihan.toLocaleString("id-ID")}
-                  </td>
-                  <td style={{ padding: "14px 16px", fontSize: 12.5, color: "var(--color-text-secondary)" }}>{o.tglMulaiBayar}</td>
-                  <td style={{ padding: "14px 16px", fontSize: 12.5, fontWeight: 700, color: o.statusTagihan === "Overdue" ? "#dc2626" : "var(--color-text-primary)" }}>
-                    {o.batasWaktuBayar}
-                  </td>
-                  <td style={{ padding: "14px 16px" }}>
-                    <span style={{
-                      background: o.statusTagihan === "Lunas" ? "#d1fae5" : o.statusTagihan === "Overdue" ? "#fee2e2" : "#fef3c7",
-                      color: o.statusTagihan === "Lunas" ? "#059669" : o.statusTagihan === "Overdue" ? "#dc2626" : "#b45309",
-                      fontSize: 11.5, fontWeight: 700, padding: "3px 10px", borderRadius: 999
-                    }}>
-                      {o.statusTagihan}
-                    </span>
-                  </td>
-                  <td style={{ padding: "14px 16px" }} onClick={e => e.stopPropagation()}>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button className="btn btn-ghost btn-sm" onClick={() => setSelectedOrangTua(o)}>Detail</button>
-                      <a href={`https://wa.me/62${o.hp.replace(/^0/, "")}`} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm" style={{ textDecoration: "none" }}>WA</a>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {parents.length === 0 ? (
+                <tr><td colSpan={6} style={{ textAlign: "center", padding: 24, color: "var(--color-text-muted)" }}>Tidak ada data orang tua.</td></tr>
+              ) : (
+                parents.map((p, i) => (
+                  <tr key={p.id} style={{ borderBottom: i < parents.length - 1 ? "1px solid var(--color-border-light)" : "none" }}>
+                    <td style={{ padding: "14px 16px", fontFamily: "monospace", fontSize: 12, color: "var(--color-text-muted)" }}>{p.parentCode}</td>
+                    <td style={{ padding: "14px 16px", fontWeight: 800, color: "var(--color-text-primary)" }}>{p.name}</td>
+                    <td style={{ padding: "14px 16px" }}>
+                      <div style={{ fontSize: 13, color: "#1e293b", fontWeight: 600 }}>{p.email}</div>
+                      <div style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>{p.phone}</div>
+                    </td>
+                    <td style={{ padding: "14px 16px" }}>
+                      {p.students.length > 0 ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                          {p.students.map(s => (
+                            <span key={s.id} style={{ fontSize: 12, fontWeight: 600, color: "#0369a1", background: "#e0f2fe", padding: "2px 8px", borderRadius: 4, width: "max-content" }}>
+                              {s.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: 12, color: "#94a3b8", fontStyle: "italic" }}>-</span>
+                      )}
+                    </td>
+                    <td style={{ padding: "14px 16px" }}>
+                      <span style={{
+                        background: p.isActive ? "#d1fae5" : "#f1f5f9",
+                        color: p.isActive ? "#059669" : "#64748b",
+                        fontSize: 11.5, fontWeight: 800, padding: "3px 10px", borderRadius: 6
+                      }}>{p.isActive ? "Aktif" : "Nonaktif"}</span>
+                    </td>
+                    <td style={{ padding: "14px 16px" }}>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => handleDetail(p)}>Detail</button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => handleOpenModal(p)}>Edit</button>
+                        <button className="btn btn-ghost btn-sm" style={{ color: "var(--color-danger)" }} onClick={() => handleDelete(p.id)}>Nonaktifkan</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Modal Detail Informasi Lengkap Orang Tua (Requirement #3) */}
-      <Modal open={!!selectedOrangTua} onClose={() => setSelectedOrangTua(null)} title="Detail Informasi Orang Tua / Wali" maxWidth={560}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* Header Info */}
-          <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "16px 18px", display: "flex", alignItems: "center", gap: 14 }}>
-            <div style={{ width: 50, height: 50, borderRadius: "50%", background: "var(--color-primary)", color: "#fff", fontWeight: 800, fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              {selectedOrangTua?.nama[0]}
+      {/* MODAL FORM TAMBAH/EDIT */}
+      <Modal open={showModal} onClose={() => setShowModal(false)} title={editingParent ? "Edit Orang Tua" : "Tambah Akun Orang Tua Baru"} maxWidth={540}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label">Nama Lengkap *</label>
+            <input className="form-input" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Cth: Budi Santoso" />
+          </div>
+          
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Email * (Digunakan untuk Login)</label>
+              <input type="email" className="form-input" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
             </div>
-            <div>
-              <div style={{ fontSize: 17, fontWeight: 800, color: "var(--color-text-primary)" }}>{selectedOrangTua?.nama}</div>
-              <div style={{ fontSize: 12.5, color: "var(--color-text-muted)", marginTop: 2 }}>{selectedOrangTua?.id} · Terdaftar sejak {selectedOrangTua?.terdaftar}</div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Nomor WhatsApp</label>
+              <input className="form-input" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="Cth: 08123456789" />
             </div>
           </div>
 
-          {/* Rincian Biaya & Periode Pembayaran */}
-          <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 12, padding: "16px 18px" }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: "#166534", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
-              Informasi Biaya & Tagihan
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Hubungan dengan Siswa</label>
+              <input className="form-input" value={formData.relationship} onChange={e => setFormData({ ...formData, relationship: e.target.value })} placeholder="Cth: Ayah / Ibu" />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
-              <div>
-                <div style={{ fontSize: 11, color: "#166534", fontWeight: 600 }}>Biaya Harus Dibayar</div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: "#15803d", marginTop: 2 }}>
-                  Rp {selectedOrangTua?.totalTagihan.toLocaleString("id-ID")}
-                </div>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: "#166534", fontWeight: 600 }}>Metode Pembayaran</div>
-                <div style={{ fontSize: 13.5, fontWeight: 700, color: "#166534", marginTop: 2 }}>
-                  {selectedOrangTua?.metodePembayaran}
-                </div>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: "#166534", fontWeight: 600 }}>Tanggal Mulai Bayar</div>
-                <div style={{ fontSize: 13.5, fontWeight: 700, color: "#166534", marginTop: 2 }}>
-                  {selectedOrangTua?.tglMulaiBayar}
-                </div>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: "#166534", fontWeight: 600 }}>Batas Waktu Bayar (Due Date)</div>
-                <div style={{ fontSize: 13.5, fontWeight: 800, color: selectedOrangTua?.statusTagihan === "Overdue" ? "#dc2626" : "#166534", marginTop: 2 }}>
-                  {selectedOrangTua?.batasWaktuBayar}
-                </div>
-              </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Password {editingParent && "(Kosongkan jika tidak diubah)"}</label>
+              <input type="password" className="form-input" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder="Minimal 8 karakter" />
             </div>
           </div>
 
-          {/* Data Pribadi & Kontak */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
-            {[
-              { label: "No. WhatsApp", value: selectedOrangTua?.hp },
-              { label: "Email", value: selectedOrangTua?.email },
-              { label: "Pekerjaan", value: selectedOrangTua?.pekerjaan },
-              { label: "Alamat Tempat Tinggal", value: selectedOrangTua?.alamat },
-            ].map(f => (
-              <div key={f.label} style={{ background: "var(--color-bg)", borderRadius: 10, padding: "12px 14px", border: "1px solid var(--color-border)" }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>{f.label}</div>
-                <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--color-text-primary)" }}>{f.value}</div>
-              </div>
-            ))}
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label">Alamat Domisili</label>
+            <textarea className="form-input" rows={2} value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder="Masukkan alamat lengkap..." />
           </div>
 
-          {/* Anak Terhubung */}
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Anak Terhubung</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {selectedOrangTua?.anak.map(a => (
-                <span key={a} style={{ background: "#e0f2fe", color: "#0369a1", fontSize: 13, fontWeight: 700, padding: "6px 14px", borderRadius: 8 }}>
-                  {a}
-                </span>
+          <div className="form-group" style={{ marginBottom: 0, padding: 12, background: "#f8fafc", borderRadius: 8, border: "1px dashed #cbd5e1" }}>
+            <label className="form-label">{editingParent ? "Kaitkan dengan Anak Tambahan (Opsional)" : "Pilih Anak / Siswa (Opsional)"}</label>
+            <select className="form-input" value={formData.student_id} onChange={e => setFormData({ ...formData, student_id: e.target.value })}>
+              <option value="">-- Pilih Siswa --</option>
+              {allStudents.map(s => (
+                <option key={s.id} value={s.id}>{s.name} ({s.studentCode})</option>
               ))}
-            </div>
+            </select>
+            <p style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 6, marginBottom: 0 }}>Anda bisa menautkannya belakangan lewat menu Detail Orang Tua.</p>
           </div>
 
-          {/* Action Buttons */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 6 }}>
-            <button className="btn btn-ghost" onClick={() => setSelectedOrangTua(null)}>Tutup</button>
-            {selectedOrangTua && (
-              <a href={`https://wa.me/62${selectedOrangTua.hp.replace(/^0/, "")}`} target="_blank" rel="noopener noreferrer" className="btn btn-accent" style={{ textAlign: "center", textDecoration: "none" }}>
-                Hubungi via WhatsApp
-              </a>
-            )}
+          <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+            <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setShowModal(false)} disabled={saving}>Batal</button>
+            <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleSave} disabled={saving}>{saving ? "Menyimpan..." : "Simpan Data"}</button>
           </div>
         </div>
       </Modal>
+
+      {/* MODAL DETAIL */}
+      {selectedParent && (
+        <Modal open={showDetailModal} onClose={() => setShowDetailModal(false)} title="Detail Orang Tua" maxWidth={600}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "16px 20px" }}>
+              <div style={{ fontSize: 11, fontFamily: "monospace", color: "var(--color-text-muted)" }}>{selectedParent.parentCode}</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", marginTop: 2 }}>{selectedParent.name}</div>
+              <div style={{ fontSize: 13, color: "var(--color-text-secondary)", marginTop: 2 }}>{selectedParent.email} • {selectedParent.phone}</div>
+            </div>
+
+            <div style={{ padding: 16, borderRadius: 12, border: "1px solid #e2e8f0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "var(--color-text-primary)" }}>Daftar Anak (Siswa)</div>
+                <button className="btn btn-sm btn-outline" onClick={() => setShowAttachModal(true)}>+ Kaitkan Siswa</button>
+              </div>
+              
+              {selectedParent.students.length === 0 ? (
+                <div style={{ fontSize: 13, color: "#94a3b8", fontStyle: "italic", textAlign: "center", padding: "20px 0" }}>Belum ada siswa yang dikaitkan dengan akun ini.</div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {selectedParent.students.map(s => (
+                    <div key={s.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", padding: "10px 14px", borderRadius: 8 }}>
+                      <div>
+                        <div style={{ fontSize: 13.5, fontWeight: 700, color: "#1e293b" }}>{s.name}</div>
+                        <div style={{ fontSize: 11.5, color: "#64748b" }}>Status Hubungan: <span style={{ fontWeight: 600 }}>{s.relation}</span> {s.isPrimary && <span style={{ color: "#059669", marginLeft: 4 }}>(Utama)</span>}</div>
+                      </div>
+                      <button className="btn btn-ghost btn-sm" style={{ color: "var(--color-danger)" }} onClick={() => handleDetachStudent(s.id)}>Lepas Kaitan</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setShowDetailModal(false)}>Tutup</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* MODAL ATTACH STUDENT */}
+      {showAttachModal && (
+        <Modal open={showAttachModal} onClose={() => setShowAttachModal(false)} title="Kaitkan Siswa ke Orang Tua" maxWidth={400}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Pilih Siswa</label>
+              <select className="form-input" value={attachForm.student_id} onChange={e => setAttachForm({ ...attachForm, student_id: e.target.value })}>
+                <option value="">-- Pilih Siswa --</option>
+                {allStudents.map(s => (
+                  <option key={s.id} value={s.id}>{s.name} ({s.studentCode})</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Hubungan</label>
+              <input className="form-input" value={attachForm.relationship} onChange={e => setAttachForm({ ...attachForm, relationship: e.target.value })} placeholder="Cth: Ayah / Ibu / Wali" />
+            </div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4 }}>
+              <input type="checkbox" id="is_primary" checked={attachForm.is_primary} onChange={e => setAttachForm({ ...attachForm, is_primary: e.target.checked })} />
+              <label htmlFor="is_primary" style={{ fontSize: 13, cursor: "pointer", fontWeight: 600, color: "var(--color-text-secondary)" }}>Tandai sebagai Kontak Utama</label>
+            </div>
+
+            <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+              <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setShowAttachModal(false)} disabled={attaching}>Batal</button>
+              <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleAttachStudent} disabled={attaching}>{attaching ? "Menyimpan..." : "Kaitkan"}</button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

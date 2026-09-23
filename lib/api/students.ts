@@ -1,134 +1,101 @@
 /* ============================================================
-   BSD After School Club — API Functions (Students & Parents)
+   BSD After School Club — Students API Service
    ============================================================ */
 
 import axiosInstance from "./axiosInstance";
-import type { Student, Parent, Enrollment } from "../types";
+import type { PaginatedResponse, ApiResponse } from "./types";
+import type { AuthUser } from "./auth";
 
-// ── Types untuk response paginasi Laravel ──────────────────
-export interface PaginatedResponse<T> {
-  data: T[];
-  current_page: number;
-  last_page: number;
-  per_page: number;
-  total: number;
+export interface ParentRelation {
+  id: string;
+  parent_code: string;
+  relationship: string;
+  address: string | null;
+  user?: AuthUser;
 }
 
-export interface ApiResponse<T> {
-  data: T;
-  message?: string;
+export interface StudentRaw {
+  id: string;
+  student_code: string;
+  full_name: string;
+  birth_date: string | null;
+  school_name: string | null;
+  school_grade: string | null;
+  address: string | null;
+  status: string;
+  parents?: ParentRelation[];
+  created_at?: string;
+  updated_at?: string;
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  STUDENTS
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+export interface Student {
+  id: string;
+  studentCode: string;
+  name: string;
+  birthDate: string | null;
+  schoolName: string | null;
+  schoolGrade: string | null;
+  address: string | null;
+  status: string;
+  parents: { id: string; name: string; relationship: string; phone: string }[];
+}
 
-/** GET /students */
+export function mapStudent(raw: StudentRaw): Student {
+  const parents = raw.parents?.map(p => ({
+    id: p.id,
+    name: p.user?.name || "Unknown",
+    relationship: p.relationship || "Orang Tua",
+    phone: p.user?.phone || "-",
+  })) || [];
+
+  return {
+    id: raw.id,
+    studentCode: raw.student_code,
+    name: raw.full_name,
+    birthDate: raw.birth_date,
+    schoolName: raw.school_name,
+    schoolGrade: raw.school_grade,
+    address: raw.address,
+    status: raw.status,
+    parents,
+  };
+}
+
 export async function getStudents(
-  params?: { page?: number; per_page?: number; search?: string; status?: string }
-): Promise<PaginatedResponse<Student>> {
-  const { data } = await axiosInstance.get<PaginatedResponse<Student>>("/students", { params });
-  return data;
+  params: {
+    page?: number;
+    per_page?: number;
+    search?: string;
+    status?: string;
+  } = {}
+) {
+  const res = await axiosInstance.get<PaginatedResponse<StudentRaw>>("/students", { params });
+  const page = res.data.data;
+  return {
+    data: page.data.map(mapStudent),
+    total: page.total,
+    currentPage: page.current_page,
+    lastPage: page.last_page,
+    perPage: page.per_page,
+  };
 }
 
-/** GET /students/:id */
-export async function getStudent(id: string): Promise<Student> {
-  const { data } = await axiosInstance.get<ApiResponse<Student>>(`/students/${id}`);
-  return data.data;
+export async function getStudent(id: string) {
+  const res = await axiosInstance.get<ApiResponse<StudentRaw>>(`/students/${id}`);
+  return mapStudent(res.data.data);
 }
 
-/** POST /students */
-export async function createStudent(payload: Omit<Student, "id">): Promise<Student> {
-  const { data } = await axiosInstance.post<ApiResponse<Student>>("/students", payload);
-  return data.data;
+export async function createStudent(data: Partial<StudentRaw>) {
+  const res = await axiosInstance.post<ApiResponse<StudentRaw>>("/students", data);
+  return mapStudent(res.data.data);
 }
 
-/** PUT /students/:id */
-export async function updateStudent(id: string, payload: Partial<Student>): Promise<Student> {
-  const { data } = await axiosInstance.put<ApiResponse<Student>>(`/students/${id}`, payload);
-  return data.data;
+export async function updateStudent(id: string, data: Partial<StudentRaw>) {
+  const res = await axiosInstance.put<ApiResponse<StudentRaw>>(`/students/${id}`, data);
+  return mapStudent(res.data.data);
 }
 
-/** DELETE /students/:id */
-export async function deleteStudent(id: string): Promise<void> {
-  await axiosInstance.delete(`/students/${id}`);
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  PARENTS (ORANG TUA)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-/** GET /parents */
-export async function getParents(
-  params?: { page?: number; per_page?: number; search?: string }
-): Promise<PaginatedResponse<Parent>> {
-  const { data } = await axiosInstance.get<PaginatedResponse<Parent>>("/parents", { params });
-  return data;
-}
-
-/** GET /parents/:id */
-export async function getParent(id: string): Promise<Parent> {
-  const { data } = await axiosInstance.get<ApiResponse<Parent>>(`/parents/${id}`);
-  return data.data;
-}
-
-/** POST /parents */
-export async function createParent(payload: Omit<Parent, "id">): Promise<Parent> {
-  const { data } = await axiosInstance.post<ApiResponse<Parent>>("/parents", payload);
-  return data.data;
-}
-
-/** PUT /parents/:id */
-export async function updateParent(id: string, payload: Partial<Parent>): Promise<Parent> {
-  const { data } = await axiosInstance.put<ApiResponse<Parent>>(`/parents/${id}`, payload);
-  return data.data;
-}
-
-/** DELETE /parents/:id */
-export async function deleteParent(id: string): Promise<void> {
-  await axiosInstance.delete(`/parents/${id}`);
-}
-
-// ── Relasi Parent ↔ Student ─────────────────────────────────
-// Backend: POST   /parents/{parent}/students/{student}
-//          DELETE /parents/{parent}/students/{student}
-
-/** POST /parents/:parentId/students/:studentId — kaitkan anak ke orang tua */
-export async function linkStudentToParent(parentId: string, studentId: string): Promise<void> {
-  await axiosInstance.post(`/parents/${parentId}/students/${studentId}`);
-}
-
-/** DELETE /parents/:parentId/students/:studentId — lepas kaitan anak dari orang tua */
-export async function unlinkStudentFromParent(parentId: string, studentId: string): Promise<void> {
-  await axiosInstance.delete(`/parents/${parentId}/students/${studentId}`);
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  ENROLLMENT (PENDAFTARAN)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-/** GET /enrollments */
-export async function getEnrollments(
-  params?: { page?: number; status?: string }
-): Promise<PaginatedResponse<Enrollment>> {
-  const { data } = await axiosInstance.get<PaginatedResponse<Enrollment>>("/enrollments", { params });
-  return data;
-}
-
-/** POST /enrollments */
-export async function createEnrollment(payload: Omit<Enrollment, "id" | "submittedAt">): Promise<Enrollment> {
-  const { data } = await axiosInstance.post<ApiResponse<Enrollment>>("/enrollments", payload);
-  return data.data;
-}
-
-/** PATCH /enrollments/:id/approve */
-export async function approveEnrollment(id: string, reviewedBy: string): Promise<Enrollment> {
-  const { data } = await axiosInstance.patch<ApiResponse<Enrollment>>(`/enrollments/${id}/approve`, { reviewed_by: reviewedBy });
-  return data.data;
-}
-
-/** PATCH /enrollments/:id/reject */
-export async function rejectEnrollment(id: string, notes: string): Promise<Enrollment> {
-  const { data } = await axiosInstance.patch<ApiResponse<Enrollment>>(`/enrollments/${id}/reject`, { notes });
-  return data.data;
+export async function deleteStudent(id: string) {
+  const res = await axiosInstance.delete<ApiResponse<any>>(`/students/${id}`);
+  return res.data;
 }

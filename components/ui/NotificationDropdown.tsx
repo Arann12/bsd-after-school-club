@@ -9,7 +9,7 @@ type NotificationRole = "owner" | "admin" | "guru" | "orangTua";
 export default function NotificationDropdown({ role = "owner" }: { role?: NotificationRole }) {
   const [open, setOpen] = useState(false);
   const notifications = notificationsByRole[role] || notificationsByRole.owner;
-  const unread = notifications.filter(n => !n.read).length;
+  const unread = notifications.filter((n: any) => !n.read).length;
 
   return (
     <div style={{ position: "relative" }}>
@@ -35,7 +35,7 @@ export default function NotificationDropdown({ role = "owner" }: { role?: Notifi
               {unread > 0 && <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: "var(--color-danger)", borderRadius: 999, padding: "1px 8px" }}>{unread} Baru</span>}
             </div>
             <div style={{ maxHeight: 300, overflowY: "auto" }}>
-              {notifications.map(n => (
+              {notifications.map((n: any) => (
                 <Link key={n.id} href={n.href || "#"} onClick={() => setOpen(false)} style={{
                   display: "block", padding: "10px 16px", textDecoration: "none",
                   borderBottom: "1px solid var(--color-border-light)",

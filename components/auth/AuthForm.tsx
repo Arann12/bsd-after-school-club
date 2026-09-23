@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, FormEvent, Suspense } from "react";
+import { useState, FormEvent } from "react";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
-import { login } from "@/lib/api/auth";
+import { useRouter } from "next/navigation";
 
 export type RoleType = "owner" | "admin" | "guru" | "orang-tua";
 
@@ -12,57 +11,18 @@ interface AuthFormProps {
   dashboardRoute: string;
 }
 
-function AuthFormInner({ role, dashboardRoute }: AuthFormProps) {
+export default function AuthForm({
+  role,
+  dashboardRoute,
+}: AuthFormProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [loginData, setLoginData] = useState({ email: "", password: "" });
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loginData, setLoginData] = useState({ username: "", password: "" });
 
-  /** Mapping role dari backend → dashboard URL */
-  const ROLE_DASHBOARD: Record<string, string> = {
-    owner:   "/owner/dashboard",
-    admin:   "/admin/dashboard",
-    teacher: "/guru/dashboard",
-    parent:  "/orang-tua/dashboard",
-  };
-
-  const handleLoginSubmit = async (e: FormEvent) => {
+  const handleLoginSubmit = (e: FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setIsLoading(true);
-
-    try {
-      const result = await login({ email: loginData.email, password: loginData.password });
-
-      // Tentukan tujuan redirect:
-      // 1. Jika ada ?redirect=... dari proxy, pastikan prefix-nya sesuai role user
-      // 2. Jika tidak valid, gunakan dashboard sesuai ROLE dari response backend
-      const ROLE_PREFIX: Record<string, string> = {
-        owner:   "/owner",
-        admin:   "/admin",
-        teacher: "/guru",
-        parent:  "/orang-tua",
-      };
-      const dashboardByRole = ROLE_DASHBOARD[result.user.role] ?? dashboardRoute;
-      const redirectParam = searchParams.get("redirect");
-      const rolePrefix = ROLE_PREFIX[result.user.role] ?? "";
-      const isValidRedirect = redirectParam && redirectParam.startsWith(rolePrefix);
-      const redirectTo = isValidRedirect ? redirectParam : dashboardByRole;
-
-      router.push(redirectTo);
-
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || "Email atau password salah.");
-      } else {
-        setError("Terjadi kesalahan. Silakan coba lagi.");
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    console.log(`Login as ${role}:`, loginData);
+    router.push(dashboardRoute);
   };
-
 
   return (
     <div className="auth-background">
@@ -84,36 +44,21 @@ function AuthFormInner({ role, dashboardRoute }: AuthFormProps) {
             className="form-panel"
             onSubmit={handleLoginSubmit}
           >
-            {error && (
-              <div style={{
-                padding: "10px 14px",
-                borderRadius: "8px",
-                background: "rgba(220, 38, 38, 0.12)",
-                border: "1px solid rgba(220, 38, 38, 0.3)",
-                color: "#f87171",
-                fontSize: "13px",
-                marginBottom: "8px",
-              }}>
-                {error}
-              </div>
-            )}
-
             <div className="form-group">
-              <label htmlFor="login-email" className="form-label">
-                Email
+              <label htmlFor="login-username" className="form-label">
+                Username / No WA
               </label>
               <input
-                id="login-email"
-                type="email"
+                id="login-username"
+                type="text"
                 className="form-input"
-                placeholder="Masukan Email"
-                value={loginData.email}
+                placeholder="Masukan Username atau No WA"
+                value={loginData.username}
                 onChange={(e) =>
-                  setLoginData({ ...loginData, email: e.target.value })
+                  setLoginData({ ...loginData, username: e.target.value })
                 }
-                autoComplete="email"
+                autoComplete="username"
                 required
-                disabled={isLoading}
               />
             </div>
 
@@ -132,7 +77,6 @@ function AuthFormInner({ role, dashboardRoute }: AuthFormProps) {
                 }
                 autoComplete="current-password"
                 required
-                disabled={isLoading}
               />
             </div>
 
@@ -140,27 +84,12 @@ function AuthFormInner({ role, dashboardRoute }: AuthFormProps) {
               Lupa Password?
             </a>
 
-            <button
-              id="login-submit"
-              type="submit"
-              className="auth-submit"
-              disabled={isLoading}
-              style={{ opacity: isLoading ? 0.7 : 1, cursor: isLoading ? "not-allowed" : "pointer" }}
-            >
-              {isLoading ? "Memverifikasi…" : "Masuk"}
+            <button id="login-submit" type="submit" className="auth-submit">
+              Masuk
             </button>
           </form>
         </div>
       </div>
     </div>
-  );
-}
-
-// useSearchParams() perlu Suspense boundary
-export default function AuthForm(props: AuthFormProps) {
-  return (
-    <Suspense>
-      <AuthFormInner {...props} />
-    </Suspense>
   );
 }

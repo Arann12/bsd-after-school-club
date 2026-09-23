@@ -5,23 +5,20 @@
    ============================================================ */
 
 import axiosInstance from "./axiosInstance";
-import {
-  setAuthCookies,
-  clearAllAuth,
-  getLocalUser,
-  getLocalToken,
-  isAuthenticated,
-  getLoginRoute,
-  clearAuthCookies,
-} from "./authHelpers";
-
-// Re-export untuk backward compatibility
-export { getLocalUser, getLocalToken, isAuthenticated, getLoginRoute, clearAuthCookies, setAuthCookies };
-export type { AuthUser } from "./authHelpers";
 
 export interface LoginCredentials {
   email: string;
   password: string;
+}
+
+export interface AuthUser {
+  id: string;
+  user_code: string;
+  name: string;
+  email: string;
+  role: "owner" | "admin" | "teacher" | "parent";
+  phone?: string;
+  is_active?: boolean;
 }
 
 // ── Response shapes dari backend ────────────────────────────
@@ -32,20 +29,20 @@ interface BackendLoginResponse {
   data: {
     token: string;
     token_type: "Bearer";
-    user: import("./authHelpers").AuthUser;
+    user: AuthUser;
   };
 }
 
 interface BackendMeResponse {
   success: boolean;
-  data: import("./authHelpers").AuthUser;
+  data: AuthUser;
 }
 
 // ── Public export ────────────────────────────────────────────
 
 export interface LoginResult {
   token: string;
-  user: import("./authHelpers").AuthUser;
+  user: AuthUser;
   message: string;
 }
 
@@ -74,11 +71,10 @@ export async function login(credentials: LoginCredentials): Promise<LoginResult>
     message: data.message,
   };
 
-  // Simpan token & user ke localStorage DAN cookie
+  // Simpan token & user ke localStorage
   if (typeof window !== "undefined") {
     localStorage.setItem("auth_token", result.token);
     localStorage.setItem("auth_user", JSON.stringify(result.user));
-    setAuthCookies(result.token, result.user);
   }
 
   return result;
@@ -86,15 +82,16 @@ export async function login(credentials: LoginCredentials): Promise<LoginResult>
 
 /**
  * POST /auth/logout
- * Butuh token — hapus dari localStorage dan cookie setelah berhasil
+ * Butuh token — hapus dari localStorage setelah berhasil
  */
 export async function logout(): Promise<void> {
   try {
     await axiosInstance.post("/auth/logout");
   } finally {
-    // Hapus localStorage & cookie meskipun request gagal
+    // Hapus localStorage meskipun request gagal
     if (typeof window !== "undefined") {
-      clearAllAuth();
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_user");
     }
   }
 }
@@ -104,7 +101,46 @@ export async function logout(): Promise<void> {
  * Ambil profil user yang sedang login (requires token)
  * Response: { success, data: User }
  */
-export async function getMe(): Promise<import("./authHelpers").AuthUser> {
+export async function getMe(): Promise<AuthUser> {
   const { data } = await axiosInstance.get<BackendMeResponse>("/auth/me");
   return data.data;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  LOCAL STORAGE HELPERS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/** Ambil user dari localStorage (tanpa network request) */
+export function getLocalUser(): AuthUser | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("auth_user");
+    return raw ? (JSON.parse(raw) as AuthUser) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Ambil token dari localStorage */
+export function getLocalToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("auth_token");
+}
+
+/** Cek apakah user sudah login */
+export function isAuthenticated(): boolean {
+  return !!getLocalToken();
+}
+
+/**
+ * Helper: redirect ke halaman login sesuai role
+ * Gunakan setelah logout atau ketika token expired
+ */
+export function getLoginRoute(role?: AuthUser["role"]): string {
+  switch (role) {
+    case "admin":   return "/admin/login";
+    case "teacher": return "/guru/login";
+    case "parent":  return "/orang-tua/login";
+    default:        return "/";  // owner & fallback → root
+  }
 }

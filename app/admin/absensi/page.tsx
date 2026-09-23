@@ -1,546 +1,296 @@
 "use client";
-import { useState, useEffect } from "react";
 
-/* ─────────────────────────────────────────────
-   TYPES
-───────────────────────────────────────────── */
-export interface SiswaLogDetail {
-  nama: string;
-  status: "Hadir" | "Izin" | "Alpha";
-  catatanGuru: string;
-  nilai?: string; // optional assessment/nilai
-}
+import { useState, useEffect, useCallback } from "react";
+import Modal from "@/components/ui/Modal";
+import { 
+  getClassSessions, getClassroomById, submitAttendanceAndLogbook,
+  type ClassSession, type Classroom, type SubmitAttendancePayload
+} from "@/lib/api/academic";
 
-export interface LogEntry {
-  tanggal: string;
-  dayNum: number;
-  hari: string;
-  status: "Hadir" | "Izin" | "Kosong";
-  kelas: string;
-  program: string;
-  materi: string;
-  siswaHadir: string; // summary string
-  catatan: string;    // catatan keseluruhan guru
-  daftarSiswa: SiswaLogDetail[];
-}
+export default function AbsensiPage() {
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split("T")[0]);
+  
+  const [sessions, setSessions] = useState<ClassSession[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export interface GuruAbsensiData {
-  id: string;
-  nama: string;
-  spesialisasi: string;
-  totalSesiBulanIni: number;
-  tingkatKehadiran: number;
-  statusLogbook: string;
-}
+  // Form State
+  const [showModal, setShowModal] = useState(false);
+  const [activeSession, setActiveSession] = useState<ClassSession | null>(null);
+  const [activeClassroom, setActiveClassroom] = useState<Classroom | null>(null);
+  
+  const [studentsAttendance, setStudentsAttendance] = useState<Record<string, { status: string; notes: string }>>({});
+  const [logbookForm, setLogbookForm] = useState({
+    check_in: "",
+    check_out: "",
+    teaching_minutes: 60,
+    material: "",
+    notes: ""
+  });
+  const [submitting, setSubmitting] = useState(false);
 
-/* ─────────────────────────────────────────────
-   MOCK DATA — GURU
-───────────────────────────────────────────── */
-const daftarGuru: GuruAbsensiData[] = [
-  { id: "GUR-2026-001", nama: "Ms. Sarah", spesialisasi: "Calistung & English", totalSesiBulanIni: 16, tingkatKehadiran: 100, statusLogbook: "Terisi Lengkap" },
-  { id: "GUR-2026-002", nama: "Mr. Andi", spesialisasi: "Math & Logic", totalSesiBulanIni: 14, tingkatKehadiran: 93, statusLogbook: "Terisi Lengkap" },
-  { id: "GUR-2026-003", nama: "Ms. Nina", spesialisasi: "Phonics & Reading", totalSesiBulanIni: 18, tingkatKehadiran: 95, statusLogbook: "Terisi Lengkap" },
-  { id: "GUR-2026-004", nama: "Mr. Budi", spesialisasi: "English & Coding Kids", totalSesiBulanIni: 12, tingkatKehadiran: 90, statusLogbook: "1 Sesi Pending" },
-];
-
-/* ─────────────────────────────────────────────
-   MOCK DATA — LOGBOOK PER GURU (dengan daftar siswa)
-───────────────────────────────────────────── */
-const mockCalendarData: Record<string, LogEntry[]> = {
-  "GUR-2026-001": [
-    {
-      tanggal: "2026-09-01",
-      dayNum: 1,
-      hari: "Senin",
-      status: "Hadir",
-      kelas: "Calistung A",
-      program: "Calistung Level 1",
-      materi: "Mengenal Huruf Vokal dan Angka 1–10",
-      siswaHadir: "6 / 6 Siswa",
-      catatan: "Seluruh siswa sangat antusias dan mengikuti pelajaran dengan sangat lancar. Disarankan lanjut ke materi suku kata minggu depan.",
-      daftarSiswa: [
-        { nama: "Aira Putri Salsabila", status: "Hadir", catatanGuru: "Aktif dan cepat memahami vokal.", nilai: "A" },
-        { nama: "Bima Raharjo", status: "Hadir", catatanGuru: "Perlu latihan menulis angka lebih banyak.", nilai: "B+" },
-        { nama: "Citra Ayu Dewi", status: "Hadir", catatanGuru: "Sudah lancar mengidentifikasi semua huruf vokal.", nilai: "A" },
-        { nama: "Dito Firmansyah", status: "Hadir", catatanGuru: "Konsentrasi baik, perlu dibimbing di angka 8 dan 9.", nilai: "B" },
-        { nama: "Elsa Nuraini", status: "Hadir", catatanGuru: "Sangat aktif bertanya, perkembangan sangat pesat.", nilai: "A+" },
-        { nama: "Fadhil Akbar", status: "Hadir", catatanGuru: "Sudah fasih menulis angka 1–10 tanpa bantuan.", nilai: "A" },
-      ],
-    },
-    {
-      tanggal: "2026-09-03",
-      dayNum: 3,
-      hari: "Rabu",
-      status: "Hadir",
-      kelas: "English B1",
-      program: "English Beginner",
-      materi: "Basic Greetings & Phonics Blends",
-      siswaHadir: "4 / 5 Siswa",
-      catatan: "Review kosa kata harian & latihan pengucapan berjalan baik. Satu siswa izin sakit.",
-      daftarSiswa: [
-        { nama: "Ghina Maharani", status: "Hadir", catatanGuru: "Pengucapan sangat baik, aktif di sesi percakapan.", nilai: "A" },
-        { nama: "Hendra Kusuma", status: "Hadir", catatanGuru: "Perlu latihan pengucapan 'th' lebih banyak.", nilai: "B+" },
-        { nama: "Indah Permata", status: "Izin", catatanGuru: "Izin sakit, perlu catch-up di sesi berikutnya.", nilai: "-" },
-        { nama: "Joko Santoso", status: "Hadir", catatanGuru: "Hafal semua greetings dengan benar.", nilai: "A-" },
-        { nama: "Kiki Ramadhani", status: "Hadir", catatanGuru: "Sudah bisa menyusun kalimat perkenalan sederhana.", nilai: "A" },
-      ],
-    },
-    {
-      tanggal: "2026-09-07",
-      dayNum: 7,
-      hari: "Senin",
-      status: "Hadir",
-      kelas: "Calistung A",
-      program: "Calistung Level 1",
-      materi: "Membaca Suku Kata Terbuka (Ba, Bi, Bu, Be, Bo)",
-      siswaHadir: "6 / 6 Siswa",
-      catatan: "Latihan mendikte kata-kata sederhana berjalan dengan lancar. Semua siswa hadir.",
-      daftarSiswa: [
-        { nama: "Aira Putri Salsabila", status: "Hadir", catatanGuru: "Sudah lancar membaca suku kata terbuka.", nilai: "A" },
-        { nama: "Bima Raharjo", status: "Hadir", catatanGuru: "Masih perlu latihan suku 'bu' dan 'bo'.", nilai: "B" },
-        { nama: "Citra Ayu Dewi", status: "Hadir", catatanGuru: "Membaca dengan fasih dan percaya diri.", nilai: "A+" },
-        { nama: "Dito Firmansyah", status: "Hadir", catatanGuru: "Perkembangan bagus dari sesi sebelumnya.", nilai: "B+" },
-        { nama: "Elsa Nuraini", status: "Hadir", catatanGuru: "Membantu teman-temannya dengan semangat.", nilai: "A+" },
-        { nama: "Fadhil Akbar", status: "Hadir", catatanGuru: "Sudah mampu dikte 5 kata tanpa kesalahan.", nilai: "A" },
-      ],
-    },
-    {
-      tanggal: "2026-09-10",
-      dayNum: 10,
-      hari: "Rabu",
-      status: "Hadir",
-      kelas: "English B1",
-      program: "English Beginner",
-      materi: "Vocabulary: Colors & Animals",
-      siswaHadir: "5 / 5 Siswa",
-      catatan: "Menggunakan kartu alfabet bergambar. Semua siswa antusias dengan permainan kosakata.",
-      daftarSiswa: [
-        { nama: "Ghina Maharani", status: "Hadir", catatanGuru: "Hapal 20+ kosakata warna dan hewan.", nilai: "A+" },
-        { nama: "Hendra Kusuma", status: "Hadir", catatanGuru: "Perlu bantuan mengeja nama hewan yang panjang.", nilai: "B" },
-        { nama: "Indah Permata", status: "Hadir", catatanGuru: "Kembali hadir, langsung aktif berpartisipasi.", nilai: "A-" },
-        { nama: "Joko Santoso", status: "Hadir", catatanGuru: "Berhasil memenangkan kuis kosakata kelas.", nilai: "A+" },
-        { nama: "Kiki Ramadhani", status: "Hadir", catatanGuru: "Sudah bisa menyebutkan warna dalam kalimat.", nilai: "A" },
-      ],
-    },
-  ],
-  "GUR-2026-002": [
-    {
-      tanggal: "2026-09-02",
-      dayNum: 2,
-      hari: "Selasa",
-      status: "Hadir",
-      kelas: "Math Level 1",
-      program: "Math Starter",
-      materi: "Penjumlahan Bergambar 1–20",
-      siswaHadir: "5 / 5 Siswa",
-      catatan: "Menggunakan media hitung stik warna. Seluruh siswa antusias dan aktif.",
-      daftarSiswa: [
-        { nama: "Lena Kusumawati", status: "Hadir", catatanGuru: "Cepat menghitung dengan metode bergambar.", nilai: "A" },
-        { nama: "Miko Prasetyo", status: "Hadir", catatanGuru: "Masih perlu bantuan untuk angka di atas 15.", nilai: "B" },
-        { nama: "Nadia Putri", status: "Hadir", catatanGuru: "Sangat teliti dan rapi dalam mengerjakan soal.", nilai: "A+" },
-        { nama: "Oscar Hidayat", status: "Hadir", catatanGuru: "Aktif bertanya, perkembangan sangat baik.", nilai: "A-" },
-        { nama: "Putri Rahayu", status: "Hadir", catatanGuru: "Sudah mampu menjumlahkan tanpa stik warna.", nilai: "A" },
-      ],
-    },
-    {
-      tanggal: "2026-09-04",
-      dayNum: 4,
-      hari: "Kamis",
-      status: "Hadir",
-      kelas: "Math Level 2",
-      program: "Math Advanced",
-      materi: "Pengurangan dan Permainan Logika",
-      siswaHadir: "3 / 4 Siswa",
-      catatan: "Siswa dapat menyelesaikan soal tantangan. Satu siswa alpha tidak ada keterangan.",
-      daftarSiswa: [
-        { nama: "Rafi Auliya", status: "Hadir", catatanGuru: "Menyelesaikan soal pengurangan 3 digit dengan tepat.", nilai: "A" },
-        { nama: "Salsa Bella", status: "Alpha", catatanGuru: "Tidak hadir tanpa keterangan, perlu dihubungi orang tua.", nilai: "-" },
-        { nama: "Toni Setiawan", status: "Hadir", catatanGuru: "Sangat menyukai permainan logika, sangat cepat.", nilai: "A+" },
-        { nama: "Umi Kalsum", status: "Hadir", catatanGuru: "Perlu latihan lebih untuk pengurangan dengan meminjam.", nilai: "B+" },
-      ],
-    },
-  ],
-  "GUR-2026-003": [
-    {
-      tanggal: "2026-09-01",
-      dayNum: 1,
-      hari: "Senin",
-      status: "Hadir",
-      kelas: "Phonics Starter",
-      program: "Phonics Level 1",
-      materi: "Letter Sounds: /s/, /a/, /t/, /i/, /p/",
-      siswaHadir: "6 / 6 Siswa",
-      catatan: "Sesi pertama berjalan sangat baik. Semua siswa antusias dengan media kartu fonik.",
-      daftarSiswa: [
-        { nama: "Vina Aulia", status: "Hadir", catatanGuru: "Sudah bisa mengenali 5 bunyi huruf dengan benar.", nilai: "A" },
-        { nama: "Wahyu Pratama", status: "Hadir", catatanGuru: "Perlu latihan bunyi /p/ lebih sering.", nilai: "B+" },
-        { nama: "Xena Faradilla", status: "Hadir", catatanGuru: "Perkembangan luar biasa sejak kelas sebelumnya.", nilai: "A+" },
-        { nama: "Yusuf Hakim", status: "Hadir", catatanGuru: "Dapat mengidentifikasi semua bunyi tanpa petunjuk.", nilai: "A" },
-        { nama: "Zahra Nabilah", status: "Hadir", catatanGuru: "Aktif mengikuti permainan bunyi huruf.", nilai: "A-" },
-        { nama: "Arif Budiman", status: "Hadir", catatanGuru: "Menyelesaikan semua latihan lebih cepat dari teman.", nilai: "A+" },
-      ],
-    },
-  ],
-  "GUR-2026-004": [
-    {
-      tanggal: "2026-09-03",
-      dayNum: 3,
-      hari: "Rabu",
-      status: "Hadir",
-      kelas: "English Advanced",
-      program: "English Level 3",
-      materi: "Present Tense & Daily Routine Sentences",
-      siswaHadir: "4 / 5 Siswa",
-      catatan: "Sesi berlangsung baik. Satu siswa izin. Materi lanjut ke past tense minggu depan.",
-      daftarSiswa: [
-        { nama: "Bella Anastasia", status: "Hadir", catatanGuru: "Mampu membuat kalimat rutin harian dengan lancar.", nilai: "A" },
-        { nama: "Cipta Nugraha", status: "Izin", catatanGuru: "Izin ada acara keluarga.", nilai: "-" },
-        { nama: "Devi Ratnasari", status: "Hadir", catatanGuru: "Aktif berpraktik speaking dengan teman.", nilai: "A-" },
-        { nama: "Evan Kristianto", status: "Hadir", catatanGuru: "Sudah faham penggunaan 'do/does' dengan benar.", nilai: "A+" },
-        { nama: "Fira Azzahra", status: "Hadir", catatanGuru: "Perlu latihan kalimat negatif lebih banyak.", nilai: "B+" },
-      ],
-    },
-  ],
-};
-
-/* ─────────────────────────────────────────────
-   HELPERS
-───────────────────────────────────────────── */
-const statusColor = (s: SiswaLogDetail["status"]) => {
-  if (s === "Hadir") return { bg: "#d1fae5", text: "#065f46" };
-  if (s === "Izin") return { bg: "#fef3c7", text: "#92400e" };
-  return { bg: "#fee2e2", text: "#991b1b" };
-};
-
-const nilaiColor = (n?: string) => {
-  if (!n || n === "-") return "#94a3b8";
-  if (n.startsWith("A")) return "#059669";
-  if (n.startsWith("B")) return "#0284c7";
-  return "#64748b";
-};
-
-/* ─────────────────────────────────────────────
-   COMPONENT
-───────────────────────────────────────────── */
-export default function AdminAbsensiPage() {
-  const [selectedGuru, setSelectedGuru] = useState<GuruAbsensiData | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState("September 2026");
-  const [activeLogDetail, setActiveLogDetail] = useState<LogEntry | null>(null);
-
-  // Auto-select guru from URL query param (?guru=G-001)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const guruId = params.get("guru");
-    if (guruId) {
-      const found = daftarGuru.find(g => g.id === guruId);
-      if (found) setSelectedGuru(found);
+  const fetchSessions = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getClassSessions(); // Backend doesn't filter yet, filter on client
+      const filtered = res.filter(s => s.sessionDate === selectedDate);
+      // Sort by start time
+      filtered.sort((a, b) => a.startTime.localeCompare(b.startTime));
+      setSessions(filtered);
+    } catch (err: any) {
+      console.error(err);
+      setError("Gagal memuat jadwal sesi.");
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  }, [selectedDate]);
 
-  const teacherLogs = selectedGuru ? (mockCalendarData[selectedGuru.id] || []) : [];
+  useEffect(() => {
+    fetchSessions();
+  }, [fetchSessions]);
 
-  const rekap = activeLogDetail
-    ? {
-        hadir: activeLogDetail.daftarSiswa.filter((s) => s.status === "Hadir").length,
-        izin: activeLogDetail.daftarSiswa.filter((s) => s.status === "Izin").length,
-        alpha: activeLogDetail.daftarSiswa.filter((s) => s.status === "Alpha").length,
-        total: activeLogDetail.daftarSiswa.length,
+  const handleOpenForm = async (session: ClassSession) => {
+    setActiveSession(session);
+    setActiveClassroom(null);
+    setStudentsAttendance({});
+    setLogbookForm({
+      check_in: `${session.sessionDate}T${session.startTime}`,
+      check_out: `${session.sessionDate}T${session.endTime}`,
+      teaching_minutes: calculateMinutes(session.startTime, session.endTime),
+      material: "",
+      notes: ""
+    });
+    setShowModal(true);
+
+    try {
+      const classroom = await getClassroomById(session.classroomId);
+      setActiveClassroom(classroom);
+      
+      // Initialize attendance state for all enrolled students
+      const initAtt: Record<string, { status: string; notes: string }> = {};
+      classroom.students.forEach(s => {
+        initAtt[s.id] = { status: "present", notes: "" };
+      });
+      setStudentsAttendance(initAtt);
+    } catch (err) {
+      alert("Gagal memuat data siswa untuk kelas ini.");
+    }
+  };
+
+  const calculateMinutes = (start: string, end: string) => {
+    const [h1, m1] = start.split(":").map(Number);
+    const [h2, m2] = end.split(":").map(Number);
+    let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+    return diff > 0 ? diff : 60;
+  };
+
+  const handleAttendanceChange = (studentId: string, field: "status" | "notes", value: string) => {
+    setStudentsAttendance(prev => ({
+      ...prev,
+      [studentId]: {
+        ...prev[studentId],
+        [field]: value
       }
-    : null;
+    }));
+  };
+
+  const handleSubmit = async () => {
+    if (!activeSession) return;
+    if (!logbookForm.check_in || !logbookForm.check_out || !logbookForm.material) {
+      return alert("Mohon lengkapi logbook: Jam Masuk, Jam Keluar, dan Materi.");
+    }
+
+    setSubmitting(true);
+    try {
+      const payload: SubmitAttendancePayload = {
+        students: Object.entries(studentsAttendance).map(([id, data]) => ({
+          student_id: id,
+          attendance_status: data.status as "present" | "absent" | "late" | "excused",
+          notes: data.notes || undefined
+        })),
+        logbook: {
+          check_in: logbookForm.check_in.includes("T") ? logbookForm.check_in.replace("T", " ") : logbookForm.check_in,
+          check_out: logbookForm.check_out.includes("T") ? logbookForm.check_out.replace("T", " ") : logbookForm.check_out,
+          teaching_minutes: logbookForm.teaching_minutes,
+          material: logbookForm.material,
+          notes: logbookForm.notes || undefined
+        }
+      };
+
+      await submitAttendanceAndLogbook(activeSession.id, payload);
+      alert("Absensi dan Logbook berhasil disimpan!");
+      setShowModal(false);
+      fetchSessions();
+    } catch (err: any) {
+      console.error(err);
+      alert("Gagal menyimpan data: " + (err.response?.data?.message || err.message));
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* ── Header ── */}
-      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <div style={{ padding: 24, maxWidth: 1000, margin: "0 auto" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <div>
-          <h1 className="page-title">Absensi &amp; Logbook Guru Kursus</h1>
-          <p className="page-subtitle">Pilih guru pengajar untuk melihat kalender absensi bulanan dan rincian logbook pengajaran.</p>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Absensi & Logbook</h1>
+          <p style={{ color: "var(--color-text-secondary)", margin: "4px 0 0 0", fontSize: 14 }}>Isi kehadiran siswa dan catat jurnal kegiatan belajar.</p>
         </div>
-        {selectedGuru && (
-          <button className="btn btn-outline" onClick={() => { setSelectedGuru(null); setActiveLogDetail(null); }}>
-            ← Kembali ke Daftar Guru
-          </button>
-        )}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <label style={{ fontSize: 14, fontWeight: 600 }}>Tanggal Sesi:</label>
+          <input 
+            type="date" 
+            className="form-input" 
+            value={selectedDate} 
+            onChange={(e) => setSelectedDate(e.target.value)} 
+            style={{ width: 150 }}
+          />
+        </div>
       </div>
 
-      {/* ── VIEW 1: DAFTAR GURU ── */}
-      {!selectedGuru ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: "var(--color-text-secondary)" }}>
-            Daftar Guru Pengajar ({daftarGuru.length} Guru)
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
-            {daftarGuru.map((g) => (
-              <div
-                key={g.id}
-                className="card"
-                onClick={() => setSelectedGuru(g)}
-                style={{ padding: 22, display: "flex", flexDirection: "column", gap: 14, cursor: "pointer", transition: "transform 0.15s ease, box-shadow 0.15s ease" }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                  <div style={{ width: 50, height: 50, borderRadius: "50%", background: "#e0f2fe", color: "#0369a1", fontWeight: 900, fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {g.nama[0]}
-                  </div>
-                  <div>
-                    <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>{g.nama}</h3>
-                    <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>{g.spesialisasi}</div>
-                  </div>
-                </div>
-
-                <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "12px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  <div>
-                    <div style={{ fontSize: 10, color: "var(--color-text-muted)", textTransform: "uppercase", fontWeight: 700 }}>Total Sesi</div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: "var(--color-text-primary)" }}>{g.totalSesiBulanIni} Sesi</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: "var(--color-text-muted)", textTransform: "uppercase", fontWeight: 700 }}>Kehadiran</div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: "#059669" }}>{g.tingkatKehadiran}%</div>
-                  </div>
-                </div>
-
-                <button className="btn btn-accent" style={{ width: "100%", justifyContent: "center" }}>
-                  Buka Kalender Logbook &rarr;
-                </button>
-              </div>
-            ))}
-          </div>
+      {loading ? (
+        <div style={{ textAlign: "center", padding: 40, color: "var(--color-text-muted)" }}>Memuat sesi...</div>
+      ) : error ? (
+        <div style={{ color: "var(--color-danger)", padding: 20 }}>{error}</div>
+      ) : sessions.length === 0 ? (
+        <div style={{ textAlign: "center", padding: 60, background: "#f8fafc", borderRadius: 12, border: "1px dashed var(--color-border-light)" }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: "var(--color-text-primary)" }}>Tidak ada jadwal sesi</div>
+          <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 4 }}>
+            Pastikan tanggal yang dipilih benar, atau pastikan Admin sudah men-generate sesi pada Jadwal Rutin.
+          </p>
         </div>
       ) : (
-        /* ── VIEW 2: KALENDER ABSENSI ── */
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          {/* Card Info Guru */}
-          <div className="card" style={{ padding: "18px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg, #1e3a8a, #2563eb)", color: "#fff" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 22 }}>
-                {selectedGuru.nama[0]}
-              </div>
-              <div>
-                <div style={{ fontSize: 18, fontWeight: 900 }}>{selectedGuru.nama}</div>
-                <div style={{ fontSize: 13, opacity: 0.9 }}>{selectedGuru.spesialisasi} · Total {selectedGuru.totalSesiBulanIni} Sesi Pengajaran</div>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-              <select className="select-control" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} style={{ padding: "8px 14px", fontSize: 13, background: "#fff", color: "#0f172a", fontWeight: 700 }}>
-                <option value="September 2026">September 2026</option>
-                <option value="Agustus 2026">Agustus 2026</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Kalender Grid */}
-          <div className="card" style={{ padding: 24 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <h2 style={{ fontSize: 16, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>
-                Kalender Presensi &amp; Logbook — {selectedMonth}
-              </h2>
-              <div style={{ display: "flex", gap: 14, fontSize: 12, fontWeight: 700 }}>
-                <span style={{ color: "#059669" }}>● Hadir &amp; Logbook Terisi</span>
-                <span style={{ color: "#b45309" }}>● Izin / Pending</span>
-                <span style={{ color: "#94a3b8" }}>● Tidak Ada Kelas</span>
-              </div>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 10 }}>
-              {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Ming"].map((d) => (
-                <div key={d} style={{ textAlign: "center", fontSize: 12, fontWeight: 800, color: "var(--color-text-muted)", paddingBottom: 6 }}>{d}</div>
-              ))}
-
-              {Array.from({ length: 30 }, (_, index) => {
-                const dayNum = index + 1;
-                const logEntry = teacherLogs.find((l) => l.dayNum === dayNum);
-
-                return (
-                  <div
-                    key={dayNum}
-                    onClick={() => logEntry && setActiveLogDetail(logEntry)}
-                    style={{
-                      background: logEntry ? (logEntry.status === "Hadir" ? "#f0fdf4" : "#fef3c7") : "#f8fafc",
-                      border: logEntry ? (logEntry.status === "Hadir" ? "1.5px solid #86efac" : "1.5px solid #fde047") : "1px solid #e2e8f0",
-                      borderRadius: 10,
-                      padding: 10,
-                      minHeight: 85,
-                      cursor: logEntry ? "pointer" : "default",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                      transition: "transform 0.1s ease, box-shadow 0.1s ease",
-                    }}
-                    onMouseEnter={(e) => { if (logEntry) { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)"; } }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: logEntry ? "#0f172a" : "#94a3b8" }}>{dayNum}</span>
-                      {logEntry && (
-                        <span style={{ background: logEntry.status === "Hadir" ? "#d1fae5" : "#fef3c7", color: logEntry.status === "Hadir" ? "#059669" : "#b45309", fontSize: 10, fontWeight: 800, padding: "1px 6px", borderRadius: 4 }}>
-                          {logEntry.status}
-                        </span>
-                      )}
-                    </div>
-
-                    {logEntry ? (
-                      <div>
-                        <div style={{ fontSize: 11, fontWeight: 800, color: "#166534", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{logEntry.kelas}</div>
-                        <div style={{ fontSize: 10, color: "#475569", marginTop: 2 }}>{logEntry.siswaHadir}</div>
-                      </div>
-                    ) : (
-                      <div style={{ fontSize: 10, color: "#cbd5e1", fontStyle: "italic" }}>Libur / Kosong</div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── MODAL DETAIL LOGBOOK + DAFTAR SISWA ── */}
-      {activeLogDetail && rekap && (
-        <div
-          style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.6)", backdropFilter: "blur(6px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
-          onClick={(e) => { if (e.target === e.currentTarget) setActiveLogDetail(null); }}
-        >
-          <div style={{ background: "#fff", borderRadius: 20, maxWidth: 680, width: "100%", maxHeight: "90vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 25px 60px -10px rgba(0,0,0,0.35)" }}>
-            
-            {/* Modal Header */}
-            <div style={{ background: "linear-gradient(135deg, #1e3a8a, #2563eb)", padding: "20px 24px", color: "#fff" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, opacity: 0.8, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    {activeLogDetail.hari}, {activeLogDetail.tanggal}
-                  </div>
-                  <h3 style={{ fontSize: 20, fontWeight: 900, margin: "4px 0 2px" }}>{activeLogDetail.kelas}</h3>
-                  <div style={{ fontSize: 13, opacity: 0.85 }}>{activeLogDetail.program}</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+          {sessions.map(s => {
+            const isCompleted = s.status === "completed";
+            return (
+              <div key={s.id} style={{ 
+                background: "#fff", 
+                border: `1px solid ${isCompleted ? "#86efac" : "var(--color-border-light)"}`, 
+                borderRadius: 12, 
+                padding: 20,
+                boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+                position: "relative"
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+                  <span style={{ 
+                    fontSize: 11, 
+                    fontWeight: 700, 
+                    padding: "4px 8px", 
+                    borderRadius: 20, 
+                    background: isCompleted ? "#dcfce7" : "#e0e7ff", 
+                    color: isCompleted ? "#166534" : "#3730a3" 
+                  }}>
+                    {isCompleted ? "SELESAI" : "TERJADWAL"}
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)" }}>
+                    {s.startTime.substring(0, 5)} - {s.endTime.substring(0, 5)}
+                  </span>
                 </div>
-                <button
-                  onClick={() => setActiveLogDetail(null)}
-                  style={{ background: "rgba(255,255,255,0.15)", border: "none", cursor: "pointer", color: "#fff", width: 32, height: 32, borderRadius: 8, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}
+                
+                <h3 style={{ margin: "0 0 4px 0", fontSize: 16, color: "var(--color-text-primary)" }}>{s.classroom?.name}</h3>
+                <p style={{ margin: 0, fontSize: 13, color: "var(--color-text-secondary)" }}>Guru: {s.teacher?.name || "Tidak ada guru"}</p>
+                <p style={{ margin: "4px 0 16px 0", fontSize: 12, color: "var(--color-text-muted)" }}>Sesi ke-{s.sessionNumber}</p>
+                
+                <button 
+                  className={`btn ${isCompleted ? 'btn-ghost' : 'btn-primary'}`} 
+                  style={{ width: "100%", border: isCompleted ? "1px solid #bbf7d0" : undefined }}
+                  onClick={() => handleOpenForm(s)}
                 >
-                  ✕
+                  {isCompleted ? "Lihat/Edit Jurnal" : "Isi Absen & Logbook"}
                 </button>
               </div>
-
-              {/* Rekap mini */}
-              <div style={{ display: "flex", gap: 12, marginTop: 14 }}>
-                <div style={{ background: "rgba(255,255,255,0.15)", borderRadius: 10, padding: "8px 14px", textAlign: "center" }}>
-                  <div style={{ fontSize: 18, fontWeight: 900 }}>{rekap.hadir}</div>
-                  <div style={{ fontSize: 10, opacity: 0.85, fontWeight: 700 }}>Hadir</div>
-                </div>
-                <div style={{ background: "rgba(255,255,255,0.15)", borderRadius: 10, padding: "8px 14px", textAlign: "center" }}>
-                  <div style={{ fontSize: 18, fontWeight: 900 }}>{rekap.izin}</div>
-                  <div style={{ fontSize: 10, opacity: 0.85, fontWeight: 700 }}>Izin</div>
-                </div>
-                <div style={{ background: "rgba(255,255,255,0.15)", borderRadius: 10, padding: "8px 14px", textAlign: "center" }}>
-                  <div style={{ fontSize: 18, fontWeight: 900 }}>{rekap.alpha}</div>
-                  <div style={{ fontSize: 10, opacity: 0.85, fontWeight: 700 }}>Alpha</div>
-                </div>
-                <div style={{ background: "rgba(255,255,255,0.15)", borderRadius: 10, padding: "8px 14px", textAlign: "center" }}>
-                  <div style={{ fontSize: 18, fontWeight: 900 }}>{rekap.total}</div>
-                  <div style={{ fontSize: 10, opacity: 0.85, fontWeight: 700 }}>Total</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Body — scrollable */}
-            <div style={{ overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 18 }}>
-
-              {/* Materi */}
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Materi yang Diajarkan</div>
-                <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12, padding: "12px 16px" }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: "#166534" }}>{activeLogDetail.materi}</div>
-                </div>
-              </div>
-
-              {/* Catatan Guru */}
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>Catatan Jurnal Pengajar</div>
-                <div style={{ background: "#f8fafc", borderRadius: 12, padding: "12px 16px", border: "1px solid #e2e8f0" }}>
-                  <div style={{ fontSize: 13, color: "#1e293b", lineHeight: 1.6, fontStyle: "italic" }}>
-                    &ldquo;{activeLogDetail.catatan}&rdquo;
-                  </div>
-                </div>
-              </div>
-
-              {/* Daftar Siswa */}
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>
-                  Daftar Siswa Kursus ({activeLogDetail.daftarSiswa.length} Siswa)
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {activeLogDetail.daftarSiswa.map((siswa, idx) => {
-                    const sc = statusColor(siswa.status);
-                    return (
-                      <div
-                        key={idx}
-                        style={{
-                          background: "#fff",
-                          border: "1px solid #e2e8f0",
-                          borderRadius: 12,
-                          padding: "12px 16px",
-                          display: "flex",
-                          alignItems: "flex-start",
-                          gap: 12,
-                          boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-                        }}
-                      >
-                        {/* Avatar */}
-                        <div style={{ width: 38, height: 38, borderRadius: "50%", background: "#e0f2fe", color: "#0369a1", fontWeight: 900, fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                          {siswa.nama[0]}
-                        </div>
-
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                            <div style={{ fontSize: 14, fontWeight: 800, color: "#1a202c" }}>{siswa.nama}</div>
-                            <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
-                              {/* Status badge */}
-                              <span style={{ background: sc.bg, color: sc.text, fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 6 }}>
-                                {siswa.status}
-                              </span>
-                              {/* Nilai badge */}
-                              {siswa.nilai && siswa.nilai !== "-" && (
-                                <span style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0", color: nilaiColor(siswa.nilai), fontSize: 12, fontWeight: 900, padding: "2px 10px", borderRadius: 6 }}>
-                                  {siswa.nilai}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div style={{ fontSize: 12, color: "#64748b", marginTop: 3, lineHeight: 1.5 }}>
-                            📝 {siswa.catatanGuru}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Status Verifikasi */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: 10, padding: "10px 14px" }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#0369a1", textTransform: "uppercase" }}>Status Verifikasi</div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: "#0284c7", marginTop: 2 }}>✓ Terverifikasi Admin</div>
-                </div>
-                <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "10px 14px" }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#166534", textTransform: "uppercase" }}>Tingkat Kehadiran Sesi</div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: "#059669", marginTop: 2 }}>
-                    {Math.round((rekap.hadir / rekap.total) * 100)}%
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div style={{ padding: "14px 24px", borderTop: "1px solid #e2e8f0", background: "#f8fafc" }}>
-              <button className="btn btn-accent" style={{ width: "100%", justifyContent: "center" }} onClick={() => setActiveLogDetail(null)}>
-                Tutup Rincian
-              </button>
-            </div>
-          </div>
+            );
+          })}
         </div>
       )}
+
+      {/* MODAL ABSENSI & LOGBOOK */}
+      <Modal open={showModal} onClose={() => setShowModal(false)} title={`Sesi: ${activeSession?.classroom?.name || ""}`} maxWidth={700}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20, maxHeight: "80vh", overflowY: "auto", paddingRight: 8 }}>
+          
+          {/* Bagian Absensi */}
+          <div>
+            <h4 style={{ margin: "0 0 12px 0", fontSize: 15, color: "var(--color-text-primary)", borderBottom: "1px solid var(--color-border-light)", paddingBottom: 8 }}>Daftar Hadir Siswa</h4>
+            {!activeClassroom ? (
+              <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>Memuat daftar siswa...</div>
+            ) : activeClassroom.students.length === 0 ? (
+              <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>Tidak ada siswa aktif di kelas ini.</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {activeClassroom.students.map(student => (
+                  <div key={student.id} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 2fr", gap: 10, alignItems: "center", background: "#f8fafc", padding: "10px 14px", borderRadius: 8 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>{student.name}</div>
+                    <div>
+                      <select 
+                        className="form-input" 
+                        style={{ padding: "4px 8px", fontSize: 12 }}
+                        value={studentsAttendance[student.id]?.status || "present"}
+                        onChange={e => handleAttendanceChange(student.id, "status", e.target.value)}
+                      >
+                        <option value="present">Hadir</option>
+                        <option value="absent">Absen (Tanpa Ket)</option>
+                        <option value="late">Terlambat</option>
+                        <option value="excused">Izin / Sakit</option>
+                      </select>
+                    </div>
+                    <div>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        placeholder="Catatan nilai/perilaku..." 
+                        style={{ padding: "4px 8px", fontSize: 12 }}
+                        value={studentsAttendance[student.id]?.notes || ""}
+                        onChange={e => handleAttendanceChange(student.id, "notes", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Bagian Logbook */}
+          <div>
+            <h4 style={{ margin: "0 0 12px 0", fontSize: 15, color: "var(--color-text-primary)", borderBottom: "1px solid var(--color-border-light)", paddingBottom: 8 }}>Logbook Guru (Jurnal)</h4>
+            
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: 12 }}>Jam Masuk Aktual</label>
+                <input type="datetime-local" className="form-input" value={logbookForm.check_in} onChange={e => setLogbookForm({...logbookForm, check_in: e.target.value})} />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: 12 }}>Jam Keluar Aktual</label>
+                <input type="datetime-local" className="form-input" value={logbookForm.check_out} onChange={e => setLogbookForm({...logbookForm, check_out: e.target.value})} />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: 12 }}>Total Menit (Untuk Payroll)</label>
+                <input type="number" className="form-input" value={logbookForm.teaching_minutes} onChange={e => setLogbookForm({...logbookForm, teaching_minutes: parseInt(e.target.value) || 0})} />
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: 12 }}>
+              <label className="form-label" style={{ fontSize: 12 }}>Materi yang Diajarkan *</label>
+              <textarea className="form-input" rows={2} placeholder="Contoh: Phonics Blends, Membaca 2 Suku Kata..." value={logbookForm.material} onChange={e => setLogbookForm({...logbookForm, material: e.target.value})}></textarea>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" style={{ fontSize: 12 }}>Catatan Kelas (Opsional)</label>
+              <textarea className="form-input" rows={2} placeholder="Kondisi kelas secara keseluruhan..." value={logbookForm.notes} onChange={e => setLogbookForm({...logbookForm, notes: e.target.value})}></textarea>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 10, marginTop: 10, position: "sticky", bottom: -20, background: "#fff", paddingTop: 10, borderTop: "1px solid var(--color-border-light)" }}>
+            <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setShowModal(false)} disabled={submitting}>Batal</button>
+            <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleSubmit} disabled={submitting || !activeClassroom}>
+              {submitting ? "Menyimpan Data..." : "Simpan Absensi & Logbook"}
+            </button>
+          </div>
+
+        </div>
+      </Modal>
+
     </div>
   );
 }

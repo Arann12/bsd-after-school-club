@@ -3,7 +3,6 @@
    ============================================================ */
 
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
-import { clearAllAuth, getLocalUser, getLoginRoute } from "./authHelpers";
 
 // ---- Base URL dari environment variable ----
 // Di .env.local tambahkan: NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
@@ -39,17 +38,17 @@ axiosInstance.interceptors.request.use(
 
 /* -------------------------------------------------------
    RESPONSE INTERCEPTOR
-   — Tangani error global (401 → redirect ke login sesuai role)
+   — Tangani error global (401 → redirect ke login)
 ------------------------------------------------------- */
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // Token expired atau tidak valid → hapus semua auth & redirect ke login
+      // Token expired atau tidak valid → hapus token & redirect ke login
       if (typeof window !== "undefined") {
-        const user = getLocalUser();
-        clearAllAuth();
-        window.location.href = getLoginRoute(user?.role);
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("auth_user");
+        window.location.href = "/login";
       }
     }
 
