@@ -165,9 +165,17 @@ export const adminAccounts = [
   { id: "ADM-0002", name: "Admin Dina", email: "dina.admin@bsdafterschool.com", role: "Admin", status: "Aktif", joinDate: "2025-06-01" },
 ];
 
-type NotificationType = { id: string; title: string; message: string; type: "warning" | "info" | "error" | "success"; read: boolean; createdAt: string; href: string; };
+export interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  type: "warning" | "info" | "error" | "success";
+  read: boolean;
+  createdAt: string;
+  href: string;
+}
 
-export const notificationsByRole: Record<string, NotificationType[]> = {
+export const notificationsByRole: Record<string, NotificationItem[]> = {
   owner: [
     { id: "NOT-O01", title: "Cash Verification Pending", message: "2 pembayaran cash menunggu verifikasi Anda", type: "warning", read: false, createdAt: "2026-09-08T10:30:00", href: "/owner/verifikasi-cash" },
     { id: "NOT-O02", title: "New Enrollment", message: "Naura Azzahra mendaftar program Calistung", type: "info", read: false, createdAt: "2026-09-07T08:00:00", href: "/owner/pendaftaran" },
@@ -193,7 +201,7 @@ export const notificationsByRole: Record<string, NotificationType[]> = {
     { id: "NOT-P04", title: "Logbook Anak", message: "Ms. Sarah menulis catatan untuk sesi Andi — Membaca Kalimat Sederhana", type: "info", read: true, createdAt: "2026-09-05T16:00:00", href: "/orang-tua/absensi" },
   ],
 };
-export const notifications = notificationsByRole.owner;
+export const notifications: NotificationItem[] = notificationsByRole.owner;
 
 /* ======================== REVENUE SUMMARY ======================== */
 export const revenueSummary = {
