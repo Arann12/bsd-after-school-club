@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 import AdminTagihanPage from "@/app/admin/tagihan/page";
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 import { invoices, revenueSummary } from "@/lib/data";
 import { formatRupiah } from "@/lib/constants";

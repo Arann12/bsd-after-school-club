@@ -12,12 +12,14 @@ export * from "./auth";
 
 // Students, Parents, Enrollment
 export * from "./students";
+export * from "./parents";
 
-// Academic: Teachers, Programs, Classes, Attendance, dll.
+export * from "./teachers";
 export * from "./academic";
 
 // Finance: Invoices, Payments, Cash, Honor, Reports
 export * from "./finance";
+export * from "./payrolls";
 
 // Operational: Announcements, Inventory, Notifications
 export * from "./operational";

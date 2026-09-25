@@ -18,6 +18,7 @@ export interface AuthUser {
   email: string;
   role: "owner" | "admin" | "teacher" | "parent";
   phone?: string;
+  is_active?: boolean;
 }
 
 // ── Response shapes dari backend ────────────────────────────

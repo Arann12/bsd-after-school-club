@@ -4,7 +4,7 @@
 
 import axiosInstance from "./axiosInstance";
 import type { Invoice, Payment, CashVerification, HonorRecord } from "../types";
-import type { PaginatedResponse, ApiResponse } from "./students";
+import type { PaginatedResponse, ApiResponse } from "./types";
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  INVOICES (TAGIHAN)
