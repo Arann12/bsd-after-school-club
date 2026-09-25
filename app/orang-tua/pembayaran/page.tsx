@@ -1,9 +1,105 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
-import React, { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { checkPaymentStatus, getPaymentMethods, getPaymentPlans, getPayments } from "@/lib/api/finance";
+import { getStudents } from "@/lib/api/students";
+
+interface PanduanItem {
+  title?: string;
+  name?: string;
+  channel?: string;
+  method?: string;
+  steps?: string[];
+  content?: string | string[];
+  notes?: string;
+  catatan?: string;
+  note?: string;
+}
+
+interface GatewayMethod {
+  category: string;
+  code: string;
+  name: string;
+  logo: string;
+  status: string;
+  fee?: number;
+  fee_format?: string;
+  panduan?: PanduanItem[] | Record<string, string[]> | string;
+}
 
 export default function PembayaranPage() {
+  // Gateway Dynamic Methods State
+  const [gatewayMethods, setGatewayMethods] = useState<GatewayMethod[]>([]);
+  const [expandedGuideIndex, setExpandedGuideIndex] = useState<number | null>(null);
 
+  // Dynamic Backend Data State
+  const [students, setStudents] = useState<any[]>([]);
+  const [selectedStudentId, setSelectedStudentId] = useState<string>("");
+  const [paymentPlans, setPaymentPlans] = useState<any[]>([]);
+  const [paymentsHistory, setPaymentsHistory] = useState<any[]>([]);
+  const [isLoadingFinance, setIsLoadingFinance] = useState<boolean>(false);
+
+  const loadFinanceData = async (studentId?: string) => {
+    setIsLoadingFinance(true);
+    try {
+      const activeStudent = studentId !== undefined ? studentId : selectedStudentId;
+      const [plansRes, paymentsRes] = await Promise.allSettled([
+        getPaymentPlans({ student_id: activeStudent || undefined, per_page: 50 }),
+        getPayments({ student_id: activeStudent || undefined, per_page: 20 }),
+      ]);
+
+      if (plansRes.status === "fulfilled" && plansRes.value) {
+        const rawPlans = (plansRes.value as any)?.data?.data || (plansRes.value as any)?.data || [];
+        setPaymentPlans(Array.isArray(rawPlans) ? rawPlans : []);
+      }
+      if (paymentsRes.status === "fulfilled" && paymentsRes.value) {
+        const rawPayments = (paymentsRes.value as any)?.data?.data || (paymentsRes.value as any)?.data || [];
+        setPaymentsHistory(Array.isArray(rawPayments) ? rawPayments : []);
+      }
+    } catch (err) {
+      console.warn("Gagal memuat data finance:", err);
+    } finally {
+      setIsLoadingFinance(false);
+    }
+  };
+
+  // Fetch Payment Methods & Students list on mount
+  useEffect(() => {
+    async function initData() {
+      try {
+        const [methodsRes, studentsRes] = await Promise.allSettled([
+          getPaymentMethods(true),
+          getStudents({ per_page: 20 }),
+        ]);
+
+        if (methodsRes.status === "fulfilled" && methodsRes.value?.data && Array.isArray(methodsRes.value.data)) {
+          setGatewayMethods(methodsRes.value.data);
+        }
+
+        let initialStudentId = "";
+        if (studentsRes.status === "fulfilled" && studentsRes.value) {
+          const rawStudents = (studentsRes.value as any)?.data || (studentsRes.value as any) || [];
+          const studentArray = Array.isArray(rawStudents) ? rawStudents : [];
+          setStudents(studentArray);
+          if (studentArray.length > 0) {
+            initialStudentId = studentArray[0].id;
+            setSelectedStudentId(initialStudentId);
+          }
+        }
+
+        await loadFinanceData(initialStudentId);
+      } catch (err) {
+        console.warn("Gagal inisialisasi data:", err);
+      }
+    }
+    initData();
+  }, []);
+
+  const handleSelectStudent = (studentId: string) => {
+    setSelectedStudentId(studentId);
+    loadFinanceData(studentId);
+  };
 
   // Modal Flow state
   // Steps: null | 'select_method' | 'payment_detail' | 'waiting_confirm' | 'success'
@@ -18,10 +114,11 @@ export default function PembayaranPage() {
   const [selectedMethod, setSelectedMethod] = useState<"va" | "ewallet" | "qris" | "cash">("va");
 
   // Selected bank for VA
-  const [selectedBank, setSelectedBank] = useState<"BCA" | "BNI" | "Mandiri" | "BRI">("BCA");
-  const [selectedEwallet, setSelectedEwallet] = useState<"GoPay" | "OVO" | "ShopeePay" | "DANA">("GoPay");
+  const [selectedBank, setSelectedBank] = useState<string>("BCA");
+  const [selectedEwallet, setSelectedEwallet] = useState<string>("ShopeePay");
 
   const historyRef = useRef<HTMLDivElement>(null);
+  const modalContentRef = useRef<HTMLDivElement>(null);
 
   // Detail modal for history items
   const [detailItem, setDetailItem] = useState<typeof historyList[number] | null>(null);
@@ -31,6 +128,24 @@ export default function PembayaranPage() {
 
   // Uploaded proof file name for cash payment
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
+
+  // Real Payment Gateway State
+  const [activePaymentId, setActivePaymentId] = useState<string | null>(null);
+  const [liveQrUrl, setLiveQrUrl] = useState<string | null>(null);
+  const [liveVaNumber, setLiveVaNumber] = useState<string | null>(null);
+  const [liveCheckoutUrl, setLiveCheckoutUrl] = useState<string | null>(null);
+  const [liveExpiredAt, setLiveExpiredAt] = useState<string | null>(null);
+  const [liveFee, setLiveFee] = useState<number | null>(null);
+  const [liveAmount, setLiveAmount] = useState<number | null>(null);
+  const [liveTotalAmount, setLiveTotalAmount] = useState<number | null>(null);
+  const [isCharging, setIsCharging] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
+  const [isGenerated, setIsGenerated] = useState(false);
+
+  // Filter Gateway Methods based on category
+  const vaGatewayList = gatewayMethods.filter((m) => m.category === "Virtual Account" && (m.status === "aktif" || m.status === "on"));
+  const ewalletGatewayList = gatewayMethods.filter((m) => m.category === "E-Wallet" && (m.status === "aktif" || m.status === "on"));
+  const qrisGatewayList = gatewayMethods.filter((m) => m.category === "QRIS" && (m.status === "aktif" || m.status === "on"));
 
   // History list state to demonstrate dynamic status updates
   const [historyList, setHistoryList] = useState([
@@ -60,55 +175,471 @@ export default function PembayaranPage() {
     },
   ]);
 
-  // Helper bank numbers
-  const vaNumbers: Record<string, string> = {
-    BCA: "1234 5678 9012 3456",
-    BNI: "8271 9920 1283 4410",
-    Mandiri: "8931 0029 4412 8821",
-    BRI: "8102 7712 9901 2341",
-  };
+  // Dynamic calculations from real Payment Plans
+  const paidPlans = paymentPlans.filter((p) => p.is_paid || p.status === "paid");
+  const unpaidPlans = paymentPlans.filter((p) => !p.is_paid && p.status !== "paid");
+  const totalSessionsCount = paymentPlans.length > 0 ? paymentPlans.length : 12;
+  const completedSessionsCount = paidPlans.length;
+  const progressPercent = totalSessionsCount > 0 ? Math.round((completedSessionsCount / totalSessionsCount) * 100) : 0;
 
-  const totalAmount = paymentType === "per_pertemuan" ? "Rp 100.000" : "Rp 300.000";
-  const childName = "Andi Setiawan";
-  const itemDescription = paymentType === "per_pertemuan" ? "Pertemuan 7 & 8" : "Pertemuan 7 - 12 (Sisa Paket)";
+  const totalUnpaidNominal = unpaidPlans.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const nextUnpaidSessions = unpaidPlans.slice(0, 2);
+  const nextUnpaidNominal = nextUnpaidSessions.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+  // Active target plan ID to charge
+  const targetPlanId = nextUnpaidSessions[0]?.id || unpaidPlans[0]?.id || null;
+
+  const totalAmount =
+    paymentType === "per_pertemuan"
+      ? `Rp ${nextUnpaidNominal.toLocaleString("id-ID")}`
+      : `Rp ${totalUnpaidNominal.toLocaleString("id-ID")}`;
+
+  const childName = paymentPlans[0]?.enrollment?.student?.full_name || "Andi Siswa";
+  const programName = paymentPlans[0]?.enrollment?.program?.name || "Kumon Matematika";
+  const levelName = paymentPlans[0]?.enrollment?.program_level?.name || "Level A (Dasar)";
+
+  const formattedHistoryList = paymentsHistory.length > 0
+    ? paymentsHistory.map((p) => {
+        let statusLabel = "Selesai";
+        if (p.payment_status === "pending") {
+          statusLabel = p.payment_method === "cash" ? "Menunggu Verifikasi" : "Menunggu Pembayaran";
+        } else if (p.payment_status === "expired") {
+          statusLabel = "Kedaluwarsa";
+        } else if (p.payment_status === "failed") {
+          statusLabel = "Gagal";
+        }
+
+        return {
+          id: p.payment_code || p.id,
+          tanggal: new Date(p.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
+          keterangan: p.notes || (p.payment_plan ? `Pertemuan ${p.payment_plan.session_number}` : "Pembayaran Tagihan"),
+          metode: p.payment_channel ? `${p.payment_channel}` : (p.payment_method?.toUpperCase() || "Digital"),
+          jumlah: `Rp ${Number(p.total_amount || p.amount).toLocaleString("id-ID")}`,
+          status: statusLabel,
+        };
+      })
+    : historyList;
+
+  const itemDescription =
+    paymentType === "per_pertemuan"
+      ? nextUnpaidSessions.length > 0
+        ? `Pertemuan ${nextUnpaidSessions.map((s) => s.session_number).join(" & ")}`
+        : "Semua Pertemuan Lunas"
+      : unpaidPlans.length > 0
+      ? `Pertemuan ${unpaidPlans[0].session_number} - ${unpaidPlans[unpaidPlans.length - 1].session_number} (Sisa Paket)`
+      : "Paket Lunas";
 
   const handleStartPayment = (type: "per_pertemuan" | "pelunasan") => {
+    if (unpaidPlans.length === 0) {
+      alert("Semua tagihan pertemuan sudah berstatus lunas.");
+      return;
+    }
     setPaymentType(type);
     setSelectedMethod("va");
     setSelectedBank("BCA");
-    setSelectedEwallet("GoPay");
+    setSelectedEwallet("ShopeePay");
     setVaCopied(false);
     setUploadedFile(null);
+    setIsGenerated(false);
+    setLiveVaNumber(null);
+    setLiveQrUrl(null);
+    setLiveCheckoutUrl(null);
+    setLiveExpiredAt(null);
+    setLiveFee(null);
+    setLiveAmount(null);
+    setLiveTotalAmount(null);
+    setActivePaymentId(null);
     setModalStep("select_method");
   };
 
   const handleCopyVa = () => {
-    const num = vaNumbers[selectedBank];
-    navigator.clipboard.writeText(num.replace(/\s/g, ""));
-    setVaCopied(true);
-    setTimeout(() => setVaCopied(false), 2000);
+    if (liveVaNumber) {
+      navigator.clipboard.writeText(liveVaNumber.replace(/\s/g, ""));
+      setVaCopied(true);
+      setTimeout(() => setVaCopied(false), 2000);
+    }
+  };
+
+  const requestCharge = async (method: "va" | "qris" | "ewallet", channelName: string) => {
+    if (!targetPlanId) {
+      alert("Semua tagihan untuk paket ini sudah berstatus lunas.");
+      return;
+    }
+
+    setIsCharging(true);
+    try {
+      let currentToken = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+      if (!currentToken) {
+        try {
+          const authRes = await fetch("http://127.0.0.1:8000/api/v1/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Accept: "application/json" },
+            body: JSON.stringify({ email: "ortu@bsd.test", password: "password" }),
+          });
+          const authData = await authRes.json();
+          if (authData.data && authData.data.token) {
+            currentToken = authData.data.token;
+            localStorage.setItem("auth_token", authData.data.token);
+            localStorage.setItem("auth_user", JSON.stringify(authData.data.user));
+          }
+        } catch (e) {
+          console.error("Auto login error:", e);
+        }
+      }
+
+      let channel = channelName;
+      if (method === "va") {
+        channel = channelName.toUpperCase().endsWith("VA") ? channelName.toUpperCase() : `${channelName.toUpperCase()}VA`;
+      } else if (method === "ewallet") {
+        channel = channelName.toUpperCase();
+      }
+
+      const chargeRes = await fetch("http://127.0.0.1:8000/api/v1/payments/charge", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: currentToken ? `Bearer ${currentToken}` : "",
+        },
+        body: JSON.stringify({
+          payment_plan_id: targetPlanId,
+          payment_method: method,
+          payment_channel: channel,
+          expired_time: "2h",
+        }),
+      });
+
+      const res = await chargeRes.json();
+
+      if (res && res.data) {
+        const inst = res.data.instructions;
+        setActivePaymentId(res.data.payment?.id || null);
+        if (inst.qr_url) setLiveQrUrl(inst.qr_url);
+        if (inst.virtual_account) setLiveVaNumber(inst.virtual_account);
+        if (inst.checkout_url) setLiveCheckoutUrl(inst.checkout_url);
+        if (inst.expired_at) setLiveExpiredAt(inst.expired_at);
+        if (inst.fee !== undefined) setLiveFee(inst.fee);
+        if (inst.amount !== undefined) setLiveAmount(inst.amount);
+        if (inst.total_amount !== undefined) setLiveTotalAmount(inst.total_amount);
+        setIsGenerated(true);
+      } else if (res && !res.success) {
+        alert(res.message || "Gagal membuat tagihan pembayaran.");
+      }
+    } catch (err) {
+      console.error("Gagal inisiasi payment gateway:", err);
+    } finally {
+      setIsCharging(false);
+    }
+  };
+
+  // Auto-scroll ke bawah saat memilih metode/bank/ewallet atau berganti step modal
+  useEffect(() => {
+    if (modalStep === "select_method" || modalStep === "payment_detail") {
+      const timer = setTimeout(() => {
+        if (modalContentRef.current) {
+          modalContentRef.current.scrollTo({
+            top: modalContentRef.current.scrollHeight,
+            behavior: "smooth",
+          });
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [modalStep, selectedMethod, selectedBank, selectedEwallet]);
+
+  // Smart Polling realtime: cek status transaksi ke backend setiap 3 detik begitu pembayaran di-generate
+  useEffect(() => {
+    if (!activePaymentId || !isGenerated || (modalStep !== "payment_detail" && modalStep !== "waiting_confirm")) {
+      return;
+    }
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await checkPaymentStatus(activePaymentId);
+        const data = res?.data;
+
+        if (data?.is_paid || data?.payment_status === "paid") {
+          clearInterval(interval);
+
+          // Refresh data rencana pembayaran & riwayat dari backend
+          loadFinanceData();
+
+          // Tambahkan ke riwayat pembayaran secara otomatis
+          const newInvId = `#INV-08-00${historyList.length + 1}`;
+          const methodText =
+            selectedMethod === "va"
+              ? `Virtual Account ${selectedBank}`
+              : selectedMethod === "qris"
+              ? "QRIS"
+              : selectedMethod === "ewallet"
+              ? `E-Wallet (${selectedEwallet})`
+              : "Cash (Di Cabang)";
+
+          setHistoryList((prev) => [
+            {
+              id: newInvId,
+              tanggal: "14 Sep 2026",
+              keterangan: itemDescription,
+              metode: methodText,
+              jumlah: totalAmount,
+              status: "Selesai",
+            },
+            ...prev,
+          ]);
+
+          setModalStep("success");
+          setTimeout(() => {
+            historyRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 100);
+        }
+      } catch (err) {
+        console.warn("Realtime payment check status error:", err);
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [activePaymentId, isGenerated, modalStep, selectedMethod, selectedBank, selectedEwallet, historyList.length, itemDescription, totalAmount]);
+
+  const handleSelectBank = (bankKey: string) => {
+    setSelectedBank(bankKey);
+    setIsGenerated(false);
+    setExpandedGuideIndex(null);
+    setLiveVaNumber(null);
+    setLiveCheckoutUrl(null);
+    setLiveExpiredAt(null);
+    setLiveFee(null);
+    setLiveAmount(null);
+    setLiveTotalAmount(null);
+  };
+
+  const handleSelectEwallet = (ewalletKey: string) => {
+    setSelectedEwallet(ewalletKey);
+    setIsGenerated(false);
+    setExpandedGuideIndex(null);
+    setLiveCheckoutUrl(null);
+    setLiveExpiredAt(null);
+    setLiveFee(null);
+    setLiveAmount(null);
+    setLiveTotalAmount(null);
+  };
+
+  const handleProceedToDetail = () => {
+    setIsGenerated(false);
+    setExpandedGuideIndex(null);
+    setLiveVaNumber(null);
+    setLiveQrUrl(null);
+    setLiveCheckoutUrl(null);
+    setLiveExpiredAt(null);
+    setLiveFee(null);
+    setLiveAmount(null);
+    setLiveTotalAmount(null);
+    setModalStep("payment_detail");
+  };
+
+  // Helper untuk normalisasi array panduan (Kategori/Channel, Langkah, Catatan)
+  const getNormalizedPanduan = (
+    panduanData: unknown
+  ): { categoryTitle?: string; steps: string[]; notes?: string }[] => {
+    if (!panduanData) return [];
+
+    // Jika panduan berbentuk Array
+    if (Array.isArray(panduanData)) {
+      return panduanData.map((item, idx) => {
+        if (typeof item === "string") {
+          return { categoryTitle: `Panduan ${idx + 1}`, steps: [item] };
+        }
+        if (typeof item === "object" && item !== null) {
+          const panduanItem = item as Record<string, unknown>;
+          const catTitle =
+            (typeof panduanItem.title === "string" ? panduanItem.title : null) ||
+            (typeof panduanItem.name === "string" ? panduanItem.name : null) ||
+            (typeof panduanItem.channel === "string" ? panduanItem.channel : null) ||
+            (typeof panduanItem.method === "string" ? panduanItem.method : null) ||
+            `Cara Bayar ${idx + 1}`;
+
+          const steps = Array.isArray(panduanItem.steps)
+            ? (panduanItem.steps as string[])
+            : Array.isArray(panduanItem.content)
+            ? (panduanItem.content as string[])
+            : typeof panduanItem.content === "string"
+            ? [panduanItem.content]
+            : [];
+
+          const notes =
+            typeof panduanItem.notes === "string"
+              ? panduanItem.notes
+              : typeof panduanItem.catatan === "string"
+              ? panduanItem.catatan
+              : typeof panduanItem.note === "string"
+              ? panduanItem.note
+              : undefined;
+
+          return { categoryTitle: catTitle, steps, notes };
+        }
+        return { categoryTitle: `Panduan ${idx + 1}`, steps: [] };
+      });
+    }
+
+    // Jika panduan berbentuk Object Key-Value (e.g. { "m_bca": [...], "atm_bca": [...] })
+    if (typeof panduanData === "object" && panduanData !== null) {
+      return Object.entries(panduanData).map(([key, val]) => {
+        const catTitle = key
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (l) => l.toUpperCase());
+        const steps = Array.isArray(val) ? (val as string[]) : typeof val === "string" ? [val] : [];
+        return { categoryTitle: catTitle, steps, notes: undefined };
+      });
+    }
+
+    if (typeof panduanData === "string") {
+      return [{ categoryTitle: "Petunjuk Pembayaran", steps: [panduanData], notes: undefined }];
+    }
+
+    return [];
+  };
+
+  // Helper format tampilan fee dinamis dari gateway (persen atau nominal)
+  const formatGatewayFeeDisplay = (feeVal?: number, feeFmt?: string) => {
+    if (feeFmt) {
+      if (feeFmt.includes("%")) return feeFmt;
+      if (!isNaN(Number(feeFmt))) {
+        const num = Number(feeFmt);
+        return num <= 10 ? `${num}%` : `Rp ${num.toLocaleString("id-ID")}`;
+      }
+      return feeFmt;
+    }
+    if (feeVal !== undefined && feeVal !== null) {
+      if (feeVal <= 10) {
+        return `${feeVal}%`;
+      }
+      return `Rp ${feeVal.toLocaleString("id-ID")}`;
+    }
+    return null;
+  };
+
+  // Helper untuk mendapatkan metode aktif saat ini
+  const getCurrentActiveMethodData = () => {
+    if (selectedMethod === "va") {
+      return (
+        vaGatewayList.find(
+          (m) =>
+            m.code.toUpperCase().replace(/VA$/, "") === selectedBank.toUpperCase().replace(/VA$/, "") ||
+            m.name.toUpperCase().includes(selectedBank.toUpperCase())
+        ) || null
+      );
+    }
+    if (selectedMethod === "ewallet") {
+      return (
+        ewalletGatewayList.find(
+          (m) =>
+            m.code.toUpperCase() === selectedEwallet.toUpperCase() ||
+            m.name.toUpperCase().includes(selectedEwallet.toUpperCase())
+        ) || null
+      );
+    }
+    if (selectedMethod === "qris") {
+      return qrisGatewayList.length > 0 ? qrisGatewayList[0] : null;
+    }
+    return null;
+  };
+
+  // Format waktu expired lengkap dengan tanggal, jam, dan timezone lokal user (WIB / WITA / WIT)
+  const formatUserLocalExpiry = (isoString: string | null) => {
+    if (!isoString) return "";
+    try {
+      let formattedIso = isoString.trim();
+      // Jika string waktu tidak memiliki penanda timezone (+07 / Z), anggap bersumber dari WIB (Asia/Jakarta +07:00)
+      if (!formattedIso.match(/[Z\+\-]\d{2}(:?\d{2})?$/i)) {
+        formattedIso = formattedIso.replace(" ", "T") + "+07:00";
+      }
+      const d = new Date(formattedIso);
+      if (isNaN(d.getTime())) return "";
+
+      // Deteksi timezone & singkatan lokal otomatis (WIB, WITA, WIT)
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+      let tzAbbr = "";
+      if (tz.includes("Jakarta") || tz.includes("Pontianak") || tz.includes("Bangkok")) {
+        tzAbbr = "WIB";
+      } else if (tz.includes("Makassar") || tz.includes("Bali") || tz.includes("Ujung_Pandang") || tz.includes("Singapore") || tz.includes("Kuala_Lumpur") || tz.includes("Manila")) {
+        tzAbbr = "WITA";
+      } else if (tz.includes("Jayapura")) {
+        tzAbbr = "WIT";
+      }
+
+      const dateStr = d.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+
+      const timeStr = d.toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }).replace(/\./g, ":");
+
+      if (tzAbbr) {
+        return `${dateStr} pukul ${timeStr} ${tzAbbr}`;
+      }
+
+      // Fallback format lokal otomatis sesuai perangkat
+      const timeFormatted = new Intl.DateTimeFormat("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        timeZoneName: "short",
+        hour12: false,
+      }).format(d).replace(/\./g, ":");
+
+      return `${dateStr} pukul ${timeFormatted}`;
+    } catch {
+      return new Date(isoString).toLocaleString("id-ID");
+    }
+  };
+
+  const handleGeneratePayment = async () => {
+    if (selectedMethod === "cash") {
+      setModalStep("waiting_confirm");
+      return;
+    }
+
+    const channel = selectedMethod === "va" ? selectedBank : selectedMethod === "ewallet" ? selectedEwallet : "QRIS";
+    await requestCharge(selectedMethod, channel);
   };
 
   const handleConfirmWaiting = () => {
     setModalStep("waiting_confirm");
   };
 
-  const handleCheckStatus = () => {
+  const handleCheckStatus = async () => {
+    setIsChecking(true);
+
+    if (activePaymentId) {
+      try {
+        await checkPaymentStatus(activePaymentId);
+      } catch (err) {
+        console.warn("Check status error:", err);
+      }
+    }
+
+    setIsChecking(false);
+
     // Add new payment record to history
     const newInvId = `#INV-08-00${historyList.length + 1}`;
     const methodText =
       selectedMethod === "va"
         ? `Virtual Account ${selectedBank}`
         : selectedMethod === "qris"
-        ? "QRIS"
+        ? "QRIS (Nobu Bank)"
         : selectedMethod === "ewallet"
-        ? "E-Wallet"
+        ? `E-Wallet (${selectedEwallet})`
         : "Cash (Di Cabang)";
 
     setHistoryList([
       {
         id: newInvId,
-        tanggal: "31 Ags 2024",
+        tanggal: "14 Sep 2026",
         keterangan: itemDescription,
         metode: methodText,
         jumlah: totalAmount,
@@ -117,7 +648,7 @@ export default function PembayaranPage() {
       ...historyList,
     ]);
 
-    setModalStep(null);
+    setModalStep("success");
     setTimeout(() => {
       historyRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
@@ -126,7 +657,7 @@ export default function PembayaranPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 1200, margin: "0 auto", width: "100%" }}>
       {/* CSS Animations */}
-      <style jsx global>{`
+      <style>{`
         @keyframes modalSlideUp {
           from {
             opacity: 0;
@@ -135,6 +666,14 @@ export default function PembayaranPage() {
           to {
             opacity: 1;
             transform: translateY(0) scale(1);
+          }
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
           }
         }
         @keyframes spin {
@@ -166,9 +705,42 @@ export default function PembayaranPage() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 800, color: "#1e293b", margin: 0, letterSpacing: "-0.02em" }}>
-            Pembayaran
+            Pembayaran Siswa
           </h1>
+          <p style={{ fontSize: 13, color: "#64748b", margin: "4px 0 0 0" }}>
+            Siswa: <strong>{childName}</strong> • {programName} ({levelName})
+          </p>
         </div>
+
+        {/* Child Selector Pills / Dropdown */}
+        {students.length > 1 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f1f5f9", padding: "4px 6px", borderRadius: 12 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#64748b", paddingLeft: 8 }}>Pilih Siswa:</span>
+            {students.map((s) => {
+              const isSelected = s.id === selectedStudentId;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => handleSelectStudent(s.id)}
+                  style={{
+                    border: "none",
+                    background: isSelected ? "#0e7490" : "transparent",
+                    color: isSelected ? "#ffffff" : "#475569",
+                    padding: "6px 14px",
+                    borderRadius: 8,
+                    fontSize: 12.5,
+                    fontWeight: isSelected ? 800 : 600,
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                    boxShadow: isSelected ? "0 2px 6px rgba(14,116,144,0.25)" : "none",
+                  }}
+                >
+                  {s.full_name}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ── 2. TOP 3 STAT CARDS GRID ───────────────────────────────────── */}
@@ -190,11 +762,11 @@ export default function PembayaranPage() {
             TOTAL TAGIHAN TERTUNDA
           </div>
           <div>
-            <div style={{ fontSize: 28, fontWeight: 800, color: "#dc2626", lineHeight: 1.1 }}>
-              Rp 150.000
+            <div style={{ fontSize: 28, fontWeight: 800, color: totalUnpaidNominal > 0 ? "#dc2626" : "#16a34a", lineHeight: 1.1 }}>
+              Rp {totalUnpaidNominal.toLocaleString("id-ID")}
             </div>
             <div style={{ fontSize: 12.5, color: "#64748b", marginTop: 6, fontWeight: 500 }}>
-              1 Tagihan belum dibayar
+              {unpaidPlans.length > 0 ? `${unpaidPlans.length} Sesi belum dibayar` : "Semua Sesi Telah Lunas"}
             </div>
           </div>
         </div>
@@ -213,11 +785,11 @@ export default function PembayaranPage() {
           }}
         >
           <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
-            PROGRESS PERTEMUAN
+            PROGRESS PERTEMUAN (LUNAS)
           </div>
           <div>
             <div style={{ fontSize: 28, fontWeight: 800, color: "#1e293b", lineHeight: 1.1 }}>
-              6 <span style={{ fontSize: 18, fontWeight: 600, color: "#94a3b8" }}>/12</span>
+              {completedSessionsCount} <span style={{ fontSize: 18, fontWeight: 600, color: "#94a3b8" }}>/{totalSessionsCount}</span>
             </div>
             {/* Horizontal Progress Bar */}
             <div
@@ -232,11 +804,11 @@ export default function PembayaranPage() {
             >
               <div
                 style={{
-                  width: "50%",
+                  width: `${progressPercent}%`,
                   height: "100%",
-                  background: "#0e7490",
+                  background: progressPercent === 100 ? "#16a34a" : "#0e7490",
                   borderRadius: 999,
-                  transition: "width 0.3s ease",
+                  transition: "width 0.4s ease",
                 }}
               />
             </div>
@@ -259,34 +831,44 @@ export default function PembayaranPage() {
           <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
             STATUS PEMBAYARAN TERAKHIR
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: "50%",
-                background: "#dcfce7",
-                border: "1.5px solid #bbf7d0",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#16a34a",
-                flexShrink: 0,
-              }}
-            >
-              <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </div>
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#1e293b", lineHeight: 1.2 }}>
-                Berhasil
+          {paymentsHistory.length > 0 ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: "50%",
+                  background: paymentsHistory[0].payment_status === "paid" ? "#dcfce7" : "#fef3c7",
+                  border: paymentsHistory[0].payment_status === "paid" ? "1.5px solid #bbf7d0" : "1.5px solid #fde68a",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: paymentsHistory[0].payment_status === "paid" ? "#16a34a" : "#b45309",
+                  flexShrink: 0,
+                }}
+              >
+                {paymentsHistory[0].payment_status === "paid" ? (
+                  <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                ) : (
+                  <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                  </svg>
+                )}
               </div>
-              <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-                25 Ags 2024
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#1e293b", lineHeight: 1.2 }}>
+                  {paymentsHistory[0].payment_status === "paid" ? "Berhasil Lunas" : paymentsHistory[0].payment_status === "pending" ? "Menunggu" : "Kedaluwarsa"}
+                </div>
+                <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+                  {new Date(paymentsHistory[0].created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div style={{ fontSize: 13, color: "#94a3b8", fontWeight: 500 }}>Belum ada transaksi</div>
+          )}
         </div>
       </div>
 
@@ -328,7 +910,7 @@ export default function PembayaranPage() {
                   Program
                 </div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: "#1e293b" }}>
-                  Phonics Level 2
+                  {programName}
                 </div>
               </div>
               <div>
@@ -336,7 +918,7 @@ export default function PembayaranPage() {
                   Total Pertemuan Paket
                 </div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: "#1e293b" }}>
-                  12 Pertemuan
+                  {totalSessionsCount} Pertemuan
                 </div>
               </div>
               <div>
@@ -344,7 +926,7 @@ export default function PembayaranPage() {
                   Harga per Pertemuan
                 </div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: "#1e293b" }}>
-                  Rp 50.000
+                  Rp {paymentPlans[0]?.amount ? Number(paymentPlans[0].amount).toLocaleString("id-ID") : "50.000"}
                 </div>
               </div>
             </div>
@@ -364,82 +946,75 @@ export default function PembayaranPage() {
               Progress Pertemuan (Paket Aktif)
             </h2>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {/* Item 1: Pertemuan 1 - 5 */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 10 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#22c55e", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: "#1e293b" }}>Pertemuan 1 - 5</div>
-                    <div style={{ fontSize: 12, color: "#64748b" }}>Selesai • Lunas</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Item 2: Pertemuan 6 */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderRadius: 10, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#f59e0b", margin: "4px", flexShrink: 0 }} />
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: "#1e293b" }}>Pertemuan 6</div>
-                    <div style={{ fontSize: 12, color: "#64748b" }}>Hari ini • Phonics Review</div>
-                  </div>
-                </div>
-                <span style={{ background: "#dcfce7", color: "#16a34a", fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999 }}>
-                  LUNAS
-                </span>
-              </div>
-
-              {/* Item 3: Pertemuan 7 */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 10 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", flexShrink: 0 }}>
-                    <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: "#1e293b" }}>Pertemuan 7</div>
-                    <div style={{ fontSize: 12, color: "#64748b" }}>2 Sept 2024</div>
-                  </div>
-                </div>
-                <span style={{ background: "#fee2e2", color: "#dc2626", fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999 }}>
-                  BELUM DIBAYAR
-                </span>
-              </div>
-
-              {/* Item 4: Pertemuan 8 */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 10 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", flexShrink: 0 }}>
-                    <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: "#1e293b" }}>Pertemuan 8</div>
-                    <div style={{ fontSize: 12, color: "#64748b" }}>4 Sept 2024</div>
-                  </div>
-                </div>
-                <span style={{ background: "#fee2e2", color: "#dc2626", fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999 }}>
-                  BELUM DIBAYAR
-                </span>
-              </div>
-
-              {/* Item 5: Pertemuan 9 - 12 */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 10, opacity: 0.75 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid #e2e8f0", flexShrink: 0 }} />
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#64748b" }}>Pertemuan 9 - 12</div>
-                    <div style={{ fontSize: 12, color: "#94a3b8" }}>Jadwal mendatang</div>
-                  </div>
-                </div>
-              </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 380, overflowY: "auto" }}>
+              {paymentPlans.length > 0 ? (
+                paymentPlans.map((plan) => {
+                  const isPlanPaid = plan.is_paid || plan.status === "paid";
+                  return (
+                    <div
+                      key={plan.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "10px 14px",
+                        borderRadius: 10,
+                        background: isPlanPaid ? "#f8fafc" : "#ffffff",
+                        border: "1px solid #f1f5f9",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div
+                          style={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: "50%",
+                            background: isPlanPaid ? "#22c55e" : "#f1f5f9",
+                            border: isPlanPaid ? "none" : "2px solid #cbd5e1",
+                            color: isPlanPaid ? "#ffffff" : "#94a3b8",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {isPlanPaid ? (
+                            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          ) : (
+                            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                            </svg>
+                          )}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: "#1e293b" }}>
+                            Pertemuan {plan.session_number}
+                          </div>
+                          <div style={{ fontSize: 12, color: "#64748b" }}>
+                            {isPlanPaid ? "Lunas" : `Jatuh tempo ${new Date(plan.due_date).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}`} • Rp {Number(plan.amount).toLocaleString("id-ID")}
+                          </div>
+                        </div>
+                      </div>
+                      <span
+                        style={{
+                          background: isPlanPaid ? "#dcfce7" : "#fee2e2",
+                          color: isPlanPaid ? "#16a34a" : "#dc2626",
+                          fontSize: 11,
+                          fontWeight: 800,
+                          padding: "3px 10px",
+                          borderRadius: 999,
+                        }}
+                      >
+                        {isPlanPaid ? "LUNAS" : "BELUM DIBAYAR"}
+                      </span>
+                    </div>
+                  );
+                })
+              ) : (
+                <div style={{ fontSize: 13, color: "#94a3b8" }}>Memuat daftar pertemuan...</div>
+              )}
             </div>
           </div>
         </div>
@@ -468,8 +1043,8 @@ export default function PembayaranPage() {
               <h3 style={{ fontSize: 16, fontWeight: 800, color: "#1e293b", margin: 0 }}>
                 Bayar per Pertemuan
               </h3>
-              <span style={{ background: "#fee2e2", color: "#dc2626", fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999 }}>
-                2 Belum Dibayar
+              <span style={{ background: nextUnpaidSessions.length > 0 ? "#fee2e2" : "#dcfce7", color: nextUnpaidSessions.length > 0 ? "#dc2626" : "#16a34a", fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999 }}>
+                {nextUnpaidSessions.length > 0 ? `${nextUnpaidSessions.length} Belum Dibayar` : "Semua Lunas"}
               </span>
             </div>
 
@@ -478,46 +1053,50 @@ export default function PembayaranPage() {
             </p>
 
             <div style={{ background: "#f8fafc", borderRadius: 10, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10, border: "1px solid #f1f5f9" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13.5, fontWeight: 700, color: "#334155" }}>
-                <span>Pertemuan 7</span><span>Rp 50.000</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13.5, fontWeight: 700, color: "#334155" }}>
-                <span>Pertemuan 8</span><span>Rp 50.000</span>
-              </div>
+              {nextUnpaidSessions.length > 0 ? (
+                nextUnpaidSessions.map((session) => (
+                  <div key={session.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13.5, fontWeight: 700, color: "#334155" }}>
+                    <span>Pertemuan {session.session_number}</span><span>Rp {Number(session.amount).toLocaleString("id-ID")}</span>
+                  </div>
+                ))
+              ) : (
+                <div style={{ fontSize: 13, color: "#16a34a", fontWeight: 700 }}>Semua tagihan pertemuan sudah lunas 🎉</div>
+              )}
               <div style={{ height: 1, background: "#e2e8f0", margin: "4px 0" }} />
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>Total Dibayar</span>
-                <span style={{ fontSize: 22, fontWeight: 800, color: "#dc2626" }}>Rp 100.000</span>
+                <span style={{ fontSize: 22, fontWeight: 800, color: nextUnpaidNominal > 0 ? "#dc2626" : "#16a34a" }}>Rp {nextUnpaidNominal.toLocaleString("id-ID")}</span>
               </div>
             </div>
 
             <button
               onClick={() => handleStartPayment("per_pertemuan")}
+              disabled={unpaidPlans.length === 0}
               style={{
                 width: "100%",
                 padding: "12px 16px",
-                background: "#f59e0b",
+                background: unpaidPlans.length === 0 ? "#94a3b8" : "#f59e0b",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 10,
                 fontWeight: 700,
                 fontSize: 14,
-                cursor: "pointer",
+                cursor: unpaidPlans.length === 0 ? "not-allowed" : "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 8,
-                boxShadow: "0 4px 12px rgba(245,158,11,0.25)",
+                boxShadow: unpaidPlans.length === 0 ? "none" : "0 4px 12px rgba(245,158,11,0.25)",
                 transition: "all 0.15s ease",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#d97706")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "#f59e0b")}
+              onMouseEnter={(e) => { if (unpaidPlans.length > 0) e.currentTarget.style.background = "#d97706"; }}
+              onMouseLeave={(e) => { if (unpaidPlans.length > 0) e.currentTarget.style.background = "#f59e0b"; }}
             >
               <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                 <rect x="2" y="5" width="20" height="14" rx="2" />
                 <line x1="2" y1="10" x2="22" y2="10" />
               </svg>
-              <span>Bayar Pertemuan (Rp 100k)</span>
+              <span>{unpaidPlans.length === 0 ? "Semua Pertemuan Lunas" : `Bayar Pertemuan (Rp ${(nextUnpaidNominal / 1000)}k)`}</span>
             </button>
           </div>
 
@@ -549,35 +1128,37 @@ export default function PembayaranPage() {
 
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13, color: "rgba(255, 255, 255, 0.95)" }}>
-                <span>Sisa Pertemuan (7-12)</span><span style={{ fontWeight: 700 }}>6 x Rp 50.000</span>
+                <span>{unpaidPlans.length > 0 ? `Sisa Pertemuan (${unpaidPlans[0]?.session_number}-${unpaidPlans[unpaidPlans.length - 1]?.session_number})` : "Sisa Pertemuan"}</span>
+                <span style={{ fontWeight: 700 }}>{unpaidPlans.length > 0 ? `${unpaidPlans.length} x Rp ${Number(unpaidPlans[0]?.amount || 50000).toLocaleString("id-ID")}` : "0 Pertemuan"}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
                 <span style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.9)" }}>Total Pelunasan</span>
-                <span style={{ fontSize: 24, fontWeight: 800, color: "#ffffff" }}>Rp 300.000</span>
+                <span style={{ fontSize: 24, fontWeight: 800, color: "#ffffff" }}>Rp {totalUnpaidNominal.toLocaleString("id-ID")}</span>
               </div>
             </div>
 
             <button
               onClick={() => handleStartPayment("pelunasan")}
+              disabled={unpaidPlans.length === 0}
               style={{
                 width: "100%",
                 padding: "12px 16px",
-                background: "#ffffff",
-                color: "#0e7490",
+                background: unpaidPlans.length === 0 ? "rgba(255,255,255,0.4)" : "#ffffff",
+                color: unpaidPlans.length === 0 ? "rgba(255,255,255,0.8)" : "#0e7490",
                 border: "none",
                 borderRadius: 10,
                 fontWeight: 800,
                 fontSize: 14,
-                cursor: "pointer",
+                cursor: unpaidPlans.length === 0 ? "not-allowed" : "pointer",
                 textAlign: "center",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                boxShadow: unpaidPlans.length === 0 ? "none" : "0 4px 12px rgba(0,0,0,0.1)",
                 transition: "all 0.15s ease",
                 marginTop: 4,
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "#ffffff")}
+              onMouseEnter={(e) => { if (unpaidPlans.length > 0) e.currentTarget.style.background = "#f8fafc"; }}
+              onMouseLeave={(e) => { if (unpaidPlans.length > 0) e.currentTarget.style.background = "#ffffff"; }}
             >
-              Lunasi Paket Sekarang
+              {unpaidPlans.length === 0 ? "Semua Paket Sudah Lunas" : "Lunasi Paket Sekarang"}
             </button>
           </div>
         </div>
@@ -626,20 +1207,27 @@ export default function PembayaranPage() {
               </tr>
             </thead>
             <tbody>
-              {historyList.map((row, idx) => (
-                <tr key={row.id + idx} style={{ borderBottom: idx < historyList.length - 1 ? "1px solid #f1f5f9" : "none" }}>
+              {formattedHistoryList.map((row, idx) => (
+                <tr key={row.id + idx} style={{ borderBottom: idx < formattedHistoryList.length - 1 ? "1px solid #f1f5f9" : "none" }}>
                   <td style={{ padding: "16px 20px", fontSize: 13, fontFamily: "monospace", color: "#475569", fontWeight: 600 }}>{row.id}</td>
                   <td style={{ padding: "16px 20px", fontSize: 13.5, fontWeight: 600, color: "#1e293b" }}>{row.tanggal}</td>
                   <td style={{ padding: "16px 20px", fontSize: 13.5, fontWeight: 600, color: "#1e293b" }}>{row.keterangan}</td>
                   <td style={{ padding: "16px 20px", fontSize: 13, color: "#475569" }}>{row.metode}</td>
                   <td style={{ padding: "16px 20px", fontSize: 14, fontWeight: 800, color: "#1e293b" }}>{row.jumlah}</td>
                   <td style={{ padding: "16px 20px" }}>
-                    {row.status === "Menunggu Verifikasi" ? (
+                    {row.status === "Menunggu Verifikasi" || row.status === "Menunggu Pembayaran" ? (
                       <span style={{ background: "#fef3c7", color: "#b45309", fontSize: 11.5, fontWeight: 700, padding: "5px 12px", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 6 }}>
                         <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
                           <path d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
                         </svg>
-                        Menunggu Verifikasi
+                        {row.status}
+                      </span>
+                    ) : row.status === "Kedaluwarsa" || row.status === "Gagal" ? (
+                      <span style={{ background: "#fee2e2", color: "#dc2626", fontSize: 11.5, fontWeight: 700, padding: "5px 12px", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                        <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
+                        </svg>
+                        {row.status}
                       </span>
                     ) : (
                       <span style={{ background: "#dcfce7", color: "#16a34a", fontSize: 11.5, fontWeight: 700, padding: "5px 12px", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -704,15 +1292,19 @@ export default function PembayaranPage() {
             inset: 0,
             background: "rgba(15, 23, 42, 0.6)",
             backdropFilter: "blur(4px)",
-            zIndex: 100,
+            zIndex: 99999,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             padding: 16,
             animation: "fadeIn 0.2s ease-out",
           }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setModalStep(null);
+          }}
         >
           <div
+            ref={modalContentRef}
             style={{
               background: "#ffffff",
               borderRadius: 18,
@@ -807,16 +1399,24 @@ export default function PembayaranPage() {
                       </div>
                       {/* Brand logos */}
                       <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                        {[
-                          { src: "/logo%20pembayaran/BCA.webp", name: "BCA" },
-                          { src: "/logo%20pembayaran/mandiri.png", name: "Mandiri" },
-                          { src: "/logo%20pembayaran/BNI.webp", name: "BNI" },
-                          { src: "/logo%20pembayaran/BRI.png", name: "BRI" },
-                        ].map(b => (
-                          <div key={b.name} style={{ width: 32, height: 22, borderRadius: 5, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #e2e8f0", overflow: "hidden" }}>
-                            <img src={b.src} alt={b.name} style={{ width: 22, height: 16, objectFit: "contain" }} />
-                          </div>
-                        ))}
+                        {vaGatewayList.length > 0 ? (
+                          vaGatewayList.slice(0, 4).map((b) => (
+                            <div key={b.code} style={{ width: 32, height: 22, borderRadius: 5, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #e2e8f0", overflow: "hidden" }}>
+                              <img src={b.logo} alt={b.name} style={{ width: 22, height: 16, objectFit: "contain" }} />
+                            </div>
+                          ))
+                        ) : (
+                          [
+                            { src: "/logo%20pembayaran/BCA.webp", name: "BCA" },
+                            { src: "/logo%20pembayaran/mandiri.png", name: "Mandiri" },
+                            { src: "/logo%20pembayaran/BNI.webp", name: "BNI" },
+                            { src: "/logo%20pembayaran/BRI.png", name: "BRI" },
+                          ].map(b => (
+                            <div key={b.name} style={{ width: 32, height: 22, borderRadius: 5, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #e2e8f0", overflow: "hidden" }}>
+                              <img src={b.src} alt={b.name} style={{ width: 22, height: 16, objectFit: "contain" }} />
+                            </div>
+                          ))
+                        )}
                       </div>
                       {/* Chevron */}
                       <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
@@ -851,16 +1451,24 @@ export default function PembayaranPage() {
                         <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 1 }}>GoPay, OVO, ShopeePay, DANA</div>
                       </div>
                       <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                        {[
-                          { src: "/logo%20pembayaran/gopay.webp", name: "GoPay" },
-                          { src: "/logo%20pembayaran/ovo.jpg", name: "OVO" },
-                          { src: "/logo%20pembayaran/shopeepay.webp", name: "ShopeePay" },
-                          { src: "/logo%20pembayaran/Dana.webp", name: "DANA" },
-                        ].map(w => (
-                          <div key={w.name} style={{ width: 32, height: 22, borderRadius: 5, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #e2e8f0", overflow: "hidden" }}>
-                            <img src={w.src} alt={w.name} style={{ width: 22, height: 16, objectFit: "contain" }} />
-                          </div>
-                        ))}
+                        {ewalletGatewayList.length > 0 ? (
+                          ewalletGatewayList.slice(0, 4).map((w) => (
+                            <div key={w.code} style={{ width: 32, height: 22, borderRadius: 5, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #e2e8f0", overflow: "hidden" }}>
+                              <img src={w.logo} alt={w.name} style={{ width: 22, height: 16, objectFit: "contain" }} />
+                            </div>
+                          ))
+                        ) : (
+                          [
+                            { src: "/logo%20pembayaran/gopay.webp", name: "GoPay" },
+                            { src: "/logo%20pembayaran/ovo.jpg", name: "OVO" },
+                            { src: "/logo%20pembayaran/shopeepay.webp", name: "ShopeePay" },
+                            { src: "/logo%20pembayaran/Dana.webp", name: "DANA" },
+                          ].map(w => (
+                            <div key={w.name} style={{ width: 32, height: 22, borderRadius: 5, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #e2e8f0", overflow: "hidden" }}>
+                              <img src={w.src} alt={w.name} style={{ width: 22, height: 16, objectFit: "contain" }} />
+                            </div>
+                          ))
+                        )}
                       </div>
                       <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
                     </div>
@@ -876,19 +1484,19 @@ export default function PembayaranPage() {
                       style={{
                         display: "flex", alignItems: "center", gap: 14,
                         padding: "14px 16px",
-                        background: isSelected ? "#fef2f2" : "#ffffff",
+                        background: isSelected ? "#f0f9ff" : "#ffffff",
                         borderBottom: "1px solid #f1f5f9",
                         cursor: "pointer", transition: "all 0.15s ease",
                       }}
                     >
-                      <div style={{ width: 20, height: 20, borderRadius: "50%", border: isSelected ? "2px solid #ED1C24" : "2px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "#fff" }}>
-                        {isSelected && <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#ED1C24" }} />}
+                      <div style={{ width: 20, height: 20, borderRadius: "50%", border: isSelected ? "2px solid #0e7490" : "2px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "#fff", transition: "border-color 0.15s" }}>
+                        {isSelected && <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#0e7490" }} />}
                       </div>
-                      <div style={{ width: 40, height: 40, borderRadius: 10, background: "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 10, background: isSelected ? "#e0f2fe" : "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         {/* QRIS logo style */}
                         <div style={{ display: "flex", alignItems: "center" }}>
                           <span style={{ fontSize: 11, fontWeight: 900, color: "#ED1C24", letterSpacing: "-0.02em" }}>QR</span>
-                          <span style={{ fontSize: 11, fontWeight: 900, color: "#ED1C24", letterSpacing: "-0.02em", marginLeft: 1 }}>IS</span>
+                          <span style={{ fontSize: 11, fontWeight: 900, color: "#1e293b", letterSpacing: "-0.02em", marginLeft: 1 }}>IS</span>
                         </div>
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -896,9 +1504,15 @@ export default function PembayaranPage() {
                         <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 1 }}>Semua bank & e-wallet</div>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
-                        <div style={{ background: "#f1f5f9", borderRadius: 6, padding: "3px 8px" }}>
-                          <span style={{ fontSize: 9, fontWeight: 700, color: "#64748b" }}>ALL</span>
-                        </div>
+                        {qrisGatewayList.length > 0 && qrisGatewayList[0].logo ? (
+                          <div style={{ width: 32, height: 22, borderRadius: 5, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #e2e8f0", overflow: "hidden" }}>
+                            <img src={qrisGatewayList[0].logo} alt="QRIS" style={{ width: 22, height: 16, objectFit: "contain" }} />
+                          </div>
+                        ) : (
+                          <div style={{ background: "#f1f5f9", borderRadius: 6, padding: "3px 8px" }}>
+                            <span style={{ fontSize: 9, fontWeight: 700, color: "#64748b" }}>ALL</span>
+                          </div>
+                        )}
                       </div>
                       <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
                     </div>
@@ -954,20 +1568,21 @@ export default function PembayaranPage() {
                     Batal
                   </button>
                   <button
-                    onClick={() => setModalStep("payment_detail")}
+                    onClick={handleProceedToDetail}
+                    disabled={isCharging}
                     style={{
                       padding: "12px",
-                      background: "#f59e0b",
+                      background: isCharging ? "#fbbf24" : "#f59e0b",
                       color: "#ffffff",
                       border: "none",
                       borderRadius: 10,
                       fontWeight: 700,
                       fontSize: 14,
-                      cursor: "pointer",
+                      cursor: isCharging ? "not-allowed" : "pointer",
                       boxShadow: "0 4px 12px rgba(245,158,11,0.25)",
                     }}
                   >
-                    Lanjutkan Pembayaran
+                    {isCharging ? "Menghubungkan Gateway..." : "Lanjutkan Pembayaran"}
                   </button>
                 </div>
               </div>
@@ -976,29 +1591,56 @@ export default function PembayaranPage() {
             {/* ── STEP 2: PEMBAYARAN DETAIL (VIRTUAL ACCOUNT / QRIS / CASH) ── */}
             {modalStep === "payment_detail" && (
               <div>
-                {/* Header */}
+                {/* Header with Change Method Button */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
                   <h3 style={{ fontSize: 18, fontWeight: 800, color: "#1e293b", margin: 0 }}>
                     {selectedMethod === "va"
-                      ? "Pembayaran Virtual Account"
+                      ? `Virtual Account (${selectedBank})`
                       : selectedMethod === "qris"
                       ? "Pembayaran QRIS"
                       : selectedMethod === "ewallet"
-                      ? "Pembayaran E-Wallet"
+                      ? `E-Wallet (${selectedEwallet})`
                       : "Pembayaran Cash / Tunai"}
                   </h3>
-                  <button
-                    onClick={() => setModalStep(null)}
-                    style={{ background: "transparent", border: "none", color: "#64748b", cursor: "pointer", padding: 4 }}
-                  >
-                    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </button>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsGenerated(false);
+                        setModalStep("select_method");
+                      }}
+                      style={{
+                        padding: "5px 10px",
+                        borderRadius: 8,
+                        border: "1px solid #cbd5e1",
+                        background: "#f8fafc",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: "#0e7490",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                        <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      <span>Ganti Metode</span>
+                    </button>
+                    <button
+                      onClick={() => setModalStep(null)}
+                      style={{ background: "transparent", border: "none", color: "#64748b", cursor: "pointer", padding: 4 }}
+                    >
+                      <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
 
                 <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 16px 0", lineHeight: 1.4 }}>
-                  Silakan selesaikan pembayaran menggunakan {selectedMethod === "va" ? "Virtual Account" : selectedMethod.toUpperCase()} sebelum batas waktu pembayaran.
+                  Silakan selesaikan pembayaran menggunakan {selectedMethod === "va" ? `Virtual Account ${selectedBank}` : selectedMethod.toUpperCase()} sebelum batas waktu pembayaran.
                 </p>
 
                 {/* Ringkasan Pembayaran Box */}
@@ -1011,19 +1653,34 @@ export default function PembayaranPage() {
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
                         <span>Pertemuan 7</span><span>Rp 50.000</span>
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 10 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: liveFee ? 4 : 10 }}>
                         <span>Pertemuan 8</span><span>Rp 50.000</span>
                       </div>
                     </>
                   ) : (
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 10 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: liveFee ? 4 : 10 }}>
                       <span>Sisa Pertemuan (7-12)</span><span>6 x Rp 50.000</span>
                     </div>
                   )}
 
+                  {/* Biaya Layanan Gateway jika sudah digenerate */}
+                  {liveFee !== null && liveFee > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, fontWeight: 600, color: "#64748b", marginBottom: 10 }}>
+                      <span>Biaya Transaksi / Fee Gateway</span>
+                      <span>+ Rp {liveFee.toLocaleString("id-ID")}</span>
+                    </div>
+                  )}
+
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #e2e8f0", paddingTop: 8 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>Total Pembayaran</span>
-                    <span style={{ fontSize: 20, fontWeight: 800, color: "#0e7490" }}>{totalAmount}</span>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#1e293b" }}>Total yang Harus Ditransfer</div>
+                      {liveFee !== null && liveFee > 0 && (
+                        <div style={{ fontSize: 10.5, color: "#64748b" }}>(Termasuk Biaya Gateway)</div>
+                      )}
+                    </div>
+                    <span style={{ fontSize: 20, fontWeight: 800, color: "#0e7490" }}>
+                      {liveTotalAmount ? `Rp ${liveTotalAmount.toLocaleString("id-ID")}` : totalAmount}
+                    </span>
                   </div>
                 </div>
 
@@ -1036,36 +1693,67 @@ export default function PembayaranPage() {
 
                     {/* Bank Grid Selector — branded cards with real logos */}
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 16 }}>
-                      {([
-                        { id: "BCA" as const, name: "Bank Central Asia", method: "m-BCA / KlikBCA / ATM", color: "#0066B3", selectedBg: "#DBEAFE", logo: "/logo%20pembayaran/BCA.webp" },
-                        { id: "BNI" as const, name: "Bank Negara Indonesia", method: "iBanking BNI / ATM", color: "#F58220", selectedBg: "#FFE8CC", logo: "/logo%20pembayaran/BNI.webp" },
-                        { id: "Mandiri" as const, name: "Bank Mandiri", method: "Livin' by Mandiri / ATM", color: "#FFB81C", selectedBg: "#FFF3CC", logo: "/logo%20pembayaran/mandiri.png" },
-                        { id: "BRI" as const, name: "Bank Rakyat Indonesia", method: "BRImo / ATM", color: "#003D6B", selectedBg: "#CCE0F2", logo: "/logo%20pembayaran/BRI.png" },
-                      ]).map((bank) => {
-                        const isActive = selectedBank === bank.id;
-                        return (
-                        <button
-                          key={bank.id}
-                          onClick={() => setSelectedBank(bank.id)}
-                          className={`bank-card-btn ${isActive ? "bank-card-active" : ""}`}
-                          style={{
-                            padding: "12px", borderRadius: 12, textAlign: "left",
-                            border: isActive ? `2px solid ${bank.color}` : "1px solid #e2e8f0",
-                            background: isActive ? bank.selectedBg : "#ffffff",
-                            cursor: "pointer",
-                            display: "flex", alignItems: "center", gap: 10,
-                          }}
-                        >
-                          <div style={{ width: 42, height: 42, borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: isActive ? `0 4px 12px ${bank.color}33` : "0 1px 3px rgba(0,0,0,0.08)", overflow: "hidden" }}>
-                            <img src={bank.logo} alt={bank.name} style={{ width: 34, height: 34, objectFit: "contain" }} />
-                          </div>
-                          <div style={{ minWidth: 0 }}>
-                            <div style={{ fontSize: 12, fontWeight: 700, color: isActive ? bank.color : "#1e293b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{bank.name}</div>
-                            <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{bank.method}</div>
-                          </div>
-                        </button>
-                        );
-                      })}
+                      {vaGatewayList.length > 0 ? (
+                        vaGatewayList.map((bank) => {
+                          const bankKey = bank.code.replace("VA", "");
+                          const isActive = selectedBank.toUpperCase() === bankKey || selectedBank.toUpperCase() === bank.code;
+                          return (
+                            <button
+                              key={bank.code}
+                              onClick={() => handleSelectBank(bankKey)}
+                              className={`bank-card-btn ${isActive ? "bank-card-active" : ""}`}
+                              style={{
+                                padding: "12px", borderRadius: 12, textAlign: "left",
+                                border: isActive ? `2px solid #0066B3` : "1px solid #e2e8f0",
+                                background: isActive ? "#DBEAFE" : "#ffffff",
+                                cursor: "pointer",
+                                display: "flex", alignItems: "center", gap: 10,
+                              }}
+                            >
+                              <div style={{ width: 42, height: 42, borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: isActive ? `0 4px 12px rgba(0,102,179,0.2)` : "0 1px 3px rgba(0,0,0,0.08)", overflow: "hidden" }}>
+                                <img src={bank.logo} alt={bank.name} style={{ width: 34, height: 34, objectFit: "contain" }} />
+                              </div>
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: isActive ? "#0066B3" : "#1e293b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{bank.name}</div>
+                                <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                  {formatGatewayFeeDisplay(bank.fee, bank.fee_format) ? `Fee: ${formatGatewayFeeDisplay(bank.fee, bank.fee_format)}` : "Virtual Account"}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })
+                      ) : (
+                        ([
+                          { id: "BCA" as const, name: "Bank Central Asia", method: "m-BCA / KlikBCA / ATM", color: "#0066B3", selectedBg: "#DBEAFE", logo: "/logo%20pembayaran/BCA.webp" },
+                          { id: "BNI" as const, name: "Bank Negara Indonesia", method: "iBanking BNI / ATM", color: "#F58220", selectedBg: "#FFE8CC", logo: "/logo%20pembayaran/BNI.webp" },
+                          { id: "Mandiri" as const, name: "Bank Mandiri", method: "Livin' by Mandiri / ATM", color: "#FFB81C", selectedBg: "#FFF3CC", logo: "/logo%20pembayaran/mandiri.png" },
+                          { id: "BRI" as const, name: "Bank Rakyat Indonesia", method: "BRImo / ATM", color: "#003D6B", selectedBg: "#CCE0F2", logo: "/logo%20pembayaran/BRI.png" },
+                        ]).map((bank) => {
+                          const isActive = selectedBank === bank.id;
+                          return (
+                          <button
+                            key={bank.id}
+                            onClick={() => handleSelectBank(bank.id)}
+                            className={`bank-card-btn ${isActive ? "bank-card-active" : ""}`}
+                            style={{
+                              padding: "12px", borderRadius: 12, textAlign: "left",
+                              border: isActive ? `2px solid ${bank.color}` : "1px solid #e2e8f0",
+                              background: isActive ? bank.selectedBg : "#ffffff",
+                              cursor: "pointer",
+                              display: "flex", alignItems: "center", gap: 10,
+                            }}
+                          >
+                            <div style={{ width: 42, height: 42, borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: isActive ? `0 4px 12px ${bank.color}33` : "0 1px 3px rgba(0,0,0,0.08)", overflow: "hidden" }}>
+                              <img src={bank.logo} alt={bank.name} style={{ width: 34, height: 34, objectFit: "contain" }} />
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: isActive ? bank.color : "#1e293b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{bank.name}</div>
+                              <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{bank.method}</div>
+                            </div>
+                          </button>
+                          );
+                        })
+                      )}
                     </div>
 
                     {/* Virtual Account Number Container */}
@@ -1083,41 +1771,54 @@ export default function PembayaranPage() {
                         NOMOR VIRTUAL ACCOUNT
                       </div>
 
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                        <span style={{ fontSize: 22, fontWeight: 800, color: "#0e7490", letterSpacing: "0.04em" }}>
-                          {vaNumbers[selectedBank]}
-                        </span>
-                        <button
-                          onClick={handleCopyVa}
-                          title="Salin Nomor VA"
-                          style={{
-                            background: "#e0f2fe",
-                            border: "none",
-                            borderRadius: 6,
-                            padding: "6px 10px",
-                            cursor: "pointer",
-                            color: "#0284c7",
-                            fontSize: 12,
-                            fontWeight: 700,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                          }}
-                        >
-                          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                          </svg>
-                          <span>{vaCopied ? "Tersalin!" : ""}</span>
-                        </button>
-                      </div>
+                      {liveVaNumber ? (
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                          <span style={{ fontSize: 22, fontWeight: 800, color: "#0e7490", letterSpacing: "0.04em" }}>
+                            {liveVaNumber}
+                          </span>
+                          <button
+                            onClick={handleCopyVa}
+                            title="Salin Nomor VA"
+                            style={{
+                              background: "#e0f2fe",
+                              border: "none",
+                              borderRadius: 6,
+                              padding: "6px 10px",
+                              cursor: "pointer",
+                              color: "#0284c7",
+                              fontSize: 12,
+                              fontWeight: 700,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
+                          >
+                            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
+                            <span>{vaCopied ? "Tersalin!" : ""}</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ padding: "8px 0", color: "#64748b", fontSize: 13, fontWeight: 600 }}>
+                          Klik tombol <strong>Bayar</strong> di bawah untuk mendapatkan Nomor Virtual Account resmi.
+                        </div>
+                      )}
 
                       <div style={{ fontSize: 13, color: "#475569", marginTop: 8, fontWeight: 600 }}>
-                        Total: <strong>{totalAmount}</strong>
+                        Total Transfer: <strong>{liveTotalAmount ? `Rp ${liveTotalAmount.toLocaleString("id-ID")}` : totalAmount}</strong>
+                        {liveFee !== null && liveFee > 0 && (
+                          <span style={{ fontSize: 11, color: "#64748b", marginLeft: 6 }}>
+                            (Tagihan: Rp {(liveAmount || 0).toLocaleString("id-ID")} + Fee: Rp {liveFee.toLocaleString("id-ID")})
+                          </span>
+                        )}
                       </div>
-                      <div style={{ fontSize: 12, color: "#dc2626", fontWeight: 700, marginTop: 4 }}>
-                        Bayar sebelum 27 Agustus 2024, 23:59
-                      </div>
+                      {liveExpiredAt && (
+                        <div style={{ fontSize: 12, color: "#dc2626", fontWeight: 700, marginTop: 4 }}>
+                          Bayar sebelum {formatUserLocalExpiry(liveExpiredAt)}
+                        </div>
+                      )}
                     </div>
                   </>
                 )}
@@ -1166,86 +1867,405 @@ export default function PembayaranPage() {
 
                 {/* ── DETAILS FOR QRIS ── */}
                 {selectedMethod === "qris" && (
-                  <div style={{ textAlign: "center", padding: "10px 0 20px" }}>
-                    {/* QRIS Logo */}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 16 }}>
-                      <div style={{ display: "flex", alignItems: "center", background: "#ED1C24", borderRadius: 8, padding: "6px 16px", gap: 2 }}>
-                        <svg width={20} height={20} viewBox="0 0 24 24" fill="#fff">
-                          <rect x="1" y="1" width="9" height="9" rx="1" /><rect x="3" y="3" width="5" height="5" rx="0.5" fill="#ED1C24" /><rect x="4" y="4" width="3" height="3" rx="0.5" fill="#fff" />
-                          <rect x="14" y="1" width="9" height="9" rx="1" /><rect x="16" y="3" width="5" height="5" rx="0.5" fill="#ED1C24" /><rect x="17" y="4" width="3" height="3" rx="0.5" fill="#fff" />
-                          <rect x="1" y="14" width="9" height="9" rx="1" /><rect x="3" y="16" width="5" height="5" rx="0.5" fill="#ED1C24" /><rect x="4" y="17" width="3" height="3" rx="0.5" fill="#fff" />
-                          <rect x="14" y="14" width="4" height="4" rx="0.5" /><rect x="20" y="14" width="3" height="3" rx="0.5" /><rect x="14" y="20" width="3" height="3" rx="0.5" /><rect x="19" y="19" width="4" height="4" rx="0.5" />
-                        </svg>
-                        <span style={{ fontSize: 18, fontWeight: 900, color: "#fff", letterSpacing: "0.06em" }}>QRIS</span>
+                  <>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+                      PILIH METODE QRIS
+                    </div>
+
+                    {/* QRIS Card Selector — Card button sama persis dengan layout VA & E-Wallet */}
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 16 }}>
+                      {(() => {
+                        const qrisData = qrisGatewayList.length > 0 ? qrisGatewayList[0] : null;
+                        return (
+                          <button
+                            onClick={() => {
+                              if (!isGenerated && !isCharging) {
+                                handleGeneratePayment();
+                              }
+                            }}
+                            className="bank-card-btn bank-card-active"
+                            style={{
+                              padding: "12px",
+                              borderRadius: 12,
+                              textAlign: "left",
+                              border: "2px solid #0e7490",
+                              background: "#f0f9ff",
+                              cursor: isGenerated ? "default" : "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 10,
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: 42,
+                                height: 42,
+                                borderRadius: 10,
+                                border: "1px solid #bae6fd",
+                                background: "#fff",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0,
+                                boxShadow: "0 4px 12px rgba(14, 116, 144, 0.18)",
+                                overflow: "hidden",
+                              }}
+                            >
+                              {qrisData?.logo ? (
+                                <img src={qrisData.logo} alt="QRIS" style={{ width: 34, height: 34, objectFit: "contain" }} />
+                              ) : (
+                                <div style={{ display: "flex", alignItems: "center" }}>
+                                  <span style={{ fontSize: 13, fontWeight: 900, color: "#ED1C24", letterSpacing: "-0.02em" }}>QR</span>
+                                  <span style={{ fontSize: 13, fontWeight: 900, color: "#1e293b", letterSpacing: "-0.02em", marginLeft: 1 }}>IS</span>
+                                </div>
+                              )}
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: "#0e7490", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                QRIS
+                              </div>
+                              <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                {qrisData?.fee_format ? `Fee: ${formatGatewayFeeDisplay(qrisData.fee, qrisData.fee_format)}` : "Semua Bank & E-Wallet"}
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })()}
+                    </div>
+
+                    {/* QR Code Container — Hanya muncul barcode jika sudah klik tombol Bayar atau klik Card QRIS */}
+                    <div
+                      style={{
+                        background: "#f8fafc",
+                        borderRadius: 12,
+                        padding: "16px",
+                        textAlign: "center",
+                        border: "1px solid #e2e8f0",
+                        marginBottom: 20,
+                      }}
+                    >
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+                        BARCODE QRIS
                       </div>
+
+                      {isGenerated && liveQrUrl ? (
+                        <>
+                          <div
+                            style={{
+                              background: "#ffffff",
+                              padding: 16,
+                              display: "inline-block",
+                              borderRadius: 16,
+                              border: "2px solid #e2e8f0",
+                              boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
+                              margin: "10px 0 14px",
+                            }}
+                          >
+                            <img
+                              src={liveQrUrl}
+                              alt="QRIS Code"
+                              style={{ width: 190, height: 190, objectFit: "contain", borderRadius: 8, display: "block" }}
+                            />
+                          </div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", marginBottom: 8 }}>
+                            Scan QRIS ini dengan:
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "center", gap: 5, flexWrap: "wrap", marginBottom: 12, maxWidth: 420, marginInline: "auto" }}>
+                            {[
+                              { n: "m-BCA", c: "#0066B3" }, { n: "BRImo", c: "#003D6B" },
+                              { n: "Livin'", c: "#FFB81C" }, { n: "BNI", c: "#F58220" },
+                              { n: "OVO", c: "#4C3494" }, { n: "GoPay", c: "#00AA13" },
+                              { n: "ShopeePay", c: "#EE4D2D" }, { n: "DANA", c: "#108EE9" },
+                              { n: "LinkAja", c: "#E4002B" },
+                            ].map(a => (
+                              <span key={a.n} style={{ fontSize: 10, fontWeight: 700, color: a.c, background: `${a.c}12`, padding: "4px 8px", borderRadius: 6, border: `1px solid ${a.c}20` }}>
+                                {a.n}
+                              </span>
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <div style={{ padding: "8px 0", color: "#64748b", fontSize: 13, fontWeight: 600 }}>
+                          Klik kartu QRIS di atas atau tombol <strong>Bayar</strong> di bawah untuk memunculkan Barcode QRIS resmi.
+                        </div>
+                      )}
+
+                      <div style={{ fontSize: 13, color: "#475569", marginTop: 8, fontWeight: 600 }}>
+                        Total Tagihan: <strong>{liveTotalAmount ? `Rp ${liveTotalAmount.toLocaleString("id-ID")}` : totalAmount}</strong>
+                        {liveFee !== null && liveFee > 0 && (
+                          <span style={{ fontSize: 11, color: "#64748b", marginLeft: 6 }}>
+                            (Tagihan: Rp {(liveAmount || 0).toLocaleString("id-ID")} + Fee: Rp {liveFee.toLocaleString("id-ID")})
+                          </span>
+                        )}
+                      </div>
+                      {liveExpiredAt && (
+                        <div style={{ fontSize: 12, color: "#dc2626", fontWeight: 700, marginTop: 4 }}>
+                          Bayar sebelum {formatUserLocalExpiry(liveExpiredAt)}
+                        </div>
+                      )}
                     </div>
-                    <div style={{ background: "#ffffff", padding: 20, display: "inline-block", borderRadius: 16, border: "2px solid #e2e8f0", boxShadow: "0 2px 16px rgba(0,0,0,0.06)", marginBottom: 14 }}>
-                      <svg width={160} height={160} viewBox="0 0 100 100" fill="#1e293b">
-                        <path d="M0,0 h30 v30 h-30 z M10,10 h10 v10 h-10 z" />
-                        <path d="M70,0 h30 v30 h-30 z M80,10 h10 v10 h-10 z" />
-                        <path d="M0,70 h30 v30 h-30 z M10,80 h10 v10 h-10 z" />
-                        <rect x="40" y="40" width="20" height="20" fill="#ED1C24" />
-                        <rect x="10" y="40" width="10" height="10" />
-                        <rect x="80" y="50" width="10" height="20" />
-                        <rect x="50" y="10" width="20" height="10" />
-                        <rect x="40" y="80" width="30" height="10" />
-                        <rect x="60" y="60" width="10" height="10" />
-                        <rect x="40" y="65" width="8" height="8" />
-                        <rect x="70" y="30" width="8" height="8" />
-                      </svg>
-                    </div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", marginBottom: 10 }}>Scan QRIS ini dengan:</div>
-                    <div style={{ display: "flex", justifyContent: "center", gap: 5, flexWrap: "wrap" }}>
-                      {[
-                        { n: "m-BCA", c: "#0066B3" }, { n: "BRImo", c: "#003D6B" },
-                        { n: "OVO", c: "#4C3494" }, { n: "GoPay", c: "#00AA13" },
-                        { n: "ShopeePay", c: "#EE4D2D" }, { n: "DANA", c: "#108EE9" },
-                        { n: "LinkAja", c: "#E4002B" },
-                      ].map(a => (
-                        <span key={a.n} style={{ fontSize: 10, fontWeight: 700, color: a.c, background: `${a.c}12`, padding: "4px 10px", borderRadius: 6, border: `1px solid ${a.c}20` }}>{a.n}</span>
-                      ))}
-                    </div>
-                  </div>
+                  </>
                 )}
 
                 {/* ── DETAILS FOR E-WALLET ── */}
                 {selectedMethod === "ewallet" && (
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 20 }}>
-                    {([
-                      { name: "GoPay" as const, fullName: "GoPay", color: "#00AA13", selectedBg: "#D1FADF", desc: "Bayar via Gojek App", logo: "/logo%20pembayaran/gopay.webp" },
-                      { name: "OVO" as const, fullName: "OVO", color: "#4C3494", selectedBg: "#E2DDF6", desc: "Bayar via OVO App", logo: "/logo%20pembayaran/ovo.jpg" },
-                      { name: "ShopeePay" as const, fullName: "ShopeePay", color: "#EE4D2D", selectedBg: "#FDDDD5", desc: "Bayar via Shopee App", logo: "/logo%20pembayaran/shopeepay.webp" },
-                      { name: "DANA" as const, fullName: "DANA", color: "#108EE9", selectedBg: "#D4ECFC", desc: "Bayar via DANA App", logo: "/logo%20pembayaran/Dana.webp" },
-                    ]).map((ew) => {
-                      const isActive = selectedEwallet === ew.name;
-                      return (
-                      <button
-                        key={ew.name}
-                        onClick={() => setSelectedEwallet(ew.name)}
-                        className={`bank-card-btn ${isActive ? "bank-card-active" : ""}`}
-                        style={{
-                          padding: "12px", borderRadius: 12, textAlign: "left",
-                          border: isActive ? `2px solid ${ew.color}` : `1px solid ${ew.color}30`,
-                          background: isActive ? ew.selectedBg : "#ffffff",
-                          cursor: "pointer",
-                          display: "flex", alignItems: "center", gap: 10,
-                        }}
-                      >
-                        <div style={{ width: 42, height: 42, borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: isActive ? `0 4px 12px ${ew.color}33` : "0 1px 3px rgba(0,0,0,0.08)", overflow: "hidden" }}>
-                          <img src={ew.logo} alt={ew.name} style={{ width: 34, height: 34, objectFit: "contain" }} />
-                        </div>
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: ew.color }}>{ew.fullName}</div>
-                          <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ew.desc}</div>
-                        </div>
-                      </button>
-                      );
-                    })}
+                    {ewalletGatewayList.length > 0 ? (
+                      ewalletGatewayList.map((ew) => {
+                        const isActive = selectedEwallet.toUpperCase() === ew.code.toUpperCase() || selectedEwallet.toUpperCase() === ew.name.toUpperCase();
+                        return (
+                          <button
+                            key={ew.code}
+                            onClick={() => handleSelectEwallet(ew.code)}
+                            className={`bank-card-btn ${isActive ? "bank-card-active" : ""}`}
+                            style={{
+                              padding: "12px", borderRadius: 12, textAlign: "left",
+                              border: isActive ? `2px solid #059669` : "1px solid #e2e8f0",
+                              background: isActive ? "#D1FADF" : "#ffffff",
+                              cursor: "pointer",
+                              display: "flex", alignItems: "center", gap: 10,
+                            }}
+                          >
+                            <div style={{ width: 42, height: 42, borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: isActive ? "0 4px 12px rgba(5,150,105,0.2)" : "0 1px 3px rgba(0,0,0,0.08)", overflow: "hidden" }}>
+                              <img src={ew.logo} alt={ew.name} style={{ width: 34, height: 34, objectFit: "contain" }} />
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontSize: 12, fontWeight: 700, color: isActive ? "#059669" : "#1e293b" }}>{ew.name}</div>
+                              <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                {formatGatewayFeeDisplay(ew.fee, ew.fee_format) ? `Fee: ${formatGatewayFeeDisplay(ew.fee, ew.fee_format)}` : "E-Wallet"}
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })
+                    ) : (
+                      ([
+                        { name: "ShopeePay" as const, fullName: "ShopeePay", color: "#EE4D2D", selectedBg: "#FDDDD5", desc: "Fee: 2.9% • Shopee App", logo: "/logo%20pembayaran/shopeepay.webp" },
+                        { name: "OVO" as const, fullName: "OVO", color: "#4C3494", selectedBg: "#E2DDF6", desc: "Fee: 2.5% • OVO App", logo: "/logo%20pembayaran/ovo.jpg" },
+                        { name: "GoPay" as const, fullName: "GoPay", color: "#00AA13", selectedBg: "#D1FADF", desc: "Fee: 2% • Gojek App", logo: "/logo%20pembayaran/gopay.webp" },
+                        { name: "DANA" as const, fullName: "DANA", color: "#108EE9", selectedBg: "#D4ECFC", desc: "Fee: 2.5% • DANA App", logo: "/logo%20pembayaran/Dana.webp" },
+                      ]).map((ew) => {
+                        const isActive = selectedEwallet === ew.name;
+                        return (
+                        <button
+                          key={ew.name}
+                          onClick={() => handleSelectEwallet(ew.name)}
+                          className={`bank-card-btn ${isActive ? "bank-card-active" : ""}`}
+                          style={{
+                            padding: "12px", borderRadius: 12, textAlign: "left",
+                            border: isActive ? `2px solid ${ew.color}` : `1px solid ${ew.color}30`,
+                            background: isActive ? ew.selectedBg : "#ffffff",
+                            cursor: "pointer",
+                            display: "flex", alignItems: "center", gap: 10,
+                          }}
+                        >
+                          <div style={{ width: 42, height: 42, borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: isActive ? `0 4px 12px ${ew.color}33` : "0 1px 3px rgba(0,0,0,0.08)", overflow: "hidden" }}>
+                            <img src={ew.logo} alt={ew.name} style={{ width: 34, height: 34, objectFit: "contain" }} />
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: ew.color }}>{ew.fullName}</div>
+                            <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ew.desc}</div>
+                          </div>
+                        </button>
+                        );
+                      })
+                    )}
                   </div>
                 )}
 
+                {/* E-Wallet Total & Fee Info jika sudah generated */}
+                {selectedMethod === "ewallet" && (
+                  <div style={{ background: "#f8fafc", borderRadius: 12, padding: "14px", border: "1px solid #e2e8f0", textAlign: "center", marginBottom: 16 }}>
+                    <div style={{ fontSize: 13, color: "#475569", fontWeight: 600 }}>
+                      Total Transfer: <strong>{liveTotalAmount ? `Rp ${liveTotalAmount.toLocaleString("id-ID")}` : totalAmount}</strong>
+                      {liveFee !== null && liveFee > 0 && (
+                        <span style={{ fontSize: 11, color: "#64748b", marginLeft: 6 }}>
+                          (Tagihan: Rp {(liveAmount || 0).toLocaleString("id-ID")} + Fee: Rp {liveFee.toLocaleString("id-ID")})
+                        </span>
+                      )}
+                    </div>
+                    {liveExpiredAt && (
+                      <div style={{ fontSize: 12, color: "#dc2626", fontWeight: 700, marginTop: 4 }}>
+                        Bayar sebelum {formatUserLocalExpiry(liveExpiredAt)}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tombol Buka Invoice / Checkout Resmi Gateway jika tersedia (Hanya E-Wallet) */}
+                {liveCheckoutUrl && selectedMethod === "ewallet" && (
+                  <div style={{ textAlign: "center", marginBottom: 16 }}>
+                    <a
+                      href={liveCheckoutUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 8,
+                        padding: "10px 16px",
+                        background: "#f0f9ff",
+                        border: "1px solid #bae6fd",
+                        borderRadius: 8,
+                        color: "#0284c7",
+                        fontWeight: 700,
+                        fontSize: 13,
+                        textDecoration: "none",
+                      }}
+                    >
+                      <span>Buka Halaman Checkout Resmi {selectedEwallet}</span>
+                      <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                      </svg>
+                    </a>
+                  </div>
+                )}
+
+                {/* ── DROPDOWN PANDUAN CARA BAYAR (ZANNSTORE GATEWAY) — HANYA MUNCUL SETELAH KLIK BAYAR ── */}
+                {isGenerated && (() => {
+                  const activeMethodData = getCurrentActiveMethodData();
+                  const rawPanduan = activeMethodData?.panduan;
+                  const categories = getNormalizedPanduan(rawPanduan);
+
+                  // Fallback jika tidak ada data dari gateway
+                  const defaultCategories: { categoryTitle?: string; steps: string[]; notes?: string }[] =
+                    selectedMethod === "va"
+                      ? [
+                          {
+                            categoryTitle: `m-${selectedBank} / Mobile Banking`,
+                            steps: [
+                              `Login ke aplikasi Mobile Banking ${selectedBank}.`,
+                              `Pilih menu 'Transfer' atau 'Bayar' lalu pilih 'Virtual Account'.`,
+                              `Masukkan Nomor Virtual Account: ${liveVaNumber || ""}.`,
+                              `Pastikan nominal tagihan sesuai (${totalAmount}) lalu masukkan PIN transaksi.`,
+                            ],
+                          },
+                          {
+                            categoryTitle: `ATM ${selectedBank}`,
+                            steps: [
+                              `Masukkan Kartu ATM dan PIN ${selectedBank} Anda.`,
+                              `Pilih menu 'Transaksi Lainnya' → 'Transfer' → 'Ke Rekening Virtual Account'.`,
+                              `Masukkan Nomor Virtual Account: ${liveVaNumber || ""}.`,
+                              `Konfirmasi detail pembayaran dan selesaikan transaksi.`,
+                            ],
+                          },
+                        ]
+                      : selectedMethod === "qris"
+                      ? [
+                          {
+                            categoryTitle: "BCA Mobile / Mandiri / BRImo / Bank Lain",
+                            steps: [
+                              "Buka aplikasi Mobile Banking pilihan Anda.",
+                              "Pilih fitur 'QRIS' atau 'Scan QR'.",
+                              "Arahkan kamera ke QR Code di atas.",
+                              `Periksa nominal (${totalAmount}) dan konfirmasi dengan PIN.`,
+                            ],
+                          },
+                          {
+                            categoryTitle: "GoPay / OVO / DANA / ShopeePay",
+                            steps: [
+                              "Buka aplikasi E-Wallet Anda.",
+                              "Pilih menu 'Scan' atau 'Bayar'.",
+                              "Arahkan kamera ke QR Code di atas.",
+                              "Verifikasi pembayaran dan selesaikan transaksi.",
+                            ],
+                          },
+                        ]
+                      : [
+                          {
+                            categoryTitle: `Aplikasi ${selectedEwallet}`,
+                            steps: [
+                              `Klik tombol 'Buka Halaman Checkout Resmi ${selectedEwallet}' di atas atau buka aplikasi ${selectedEwallet}.`,
+                              "Selesaikan otorisasi dan konfirmasi pembayaran di aplikasi.",
+                              "Setelah berhasil, status pembayaran akan terverifikasi otomatis.",
+                            ],
+                          },
+                        ];
+
+                  const categoriesToRender = categories.length > 0 ? categories : defaultCategories;
+
+                  return (
+                    <div style={{ marginBottom: 20 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#475569", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                        <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="#0e7490" strokeWidth={2}>
+                          <circle cx="12" cy="12" r="10" />
+                          <path d="M12 16v-4M12 8h.01" />
+                        </svg>
+                        <span>Petunjuk & Cara Pembayaran:</span>
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {categoriesToRender.map((cat, catIdx) => {
+                          const isCatOpen = expandedGuideIndex === catIdx;
+                          return (
+                            <div key={catIdx} style={{ border: "1px solid #e2e8f0", borderRadius: 10, overflow: "hidden", background: "#ffffff" }}>
+                              <button
+                                type="button"
+                                onClick={() => setExpandedGuideIndex(isCatOpen ? null : catIdx)}
+                                style={{
+                                  width: "100%",
+                                  padding: "10px 14px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  background: isCatOpen ? "#f8fafc" : "#ffffff",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  textAlign: "left",
+                                }}
+                              >
+                                <span style={{ fontSize: 12, fontWeight: 700, color: isCatOpen ? "#0e7490" : "#334155" }}>
+                                  ▸ {cat.categoryTitle}
+                                </span>
+                                <svg
+                                  width={14}
+                                  height={14}
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="#64748b"
+                                  strokeWidth={2}
+                                  style={{
+                                    transform: isCatOpen ? "rotate(180deg)" : "rotate(0deg)",
+                                    transition: "transform 0.2s ease",
+                                  }}
+                                >
+                                  <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                              </button>
+
+                              {isCatOpen && (
+                                <div style={{ padding: "10px 16px 14px", borderTop: "1px solid #f1f5f9", background: "#f8fafc" }}>
+                                  <ol style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: "#334155", lineHeight: 1.6 }}>
+                                    {cat.steps.map((st, stIdx) => {
+                                      // Ganti placeholder jika ada dengan nomor VA live
+                                      const text = liveVaNumber ? st.replace(/Nomor VA/i, `Nomor VA (${liveVaNumber})`) : st;
+                                      return (
+                                        <li key={stIdx} style={{ marginBottom: 4 }}>
+                                          {text}
+                                        </li>
+                                      );
+                                    })}
+                                  </ol>
+
+                                  {cat.notes && (
+                                    <div style={{ marginTop: 8, padding: "6px 10px", background: "#fffbeb", border: "1px solid #fef3c7", borderRadius: 6, fontSize: 11, color: "#92400e" }}>
+                                      <strong>Catatan:</strong> {cat.notes}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Footer Action Buttons */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: selectedMethod === "cash" ? (isGenerated ? "1fr 1.4fr" : "1fr 1.4fr") : "1fr", gap: 12 }}>
                   <button
                     onClick={() => setModalStep("select_method")}
                     style={{
@@ -1261,23 +2281,95 @@ export default function PembayaranPage() {
                   >
                     Kembali
                   </button>
-                  <button
-                    onClick={handleConfirmWaiting}
+
+                  {selectedMethod === "cash" ? (
+                    <button
+                      onClick={handleConfirmWaiting}
+                      style={{
+                        padding: "12px",
+                        background: "#0e7490",
+                        color: "#ffffff",
+                        border: "none",
+                        borderRadius: 10,
+                        fontWeight: 700,
+                        fontSize: 14,
+                        cursor: "pointer",
+                        boxShadow: "0 4px 12px rgba(14,116,144,0.25)",
+                      }}
+                    >
+                      Kirim Bukti Pembayaran
+                    </button>
+                  ) : !isGenerated ? (
+                    <button
+                      onClick={handleGeneratePayment}
+                      disabled={isCharging}
+                      style={{
+                        padding: "12px",
+                        background: isCharging ? "#94a3b8" : "#f59e0b",
+                        color: "#ffffff",
+                        border: "none",
+                        borderRadius: 10,
+                        fontWeight: 700,
+                        fontSize: 14,
+                        cursor: isCharging ? "not-allowed" : "pointer",
+                        boxShadow: isCharging ? "none" : "0 4px 12px rgba(245,158,11,0.25)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                      }}
+                    >
+                      {isCharging ? (
+                        <>
+                          <div
+                            style={{
+                              width: 16,
+                              height: 16,
+                              borderRadius: "50%",
+                              border: "2px solid #ffffff",
+                              borderTopColor: "transparent",
+                              animation: "spin 0.8s linear infinite",
+                            }}
+                          />
+                          <span>Memproses...</span>
+                        </>
+                      ) : (
+                        "Bayar"
+                      )}
+                    </button>
+                  ) : null}
+                </div>
+                {/* Live Realtime Listening Banner (Digital Payment) */}
+                {selectedMethod !== "cash" && isGenerated && (
+                  <div
                     style={{
-                      padding: "12px",
-                      background: "#f59e0b",
-                      color: "#ffffff",
-                      border: "none",
+                      marginTop: 14,
+                      padding: "12px 16px",
+                      background: "#f0f9ff",
+                      border: "1px solid #bae6fd",
                       borderRadius: 10,
-                      fontWeight: 700,
-                      fontSize: 14,
-                      cursor: "pointer",
-                      boxShadow: "0 4px 12px rgba(245,158,11,0.25)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
                     }}
                   >
-                    Bayar
-                  </button>
-                </div>
+                    {/* Spinner loading halus tanpa kedip */}
+                    <div
+                      style={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: "50%",
+                        border: "2px solid #bae6fd",
+                        borderTopColor: "#0284c7",
+                        animation: "spin 0.8s linear infinite",
+                        flexShrink: 0,
+                      }}
+                    />
+                    <div style={{ fontSize: 12, color: "#0369a1", fontWeight: 600 }}>
+                      Menunggu pembayaran masuk... Halaman akan otomatis lunas begitu transfer selesai.
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1346,23 +2438,24 @@ export default function PembayaranPage() {
                 {/* Action Button: Cek Status Pembayaran */}
                 <button
                   onClick={handleCheckStatus}
+                  disabled={isChecking}
                   style={{
                     width: "100%",
                     padding: "12px 16px",
-                    background: "#f59e0b",
+                    background: isChecking ? "#fbbf24" : "#f59e0b",
                     color: "#ffffff",
                     border: "none",
                     borderRadius: 10,
                     fontWeight: 700,
                     fontSize: 14,
-                    cursor: "pointer",
+                    cursor: isChecking ? "not-allowed" : "pointer",
                     boxShadow: "0 4px 12px rgba(245,158,11,0.25)",
                     transition: "all 0.15s ease",
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.background = "#d97706")}
                   onMouseLeave={(e) => (e.currentTarget.style.background = "#f59e0b")}
                 >
-                  Cek Status Pembayaran
+                  {isChecking ? "Memeriksa Status..." : "Cek Status Pembayaran"}
                 </button>
               </div>
             )}

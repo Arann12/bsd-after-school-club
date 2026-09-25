@@ -42,14 +42,46 @@ export async function deleteInvoice(id: string): Promise<void> {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  PAYMENT PLANS (TAGIHAN PER SESI / PAKET)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/** GET /payment-plans — mengambil daftar rencana pembayaran (per sesi / paket) */
+export async function getPaymentPlans(
+  params?: { page?: number; student_id?: string; enrollment_id?: string; status?: string; is_paid?: boolean; per_page?: number }
+): Promise<any> {
+  const { data } = await axiosInstance.get("/payment-plans", { params });
+  return data;
+}
+
+/** POST /payment-plans — membuat tagihan baru (manual) untuk enrollment siswa */
+export async function createPaymentPlan(payload: {
+  enrollment_id: string;
+  session_number: number;
+  amount: number;
+  due_date: string;
+  status?: string;
+}): Promise<any> {
+  const { data } = await axiosInstance.post("/payment-plans", payload);
+  return data;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  PAYMENTS (PEMBAYARAN)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+/** GET /payments/methods — mengambil daftar metode pembayaran aktif dari gateway (auto-cached 2 menit di backend) */
+export async function getPaymentMethods(panduan: boolean = true): Promise<any> {
+  const { data } = await axiosInstance.get("/payments/methods", {
+    params: { panduan },
+  });
+  return data;
+}
+
 /** GET /payments */
 export async function getPayments(
-  params?: { page?: number; invoice_id?: string; status?: string }
-): Promise<PaginatedResponse<Payment>> {
-  const { data } = await axiosInstance.get<PaginatedResponse<Payment>>("/payments", { params });
+  params?: { page?: number; invoice_id?: string; status?: string; per_page?: number; student_id?: string; enrollment_id?: string; payment_plan_id?: string }
+): Promise<any> {
+  const { data } = await axiosInstance.get("/payments", { params });
   return data;
 }
 
@@ -57,6 +89,25 @@ export async function getPayments(
 export async function getPayment(id: string): Promise<Payment> {
   const { data } = await axiosInstance.get<ApiResponse<Payment>>(`/payments/${id}`);
   return data.data;
+}
+
+/** POST /payments/charge — inisiasi transaksi via Payment Gateway (QRIS, VA, E-Wallet) */
+export async function chargePayment(payload: {
+  payment_plan_id: string;
+  payment_method: "va" | "qris" | "ewallet";
+  payment_channel?: string;
+  expired_time?: string;
+  type_fee?: "user" | "merchant";
+  notes?: string;
+}): Promise<any> {
+  const { data } = await axiosInstance.post("/payments/charge", payload);
+  return data;
+}
+
+/** GET /payments/:id/status — periksa status real-time pembayaran */
+export async function checkPaymentStatus(id: string): Promise<any> {
+  const { data } = await axiosInstance.get(`/payments/${id}/status`);
+  return data;
 }
 
 /** POST /payments — buat catatan pembayaran baru */
@@ -69,7 +120,103 @@ export async function createPayment(payload: Omit<Payment, "id">): Promise<Payme
 //  CASH VERIFICATION (VERIFIKASI CASH)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-/** GET /cash-verifications */
+export interface BackendCashTransaction {
+  id: string;
+  cash_code: string;
+  payment_plan_id: string;
+  payment_id?: string;
+  enrollment_id: string;
+  student_id: string;
+  amount: number;
+  status: "menunggu_konfirmasi_admin" | "paid" | "rejected" | string;
+  submitted_by: string;
+  submitted_at: string;
+  verified_by?: string | null;
+  verified_at?: string | null;
+  receipt_number?: string | null;
+  proof_image?: string | null;
+  notes?: string | null;
+  admin_notes?: string | null;
+  payment_plan?: {
+    id: string;
+    session_number: number;
+    amount: number;
+    due_date: string;
+    is_paid: boolean;
+    status: string;
+  };
+  payment?: {
+    id: string;
+    payment_code: string;
+    amount: number;
+    payment_status: string;
+  };
+  enrollment?: {
+    id: string;
+    student?: { id: string; full_name: string; student_code: string };
+    program?: { id: string; name: string };
+  };
+  submitter?: { id: string; name: string; email: string };
+  verifier?: { id: string; name: string; email: string };
+}
+
+/** GET /cash-transactions — mengambil daftar transaksi cash dari backend */
+export async function getCashTransactions(
+  params?: { page?: number; status?: string; per_page?: number; student_id?: string; enrollment_id?: string; search?: string }
+): Promise<any> {
+  const { data } = await axiosInstance.get("/cash-transactions", { params });
+  return data;
+}
+
+/** GET /cash-transactions/:id */
+export async function getCashTransaction(id: string): Promise<any> {
+  const { data } = await axiosInstance.get(`/cash-transactions/${id}`);
+  return data;
+}
+
+/** POST /cash-transactions/submit — pengajuan pembayaran cash oleh ortu/siswa */
+export async function submitCashTransaction(payload: {
+  payment_plan_id: string;
+  receipt_number?: string;
+  notes?: string;
+  proof_image?: File | null;
+}): Promise<any> {
+  let body: any = payload;
+  let headers: Record<string, string> = {};
+
+  if (payload.proof_image) {
+    const formData = new FormData();
+    formData.append("payment_plan_id", payload.payment_plan_id);
+    if (payload.receipt_number) formData.append("receipt_number", payload.receipt_number);
+    if (payload.notes) formData.append("notes", payload.notes);
+    formData.append("proof_image", payload.proof_image);
+    body = formData;
+    headers["Content-Type"] = "multipart/form-data";
+  }
+
+  const { data } = await axiosInstance.post("/cash-transactions/submit", body, { headers });
+  return data;
+}
+
+/** POST /cash-transactions/:id/confirm — konfirmasi dan ACC penerimaan uang tunai fisik oleh Admin/Owner */
+export async function confirmCashTransaction(
+  id: string,
+  payload?: { admin_notes?: string; receipt_number?: string }
+): Promise<any> {
+  const { data } = await axiosInstance.post(`/cash-transactions/${id}/confirm`, payload || {});
+  return data;
+}
+
+/** POST /cash-transactions/:id/reject — tolak pembayaran cash oleh Admin/Owner */
+export async function rejectCashTransaction(
+  id: string,
+  payload: { admin_notes?: string; notes?: string }
+): Promise<any> {
+  const { data } = await axiosInstance.post(`/cash-transactions/${id}/reject`, payload);
+  return data;
+}
+
+/** GET /cash-verifications (legacy alias) */
 export async function getCashVerifications(
   params?: { page?: number; status?: string }
 ): Promise<PaginatedResponse<CashVerification>> {

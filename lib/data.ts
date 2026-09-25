@@ -7,6 +7,7 @@ import type {
   Student, Parent, Teacher, Program, ClassRoom, Schedule,
   Invoice, CashVerification, HonorRecord, Enrollment,
   Announcement, InventoryItem, Logbook, Certificate,
+  PaymentStatus,
 } from "./types";
 
 /* ======================== STUDENTS ======================== */
@@ -91,16 +92,29 @@ export const todaySchedules: Schedule[] = [
   { id: "SCH-006", classId: "KLS-2026-0011", className: "KLS-K", program: "Math", level: "Basic", teacher: "Mr. Dimas", day: "Senin", date: "2026-09-08", timeStart: "15:00", timeEnd: "16:00", room: "Ruang D", status: "Selesai" },
 ];
 
+export interface InvoiceItem {
+  id: string;
+  siswa: string;
+  idSiswa: string;
+  program: string;
+  pertemuan: string;
+  jumlah: number;
+  metode: string;
+  tanggal: string;
+  status: PaymentStatus;
+  jalur: string;
+}
+
 /* ======================== INVOICES ======================== */
-export const invoices = [
-  { id: "INV-2026-000001", siswa: "Andi Setiawan", idSiswa: "STD-2026-0001", program: "Calistung Level 1", pertemuan: "Pertemuan 7 & 8", jumlah: 100000, metode: "Cash", tanggal: "2 Sept 2026", status: "Menunggu Konfirmasi" as const, jalur: "via Orang Tua" },
-  { id: "INV-2026-000002", siswa: "Budi Santoso", idSiswa: "STD-2026-0002", program: "English B1", pertemuan: "Pertemuan 4", jumlah: 75000, metode: "QRIS", tanggal: "1 Sept 2026", status: "Lunas" as const, jalur: "via Orang Tua" },
-  { id: "INV-2026-000003", siswa: "Citra Kirana", idSiswa: "STD-2026-0003", program: "Math Advance", pertemuan: "Pertemuan 9 & 10", jumlah: 120000, metode: "Cash", tanggal: "31 Agt 2026", status: "Menunggu Konfirmasi" as const, jalur: "via Orang Tua" },
-  { id: "INV-2026-000004", siswa: "Dian Pratama", idSiswa: "STD-2026-0004", program: "Phonics Starter", pertemuan: "Pertemuan 3", jumlah: 50000, metode: "–", tanggal: "–", status: "Overdue" as const, jalur: "–" },
-  { id: "INV-2026-000005", siswa: "Eko Wijaya", idSiswa: "STD-2026-0005", program: "Calistung Level 2", pertemuan: "Pertemuan 11 & 12", jumlah: 100000, metode: "Cash", tanggal: "28 Agt 2026", status: "Lunas" as const, jalur: "via Admin" },
-  { id: "INV-2026-000006", siswa: "Fitri Handayani", idSiswa: "STD-2026-0006", program: "English B1", pertemuan: "Pertemuan 8", jumlah: 75000, metode: "Transfer Mandiri", tanggal: "29 Agt 2026", status: "Lunas" as const, jalur: "via Orang Tua" },
-  { id: "INV-2026-000007", siswa: "Gilang Ramadan", idSiswa: "STD-2026-0007", program: "Math Advance", pertemuan: "Pertemuan 5", jumlah: 60000, metode: "VA BCA", tanggal: "28 Agt 2026", status: "Partially Paid" as const, jalur: "via Orang Tua" },
-  { id: "INV-2026-000008", siswa: "Hana Pertiwi", idSiswa: "STD-2026-0008", program: "Phonics Starter", pertemuan: "Pertemuan 1 & 2", jumlah: 100000, metode: "–", tanggal: "–", status: "Overdue" as const, jalur: "–" },
+export const invoices: InvoiceItem[] = [
+  { id: "INV-2026-000001", siswa: "Andi Setiawan", idSiswa: "STD-2026-0001", program: "Calistung Level 1", pertemuan: "Pertemuan 7 & 8", jumlah: 100000, metode: "Cash", tanggal: "2 Sept 2026", status: "Menunggu Konfirmasi", jalur: "via Orang Tua" },
+  { id: "INV-2026-000002", siswa: "Budi Santoso", idSiswa: "STD-2026-0002", program: "English B1", pertemuan: "Pertemuan 4", jumlah: 75000, metode: "QRIS", tanggal: "1 Sept 2026", status: "Lunas", jalur: "via Orang Tua" },
+  { id: "INV-2026-000003", siswa: "Citra Kirana", idSiswa: "STD-2026-0003", program: "Math Advance", pertemuan: "Pertemuan 9 & 10", jumlah: 120000, metode: "Cash", tanggal: "31 Agt 2026", status: "Menunggu Konfirmasi", jalur: "via Orang Tua" },
+  { id: "INV-2026-000004", siswa: "Dian Pratama", idSiswa: "STD-2026-0004", program: "Phonics Starter", pertemuan: "Pertemuan 3", jumlah: 50000, metode: "–", tanggal: "–", status: "Overdue", jalur: "–" },
+  { id: "INV-2026-000005", siswa: "Eko Wijaya", idSiswa: "STD-2026-0005", program: "Calistung Level 2", pertemuan: "Pertemuan 11 & 12", jumlah: 100000, metode: "Cash", tanggal: "28 Agt 2026", status: "Lunas", jalur: "via Admin" },
+  { id: "INV-2026-000006", siswa: "Fitri Handayani", idSiswa: "STD-2026-0006", program: "English B1", pertemuan: "Pertemuan 8", jumlah: 75000, metode: "Transfer Mandiri", tanggal: "29 Agt 2026", status: "Lunas", jalur: "via Orang Tua" },
+  { id: "INV-2026-000007", siswa: "Gilang Ramadan", idSiswa: "STD-2026-0007", program: "Math Advance", pertemuan: "Pertemuan 5", jumlah: 60000, metode: "VA BCA", tanggal: "28 Agt 2026", status: "Partially Paid", jalur: "via Orang Tua" },
+  { id: "INV-2026-000008", siswa: "Hana Pertiwi", idSiswa: "STD-2026-0008", program: "Phonics Starter", pertemuan: "Pertemuan 1 & 2", jumlah: 100000, metode: "–", tanggal: "–", status: "Overdue", jalur: "–" },
 ];
 
 /* ======================== CASH VERIFICATIONS ======================== */
@@ -175,6 +189,7 @@ export interface NotificationItem {
   href: string;
 }
 
+/* ======================== NOTIFICATIONS ======================== */
 export const notificationsByRole: Record<string, NotificationItem[]> = {
   owner: [
     { id: "NOT-O01", title: "Cash Verification Pending", message: "2 pembayaran cash menunggu verifikasi Anda", type: "warning", read: false, createdAt: "2026-09-08T10:30:00", href: "/owner/verifikasi-cash" },

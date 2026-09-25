@@ -41,7 +41,7 @@ interface DataTableProps<T> {
   emptyMessage?: string;
 }
 
-export default function DataTable<T extends Record<string, unknown>>({
+export default function DataTable<T extends object>({
   columns, data, rowKey, searchPlaceholder = "Cari...",
   filters, filterValues, onFilterChange, onRowClick, footer,
   emptyMessage = "Tidak ada data yang ditemukan.",
@@ -57,7 +57,7 @@ export default function DataTable<T extends Record<string, unknown>>({
       const searchableCols = columns.filter(c => c.searchable !== false);
       result = result.filter(row =>
         searchableCols.some(col => {
-          const val = row[col.key];
+          const val = (row as Record<string, unknown>)[col.key];
           return val !== undefined && String(val).toLowerCase().includes(q);
         })
       );
@@ -67,7 +67,7 @@ export default function DataTable<T extends Record<string, unknown>>({
     if (filterValues) {
       Object.entries(filterValues).forEach(([key, val]) => {
         if (val && val !== "Semua") {
-          result = result.filter(row => String(row[key]) === val);
+          result = result.filter(row => String((row as Record<string, unknown>)[key]) === val);
         }
       });
     }
@@ -152,7 +152,7 @@ export default function DataTable<T extends Record<string, unknown>>({
               >
                 {columns.map(col => (
                   <td key={col.key} style={{ padding: "14px 16px", fontSize: 13, color: "var(--color-text-secondary)" }}>
-                    {col.render ? col.render(row) : String(row[col.key] ?? "")}
+                    {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key] ?? "")}
                   </td>
                 ))}
               </tr>
