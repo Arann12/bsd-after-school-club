@@ -9,7 +9,7 @@ import {
   submitCashTransaction,
   confirmCashTransaction,
 } from "@/lib/api/finance";
-import { getEnrollments } from "@/lib/api/students";
+import { getEnrollments } from "@/lib/api/enrollments";
 
 export interface TagihanItem {
   id: string;

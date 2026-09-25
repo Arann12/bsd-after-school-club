@@ -1,12 +1,55 @@
 "use client";
+
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { students, teachers, classes, todaySchedules, invoices, cashVerifications, honorRecords, certificates, announcements, inventory, revenueSummary, dashboardCounts } from "@/lib/data";
-import { PAYMENT_STATUS_COLOR, CASH_STATUS_COLOR, ANNOUNCEMENT_STATUS_COLOR, INVENTORY_CONDITION_COLOR, formatRupiah } from "@/lib/constants";
+import { formatRupiah } from "@/lib/constants";
 import StatCard from "@/components/ui/StatCard";
-import StatusBadge from "@/components/ui/StatusBadge";
 import PageHeader from "@/components/ui/PageHeader";
-import { useCountUp, useLoadingState } from "@/lib/hooks";
-import { SkeletonStatGrid, SkeletonDashboard } from "@/components/ui/Skeleton";
+import { useCountUp } from "@/lib/hooks";
+import { SkeletonDashboard } from "@/components/ui/Skeleton";
+import StatusBadge from "@/components/ui/StatusBadge";
+
+// API imports
+import { getStudents } from "@/lib/api/students";
+import { getTeachers } from "@/lib/api/teachers";
+import { getPrograms, getClassrooms, getClassSessions } from "@/lib/api/academic";
+import { getInvoices, getCashVerifications, getFinanceSummary } from "@/lib/api/finance";
+import { getAnnouncements, getInventory } from "@/lib/api/operational";
+
+// ---- Types ----
+interface DashboardData {
+  totalStudents: number;
+  activeStudents: number;
+  totalTeachers: number;
+  activeTeachers: number;
+  totalPrograms: number;
+  totalClasses: number;
+  activeClasses: number;
+  pendingEnrollments: number;
+  overdueCount: number;
+  pendingCashCount: number;
+  totalRevenue: number;
+  honorPaid: number;
+  netProfit: number;
+  totalInventory: number;
+  goodInventory: number;
+  underRepairInventory: number;
+  damagedInventory: number;
+  publishedAnnouncements: number;
+  sessionsToday: number;
+  recentAnnouncements: { id: string; title: string; status: string }[];
+  pendingCashItems: { parentName: string; amount: number }[];
+  overdueInvoices: { studentName: string; amount: number; program: string }[];
+}
+
+const EMPTY: DashboardData = {
+  totalStudents: 0, activeStudents: 0, totalTeachers: 0, activeTeachers: 0,
+  totalPrograms: 0, totalClasses: 0, activeClasses: 0, pendingEnrollments: 0,
+  overdueCount: 0, pendingCashCount: 0, totalRevenue: 0, honorPaid: 0, netProfit: 0,
+  totalInventory: 0, goodInventory: 0, underRepairInventory: 0, damagedInventory: 0,
+  publishedAnnouncements: 0, sessionsToday: 0,
+  recentAnnouncements: [], pendingCashItems: [], overdueInvoices: [],
+};
 
 /* ---- Stat Card with count-up animation ---- */
 function AnimatedStat({ label, target, detail, color, bg }: { label: string; target: number; detail: string; color: string; bg: string }) {
@@ -33,14 +76,101 @@ function ShortcutGrid({ items }: { items: { label: string; sub: string; href: st
 }
 
 export default function OwnerDashboardPage() {
-  const loading = useLoadingState(600);
+  const [data, setData] = useState<DashboardData>(EMPTY);
+  const [loading, setLoading] = useState(true);
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const today = new Date().toISOString().split("T")[0];
+
+      const [
+        studentsRes,
+        teachersRes,
+        programsRes,
+        classroomsRes,
+        sessionsRes,
+        invoicesRes,
+        cashRes,
+        announcementsRes,
+        inventoryRes,
+        financeRes,
+      ] = await Promise.allSettled([
+        getStudents({ per_page: 100 }),
+        getTeachers({ per_page: 100 }),
+        getPrograms({ per_page: 100 }),
+        getClassrooms({ per_page: 100 }),
+        getClassSessions({ per_page: 100 }),
+        getInvoices({ per_page: 100 }),
+        getCashVerifications({ status: "pending" }),
+        getAnnouncements({ per_page: 10 }),
+        getInventory({ per_page: 200 }),
+        getFinanceSummary(),
+      ]);
+
+      const students = studentsRes.status === "fulfilled" ? (studentsRes.value.data ?? []) : [];
+      const teachers = teachersRes.status === "fulfilled" ? (teachersRes.value.data ?? []) : [];
+      const programs = programsRes.status === "fulfilled" ? (programsRes.value.data ?? []) : [];
+      const classrooms = classroomsRes.status === "fulfilled" ? (classroomsRes.value.data ?? []) : [];
+      // getClassSessions returns ClassSession[] directly (not paginated)
+      const sessions = sessionsRes.status === "fulfilled" ? (Array.isArray(sessionsRes.value) ? sessionsRes.value : []) : [];
+      const invoices = invoicesRes.status === "fulfilled" ? invoicesRes.value.data : [];
+      const cashItems = cashRes.status === "fulfilled" ? cashRes.value.data : [];
+      const announcements = announcementsRes.status === "fulfilled" ? announcementsRes.value.data : [];
+      const inventoryItems = inventoryRes.status === "fulfilled" ? inventoryRes.value.data : [];
+      const finance = financeRes.status === "fulfilled" ? financeRes.value : null;
+
+      const overdueInvoices = invoices.filter((inv: any) =>
+        inv.status === "overdue" || inv.status === "Overdue"
+      );
+      const pendingCash = cashItems.filter((c: any) =>
+        c.status === "pending" || c.status === "Menunggu Konfirmasi"
+      );
+
+      setData({
+        totalStudents: students.length,
+        activeStudents: students.filter((s: any) => s.status === "active" || s.status === "Aktif").length,
+        totalTeachers: teachers.length,
+        activeTeachers: teachers.filter((t: any) => t.status === "active" || t.status === "Aktif").length,
+        totalPrograms: programs.length,
+        totalClasses: classrooms.length,
+        activeClasses: classrooms.filter((c: any) => c.status === "active" || c.status === "Aktif").length,
+        pendingEnrollments: 0, // belum ada endpoint pendaftaran count
+        overdueCount: overdueInvoices.length,
+        pendingCashCount: pendingCash.length,
+        totalRevenue: finance?.totalRevenue ?? 0,
+        honorPaid: finance?.totalHonor ?? 0,
+        netProfit: finance ? (finance.totalRevenue - finance.totalHonor) : 0,
+        totalInventory: inventoryItems.length,
+        goodInventory: inventoryItems.filter((i: any) => i.condition === "Good" || i.condition === "good").length,
+        underRepairInventory: inventoryItems.filter((i: any) => i.condition === "Under Repair" || i.condition === "under_repair").length,
+        damagedInventory: inventoryItems.filter((i: any) => i.condition === "Damaged" || i.condition === "damaged").length,
+        publishedAnnouncements: announcements.filter((a: any) => a.status === "Published" || a.status === "published").length,
+        sessionsToday: sessions.length,
+        recentAnnouncements: announcements
+          .filter((a: any) => a.status === "Published" || a.status === "published")
+          .slice(0, 3)
+          .map((a: any) => ({ id: a.id, title: a.title, status: a.status })),
+        pendingCashItems: pendingCash.slice(0, 3).map((c: any) => ({
+          parentName: c.parentName || c.parent_name || c.user?.name || "—",
+          amount: c.amount || 0,
+        })),
+        overdueInvoices: overdueInvoices.slice(0, 4).map((inv: any) => ({
+          studentName: inv.siswa || inv.student_name || inv.student?.name || "—",
+          amount: inv.jumlah || inv.amount || inv.total_amount || 0,
+          program: inv.program || "—",
+        })),
+      });
+    } catch (err) {
+      console.error("Dashboard fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
 
   if (loading) return <SkeletonDashboard />;
-
-  const pendingCash = cashVerifications.filter(c => c.status === "Menunggu Konfirmasi");
-  const overdueInvoices = invoices.filter(i => i.status === "Overdue");
-  const activeTeachers = teachers.filter(t => t.status === "Aktif");
-  const activeStudents = students.filter(s => s.status === "Aktif");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -56,7 +186,7 @@ export default function OwnerDashboardPage() {
       />
 
       {/* URGENT BANNER — Cash Verifikasi */}
-      {pendingCash.length > 0 && (
+      {data.pendingCashCount > 0 && (
         <div style={{ background: "var(--color-warning-bg)", border: "1px solid #fde68a", borderRadius: "var(--radius-lg)", padding: "16px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ width: 38, height: 38, borderRadius: "50%", background: "var(--color-warning)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -65,42 +195,44 @@ export default function OwnerDashboardPage() {
               </svg>
             </div>
             <div>
-              <div style={{ fontWeight: 800, fontSize: 14, color: "#92400e" }}>{pendingCash.length} Pembayaran Cash Menunggu Verifikasi</div>
-              <div style={{ fontSize: 12.5, color: "#b45309", marginTop: 1 }}>{pendingCash.map(c => `${c.parentName} (${formatRupiah(c.amount)})`).join(" & ")}</div>
+              <div style={{ fontWeight: 800, fontSize: 14, color: "#92400e" }}>{data.pendingCashCount} Pembayaran Cash Menunggu Verifikasi</div>
+              <div style={{ fontSize: 12.5, color: "#b45309", marginTop: 1 }}>
+                {data.pendingCashItems.map(c => `${c.parentName} (${formatRupiah(c.amount)})`).join(" & ")}
+              </div>
             </div>
           </div>
           <Link href="/owner/verifikasi-cash" className="btn btn-sm" style={{ background: "var(--color-accent-dark)", color: "#fff", border: "none" }}>Konfirmasi Sekarang →</Link>
         </div>
       )}
 
-      {/* BANNER RINGKASAN EKSEKUTIF */}
+      {/* BANNER RINGKASAN FINANSIAL */}
       <div style={{ background: "linear-gradient(135deg, var(--color-primary) 0%, #0f3c5d 100%)", borderRadius: "var(--radius-lg)", padding: "24px 28px", color: "white", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 20, boxShadow: "0 10px 25px -5px rgba(26,92,138,0.3)" }}>
         <div>
-          <div style={{ fontSize: 13, opacity: 0.85, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Pendapatan Bulan Ini (September 2026)</div>
-          <div style={{ fontSize: 32, fontWeight: 900, marginTop: 4 }}>{formatRupiah(revenueSummary.totalIncome)}</div>
-          <div style={{ fontSize: 12.5, opacity: 0.9, marginTop: 6, display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ background: "var(--color-success-bg)", color: "var(--color-success)", fontWeight: 700, padding: "2px 8px", borderRadius: 999 }}>↑ +{revenueSummary.growthPercent}%</span>
-            <span>dibanding bulan lalu ({formatRupiah(revenueSummary.lastMonthIncome)})</span>
+          <div style={{ fontSize: 13, opacity: 0.85, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Total Pendapatan</div>
+          <div style={{ fontSize: 32, fontWeight: 900, marginTop: 4 }}>
+            {data.totalRevenue > 0 ? formatRupiah(data.totalRevenue) : <span style={{ fontSize: 18, opacity: 0.7 }}>Menunggu data keuangan...</span>}
           </div>
         </div>
-        <div style={{ display: "flex", gap: 24, borderLeft: "1px solid rgba(255,255,255,0.2)", paddingLeft: 24 }}>
-          <div>
-            <div style={{ fontSize: 12, opacity: 0.8 }}>Honor Terbayar</div>
-            <div style={{ fontSize: 20, fontWeight: 800 }}>{formatRupiah(revenueSummary.honorPaid)}</div>
+        {data.totalRevenue > 0 && (
+          <div style={{ display: "flex", gap: 24, borderLeft: "1px solid rgba(255,255,255,0.2)", paddingLeft: 24 }}>
+            <div>
+              <div style={{ fontSize: 12, opacity: 0.8 }}>Honor Terbayar</div>
+              <div style={{ fontSize: 20, fontWeight: 800 }}>{formatRupiah(data.honorPaid)}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 12, opacity: 0.8 }}>Laba Bersih Operasional</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#6ee7b7" }}>{formatRupiah(data.netProfit)}</div>
+            </div>
           </div>
-          <div>
-            <div style={{ fontSize: 12, opacity: 0.8 }}>Laba Bersih Operasional</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#6ee7b7" }}>{formatRupiah(revenueSummary.netProfit)}</div>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* STAT GRID — Animated */}
+      {/* STAT GRID */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
-        <AnimatedStat label="Total Siswa Aktif" target={activeStudents.length} detail={`${dashboardCounts.totalPrograms} program berjalan`} color="#1d4ed8" bg="var(--color-info-bg)" />
-        <AnimatedStat label="Total Guru & Staff" target={activeTeachers.length} detail="Semua aktif mengajar" color="#059669" bg="var(--color-success-bg)" />
-        <AnimatedStat label="Kelas Berjalan Hari Ini" target={todaySchedules.filter(s => s.status === "Berlangsung" || s.status === "Selesai").length} detail="100% tepat waktu" color="#7c3aed" bg="#ede9fe" />
-        <AnimatedStat label="Sertifikat Terbit" target={dashboardCounts.certificatesIssued} detail="Program Graduated" color="#d97706" bg="var(--color-accent-bg)" />
+        <AnimatedStat label="Siswa Aktif" target={data.activeStudents} detail={`dari ${data.totalStudents} siswa terdaftar`} color="#1d4ed8" bg="var(--color-info-bg)" />
+        <AnimatedStat label="Guru Aktif" target={data.activeTeachers} detail={`dari ${data.totalTeachers} guru terdaftar`} color="#059669" bg="var(--color-success-bg)" />
+        <AnimatedStat label="Sesi Hari Ini" target={data.sessionsToday} detail="kelas berjalan" color="#7c3aed" bg="#ede9fe" />
+        <AnimatedStat label="Kelas Aktif" target={data.activeClasses} detail={`dari ${data.totalClasses} kelas`} color="#d97706" bg="var(--color-accent-bg)" />
       </div>
 
       {/* ACADEMIC SHORTCUTS */}
@@ -110,165 +242,89 @@ export default function OwnerDashboardPage() {
           <Link href="/owner/pendaftaran" style={{ fontSize: 12.5, fontWeight: 700, color: "var(--color-primary)", textDecoration: "none" }}>Lihat Semua →</Link>
         </div>
         <ShortcutGrid items={[
-          { label: "Pendaftaran", sub: `${dashboardCounts.pendingEnrollments} Pending`, href: "/owner/pendaftaran", color: "#1d4ed8", bg: "var(--color-info-bg)" },
-          { label: "Siswa", sub: `${activeStudents.length} Aktif`, href: "/owner/siswa", color: "#1d4ed8", bg: "var(--color-info-bg)" },
-          { label: "Guru & Staff", sub: `${activeTeachers.length} Pengajar`, href: "/owner/guru", color: "#7c3aed", bg: "#ede9fe" },
-          { label: "Program", sub: `${dashboardCounts.totalPrograms} Program`, href: "/owner/program", color: "#059669", bg: "var(--color-success-bg)" },
-          { label: "Kelas", sub: `${dashboardCounts.activeClasses} Kelas`, href: "/owner/kelas", color: "#7c3aed", bg: "#ede9fe" },
-          { label: "Jadwal", sub: `${todaySchedules.length} Hari Ini`, href: "/owner/jadwal", color: "#059669", bg: "var(--color-success-bg)" },
-          { label: "Absensi & Logbook", sub: "Senin terkini", href: "/owner/absensi", color: "#0369a1", bg: "var(--color-info-bg)" },
-          { label: "Penilaian", sub: `${dashboardCounts.certificatesIssued} Sertifikat`, href: "/owner/penilaian", color: "#d97706", bg: "var(--color-accent-bg)" },
+          { label: "Pendaftaran", sub: "Kelola pendaftaran", href: "/owner/pendaftaran", color: "#1d4ed8", bg: "var(--color-info-bg)" },
+          { label: "Siswa", sub: `${data.activeStudents} Aktif`, href: "/owner/siswa", color: "#1d4ed8", bg: "var(--color-info-bg)" },
+          { label: "Guru & Staff", sub: `${data.activeTeachers} Pengajar`, href: "/owner/guru", color: "#7c3aed", bg: "#ede9fe" },
+          { label: "Program", sub: `${data.totalPrograms} Program`, href: "/owner/program", color: "#059669", bg: "var(--color-success-bg)" },
+          { label: "Kelas", sub: `${data.activeClasses} Kelas`, href: "/owner/kelas", color: "#7c3aed", bg: "#ede9fe" },
+          { label: "Jadwal", sub: `${data.sessionsToday} Hari Ini`, href: "/owner/jadwal", color: "#059669", bg: "var(--color-success-bg)" },
+          { label: "Absensi & Logbook", sub: "Rekap kehadiran", href: "/owner/absensi", color: "#0369a1", bg: "var(--color-info-bg)" },
+          { label: "Penilaian", sub: "Nilai & Sertifikat", href: "/owner/penilaian", color: "#d97706", bg: "var(--color-accent-bg)" },
         ]} />
       </div>
 
-      {/* FINANCE SHORTCUTS + DETAIL */}
+      {/* FINANCE SHORTCUTS */}
       <div className="card" style={{ padding: 22 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
           <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>💰 Keuangan</h3>
           <Link href="/owner/pembayaran" style={{ fontSize: 12.5, fontWeight: 700, color: "var(--color-primary)", textDecoration: "none" }}>Lihat Semua →</Link>
         </div>
         <ShortcutGrid items={[
-          { label: "Tagihan", sub: `${dashboardCounts.overdueInvoices} Overdue`, href: "/owner/tagihan", color: "var(--color-danger)", bg: "var(--color-danger-bg)" },
-          { label: "Pembayaran", sub: `${formatRupiah(revenueSummary.totalIncome)} Bulan Ini`, href: "/owner/pembayaran", color: "#059669", bg: "var(--color-success-bg)" },
-          { label: "Verifikasi Cash", sub: `${dashboardCounts.pendingCashVerifications} Menunggu`, href: "/owner/verifikasi-cash", color: "#b45309", bg: "var(--color-warning-bg)" },
-          { label: "Honor Guru", sub: `${formatRupiah(revenueSummary.honorPaid)} Terbayar`, href: "/owner/honor", color: "#7c3aed", bg: "#ede9fe" },
+          { label: "Tagihan", sub: `${data.overdueCount} Overdue`, href: "/owner/tagihan", color: "var(--color-danger)", bg: "var(--color-danger-bg)" },
+          { label: "Pembayaran", sub: data.totalRevenue > 0 ? formatRupiah(data.totalRevenue) : "Lihat detail", href: "/owner/pembayaran", color: "#059669", bg: "var(--color-success-bg)" },
+          { label: "Verifikasi Cash", sub: `${data.pendingCashCount} Menunggu`, href: "/owner/verifikasi-cash", color: "#b45309", bg: "var(--color-warning-bg)" },
+          { label: "Honor Guru", sub: "Kelola honorarium", href: "/owner/honor", color: "#7c3aed", bg: "#ede9fe" },
         ]} />
       </div>
 
-      {/* GRAFIK + AKTIVITAS */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 20 }}>
-        <div className="card" style={{ padding: 24 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Pendapatan per Program</h3>
-            <span style={{ fontSize: 12, color: "var(--color-text-muted)", fontWeight: 600 }}>September 2026</span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {revenueSummary.byProgram.map((p, i) => {
-              const colors = ["var(--color-primary)", "#059669", "#7c3aed", "#d97706"];
-              const pct = Math.round((p.amount / revenueSummary.totalIncome) * 100);
-              return (
-                <div key={p.name}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 700, marginBottom: 4 }}>
-                    <span style={{ color: "var(--color-text-primary)" }}>{p.name}</span>
-                    <span style={{ color: colors[i] }}>{formatRupiah(p.amount)}</span>
-                  </div>
-                  <div style={{ height: 8, background: "var(--color-border)", borderRadius: 999, overflow: "hidden" }}>
-                    <div style={{ height: "100%", background: colors[i], width: `${pct}%`, borderRadius: 999, transition: "width .4s ease" }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="card" style={{ padding: 24 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 16px" }}>Aktivitas Terbaru</h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {[
-              { teks: `Konfirmasi Cash ${formatRupiah(pendingCash[0]?.amount || 100000)} (${pendingCash[0]?.parentName || "Budi Setiawan"})`, waktu: "10 menit lalu", jenis: "pembayaran" },
-              { teks: "Pendaftaran Siswa Baru: Naura Azzahra", waktu: "1 jam lalu", jenis: "siswa" },
-              { teks: "Logbook KLS-A diisi oleh Ms. Sarah", waktu: "2 jam lalu", jenis: "logbook" },
-              { teks: `Honor Ms. Sarah disetujui (${formatRupiah(1450000)})`, waktu: "Kemarin", jenis: "honor" },
-              { teks: "Pengumuman dipublish: \"Jadwal Libur\"", waktu: "Kemarin", jenis: "pengumuman" },
-              { teks: `Sertifikat ${certificates[0]?.id} diterbitkan`, waktu: "2 hari lalu", jenis: "sertifikat" },
-            ].map((a, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12, paddingBottom: i < 5 ? 12 : 0, borderBottom: i < 5 ? "1px solid var(--color-border-light)" : "none" }}>
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: a.jenis === "pembayaran" ? "var(--color-success)" : a.jenis === "siswa" ? "#1d4ed8" : a.jenis === "honor" ? "#7c3aed" : a.jenis === "pengumuman" ? "#b45309" : "#d97706", marginTop: 6, flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text-primary)", lineHeight: 1.4 }}>{a.teks}</div>
-                  <div style={{ fontSize: 11.5, color: "var(--color-text-muted)", marginTop: 2 }}>{a.waktu}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* JADWAL HARI INI + TAGIHAN OVERDUE */}
+      {/* TAGIHAN OVERDUE + INVENTARIS */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
+        {/* TAGIHAN OVERDUE */}
         <div className="card" style={{ padding: 22 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Jadwal Mengajar Hari Ini</h3>
-            <Link href="/owner/jadwal" style={{ fontSize: 12.5, fontWeight: 700, color: "var(--color-primary)", textDecoration: "none" }}>Lihat Semua →</Link>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {todaySchedules.slice(0, 6).map((j, i) => {
-              const statusColors: Record<string, { warna: string; bg: string }> = {
-                Selesai: { warna: "var(--color-success)", bg: "var(--color-success-bg)" },
-                Berlangsung: { warna: "#1d4ed8", bg: "var(--color-info-bg)" },
-                Terjadwal: { warna: "#b45309", bg: "var(--color-warning-bg)" },
-                Dibatalkan: { warna: "var(--color-danger)", bg: "var(--color-danger-bg)" },
-              };
-              const sc = statusColors[j.status] || statusColors.Terjadwal;
-              return (
-                <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "var(--color-bg)", borderRadius: 10, border: "1px solid var(--color-border)" }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)" }}>{j.className} — {j.program}</div>
-                    <div style={{ fontSize: 11.5, color: "var(--color-text-muted)", marginTop: 2 }}>{j.timeStart}–{j.timeEnd} · {j.teacher}</div>
-                  </div>
-                  <StatusBadge status={j.status} />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="card" style={{ padding: 22 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-danger)", margin: 0 }}>Tagihan Overdue</h3>
+            <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-danger)", margin: 0 }}>⚠️ Tagihan Overdue</h3>
             <Link href="/owner/tagihan" style={{ fontSize: 12, fontWeight: 700, color: "var(--color-primary)", textDecoration: "none" }}>Ke Halaman Tagihan →</Link>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {overdueInvoices.length === 0 ? (
+            {data.overdueInvoices.length === 0 ? (
               <div style={{ textAlign: "center", padding: "24px 16px", color: "var(--color-text-muted)", fontSize: 13 }}>✅ Tidak ada tagihan overdue</div>
-            ) : overdueInvoices.map((inv, i) => (
-              <div key={i} style={{ background: "#fff5f5", border: `1.5px solid ${PAYMENT_STATUS_COLOR.Overdue.bg === "#fce7f3" ? "#fecaca" : "#fecaca"}`, borderRadius: 10, padding: "12px 14px" }}>
+            ) : data.overdueInvoices.map((inv, i) => (
+              <div key={i} style={{ background: "#fff5f5", border: "1.5px solid #fecaca", borderRadius: 10, padding: "12px 14px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--color-danger)" }}>{inv.siswa}</div>
-                    <div style={{ fontSize: 11.5, color: "var(--color-danger)", marginTop: 1 }}>{inv.program} · {inv.pertemuan}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--color-danger)" }}>{inv.studentName}</div>
+                    <div style={{ fontSize: 11.5, color: "var(--color-danger)", marginTop: 1 }}>{inv.program}</div>
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: "var(--color-danger)" }}>{formatRupiah(inv.jumlah)}</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "var(--color-danger)" }}>{formatRupiah(inv.amount)}</div>
                 </div>
               </div>
             ))}
           </div>
         </div>
+
+        {/* INVENTARIS OVERVIEW */}
+        <div className="card" style={{ padding: 22 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>📦 Inventaris</h3>
+            <Link href="/owner/inventaris" style={{ fontSize: 12, fontWeight: 700, color: "var(--color-primary)", textDecoration: "none" }}>Kelola →</Link>
+          </div>
+          <div style={{ display: "flex", gap: 20, marginBottom: 16 }}>
+            <div><div style={{ fontSize: 24, fontWeight: 800, color: "var(--color-success)" }}>{data.goodInventory}</div><div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>Kondisi Baik</div></div>
+            <div><div style={{ fontSize: 24, fontWeight: 800, color: "var(--color-warning)" }}>{data.underRepairInventory}</div><div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>Perbaikan</div></div>
+            <div><div style={{ fontSize: 24, fontWeight: 800, color: "var(--color-danger)" }}>{data.damagedInventory}</div><div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>Rusak</div></div>
+          </div>
+          <div style={{ fontSize: 12, color: "var(--color-text-muted)", fontWeight: 600 }}>Total {data.totalInventory} item tercatat</div>
+        </div>
       </div>
 
-      {/* OPERATIONAL */}
+      {/* PENGUMUMAN TERBARU */}
       <div className="card" style={{ padding: 22 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>📦 Operasional</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>📢 Pengumuman Terbaru</h3>
+          <Link href="/owner/pengumuman" style={{ fontSize: 12.5, fontWeight: 700, color: "var(--color-primary)", textDecoration: "none" }}>Kelola Pengumuman →</Link>
         </div>
-        <ShortcutGrid items={[
-          { label: "Inventaris", sub: `${dashboardCounts.totalInventory} Item`, href: "/owner/inventaris", color: "#0369a1", bg: "var(--color-info-bg)" },
-          { label: "Pengumuman", sub: `${dashboardCounts.publishedAnnouncements} Published`, href: "/owner/pengumuman", color: "#b45309", bg: "var(--color-warning-bg)" },
-        ]} />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14, marginTop: 14 }}>
-          <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "14px 16px", border: "1px solid var(--color-border)" }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text-muted)", marginBottom: 8 }}>Inventaris Overview</div>
-            <div style={{ display: "flex", gap: 16 }}>
-              <div><div style={{ fontSize: 20, fontWeight: 800, color: "var(--color-success)" }}>{dashboardCounts.goodInventory}</div><div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>Baik</div></div>
-              <div><div style={{ fontSize: 20, fontWeight: 800, color: "var(--color-warning)" }}>{dashboardCounts.underRepairInventory}</div><div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>Perbaikan</div></div>
-              <div><div style={{ fontSize: 20, fontWeight: 800, color: "var(--color-danger)" }}>{dashboardCounts.damagedInventory}</div><div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>Rusak</div></div>
-            </div>
+        {data.recentAnnouncements.length === 0 ? (
+          <div style={{ fontSize: 13, color: "var(--color-text-muted)", fontStyle: "italic", padding: "12px 0" }}>Belum ada pengumuman yang dipublikasi.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {data.recentAnnouncements.map(a => (
+              <div key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: "var(--color-bg)", borderRadius: 8, border: "1px solid var(--color-border)" }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text-primary)" }}>{a.title}</span>
+                <StatusBadge status={a.status} variant="announcement" size="sm" />
+              </div>
+            ))}
           </div>
-          <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "14px 16px", border: "1px solid var(--color-border)" }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text-muted)", marginBottom: 8 }}>Pengumuman Terbaru</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {announcements.filter(a => a.status !== "Draft").slice(0, 3).map((a, i) => {
-                const colors = ANNOUNCEMENT_STATUS_COLOR[a.status];
-                return (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--color-text-primary)" }}>{a.title}</span>
-                    <StatusBadge status={a.status} variant="announcement" size="sm" />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* LAPORAN + KELOLA AKUN + PENGATURAN */}
@@ -295,9 +351,9 @@ export default function OwnerDashboardPage() {
         <div className="card" style={{ padding: 22 }}>
           <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 14px" }}>🔐 Kelola Akun</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {[{ label: "Akun Admin", sub: "2 Admin", href: "/owner/kelola-akun/admin", color: "#059669", bg: "var(--color-success-bg)" },
-              { label: "Akun Guru", sub: `${teachers.length} Guru`, href: "/owner/kelola-akun/guru", color: "#7c3aed", bg: "#ede9fe" },
-              { label: "Akun Orang Tua", sub: "10 Orang Tua", href: "/owner/kelola-akun/orang-tua", color: "#1d4ed8", bg: "var(--color-info-bg)" },
+            {[{ label: "Akun Admin", sub: "Manajemen admin", href: "/owner/kelola-akun/admin", color: "#059669", bg: "var(--color-success-bg)" },
+              { label: "Akun Guru", sub: `${data.totalTeachers} Guru terdaftar`, href: "/owner/kelola-akun/guru", color: "#7c3aed", bg: "#ede9fe" },
+              { label: "Akun Orang Tua", sub: "Manajemen ortu", href: "/owner/kelola-akun/orang-tua", color: "#1d4ed8", bg: "var(--color-info-bg)" },
             ].map(m => (
               <Link key={m.href} href={m.href} style={{ textDecoration: "none" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: m.bg, borderRadius: 8, border: `1.5px solid ${m.color}18` }}>
@@ -325,7 +381,12 @@ export default function OwnerDashboardPage() {
             <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "12px 14px", border: "1px solid var(--color-border)", marginTop: 6 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text-muted)", marginBottom: 8 }}>Info Sistem</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {[{ k: "Versi", v: "1.0.0" }, { k: "Siswa", v: `${dashboardCounts.totalStudents} total` }, { k: "Guru", v: `${teachers.length} total` }, { k: "Kelas", v: `${dashboardCounts.activeClasses} aktif` }].map(row => (
+                {[
+                  { k: "Versi", v: "1.0.0" },
+                  { k: "Siswa", v: `${data.totalStudents} total` },
+                  { k: "Guru", v: `${data.totalTeachers} total` },
+                  { k: "Kelas", v: `${data.activeClasses} aktif` },
+                ].map(row => (
                   <div key={row.k} style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5 }}>
                     <span style={{ color: "var(--color-text-muted)" }}>{row.k}</span>
                     <span style={{ fontWeight: 700, color: "var(--color-text-primary)" }}>{row.v}</span>
@@ -334,37 +395,6 @@ export default function OwnerDashboardPage() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* PENILAIAN & SERTIFIKAT */}
-      <div className="card" style={{ padding: 22 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>🎓 Sertifikat Terbaru</h3>
-          <Link href="/owner/penilaian" style={{ fontSize: 12.5, fontWeight: 700, color: "var(--color-primary)", textDecoration: "none" }}>Lihat Semua →</Link>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
-          {certificates.map((s, i) => (
-            <div key={i} style={{ padding: "14px 16px", background: "var(--color-bg)", borderRadius: 10, border: "1px solid var(--color-border)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)" }}>{s.studentName}</div>
-                  <div style={{ fontSize: 11.5, color: "var(--color-text-muted)", marginTop: 2 }}>{s.program} — {s.level}</div>
-                </div>
-                <StatusBadge status="Lulus" />
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, paddingTop: 8, borderTop: "1px solid var(--color-border)" }}>
-                <div>
-                  <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>Nilai Akhir</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "var(--color-primary)" }}>{s.finalScore}</div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>{s.id}</div>
-                  <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>{s.issueDate}</div>
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </div>

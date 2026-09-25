@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import Toast, { useToast } from "@/components/ui/Toast";
 import Modal from "@/components/ui/Modal";
 import { SkeletonTable } from "@/components/ui/Skeleton";
-import { getEnrollments, createEnrollment, getStudents } from "@/lib/api/students";
-import { getClasses } from "@/lib/api/academic";
+import { getStudents } from "@/lib/api/students";
+import { getEnrollments, createEnrollment } from "@/lib/api/enrollments";
+import { getClassrooms } from "@/lib/api/academic";
 
 interface EnrollmentItem {
   id: string;
@@ -119,7 +120,7 @@ export default function PendaftaranPage() {
     try {
       const [resStudents, resClasses]: [any, any] = await Promise.all([
         getStudents({ per_page: 100 }),
-        getClasses({ per_page: 50 }),
+        getClassrooms({ per_page: 50 }),
       ]);
 
       const stList = Array.isArray(resStudents?.data?.data)
