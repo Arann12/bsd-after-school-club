@@ -111,3 +111,13 @@ export async function detachStudentFromParent(parentId: string, studentId: strin
   const res = await axiosInstance.delete<ApiResponse<any>>(`/parents/${parentId}/students/${studentId}`);
   return res.data;
 }
+
+/**
+ * Ambil profil parent yang sedang login.
+ * Menggunakan endpoint khusus /parents/my-profile yang hanya bisa diakses
+ * oleh user yang sudah login (semua role termasuk parent).
+ */
+export async function getMyParentProfile(): Promise<Parent> {
+  const res = await axiosInstance.get<ApiResponse<ParentRaw>>("/parents/my-profile");
+  return mapParent(res.data.data);
+}

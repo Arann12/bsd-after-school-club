@@ -8,7 +8,13 @@ import { getClassSessions, getClassSchedules, type ClassSchedule } from "@/lib/a
 
 type FilterType = "Semua" | "Hari Ini" | "Mendatang" | "Selesai";
 
-function getStatusSesi(sessionDate: string): "Hari Ini" | "Mendatang" | "Selesai" {
+function getStatusSesi(
+  sessionDate: string,
+  backendStatus?: string
+): "Hari Ini" | "Mendatang" | "Selesai" {
+  // Backend status is the source of truth — completed always shows as Selesai
+  if (backendStatus === "completed") return "Selesai";
+
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const d = new Date(sessionDate); d.setHours(0, 0, 0, 0);
   if (d.getTime() === today.getTime()) return "Hari Ini";
@@ -31,6 +37,7 @@ function formatHari(iso: string) {
 function warnaStatus(s: string) {
   if (s === "Hari Ini") return "#059669";
   if (s === "Mendatang") return "#1d4ed8";
+  if (s === "Selesai") return "#64748b";
   return "#64748b";
 }
 
@@ -54,7 +61,8 @@ interface SesiTampil {
 
 function mapSession(s: ClassSession): SesiTampil {
   const dateKey = s.sessionDate?.split("T")[0] ?? "";
-  const status = getStatusSesi(dateKey);
+  // Use backend status as source of truth: 'completed' → Selesai
+  const status = getStatusSesi(dateKey, s.status);
 
   return {
     id: s.id,
@@ -332,18 +340,24 @@ export default function GuruJadwalPage() {
 
                     {/* Aksi */}
                     <div style={{ flexShrink: 0 }}>
-                      {sesi.status === "Hari Ini" ? (
+                      {sesi.status === "Selesai" ? (
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, background: "#d1fae5", color: "#059669", padding: "6px 14px", borderRadius: 8, fontWeight: 700, fontSize: 12 }}>
+                            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                            Selesai
+                          </div>
+                          <Link href="/guru/logbook" style={{ color: "var(--color-primary)", fontWeight: 600, fontSize: 11.5, textDecoration: "none" }}>
+                            Lihat Logbook →
+                          </Link>
+                        </div>
+                      ) : sesi.status === "Hari Ini" ? (
                         <Link href={`/guru/kelas/${sesi.classroomId || sesi.id}`} style={{ background: "var(--color-primary)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 700, fontSize: 13, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
-                          Mulai
+                          ▶ Mulai
                         </Link>
-                      ) : sesi.status === "Mendatang" ? (
-                        <span style={{ fontSize: 12, color: "var(--color-text-muted)", fontWeight: 600, padding: "6px 12px", background: "var(--color-bg)", borderRadius: 8, display: "inline-block" }}>
-                          {sesi.jam}
-                        </span>
                       ) : (
-                        <Link href="/guru/logbook" style={{ color: "var(--color-primary)", fontWeight: 600, fontSize: 13, textDecoration: "none" }}>
-                          Logbook →
-                        </Link>
+                        <span style={{ fontSize: 12, color: "var(--color-text-muted)", fontWeight: 600, padding: "6px 12px", background: "var(--color-bg)", borderRadius: 8, display: "inline-block" }}>
+                          Mendatang
+                        </span>
                       )}
                     </div>
                   </div>
