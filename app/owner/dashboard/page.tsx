@@ -351,19 +351,14 @@ export default function OwnerDashboardPage() {
         <div className="card" style={{ padding: 22 }}>
           <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 14px" }}>🔐 Kelola Akun</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {[{ label: "Akun Admin", sub: "Manajemen admin", href: "/owner/kelola-akun/admin", color: "#059669", bg: "var(--color-success-bg)" },
-              { label: "Akun Guru", sub: `${data.totalTeachers} Guru terdaftar`, href: "/owner/kelola-akun/guru", color: "#7c3aed", bg: "#ede9fe" },
-              { label: "Akun Orang Tua", sub: "Manajemen ortu", href: "/owner/kelola-akun/orang-tua", color: "#1d4ed8", bg: "var(--color-info-bg)" },
-            ].map(m => (
-              <Link key={m.href} href={m.href} style={{ textDecoration: "none" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: m.bg, borderRadius: 8, border: `1.5px solid ${m.color}18` }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: m.color }}>{m.label}</div>
-                    <div style={{ fontSize: 11, color: "#64748b" }}>{m.sub}</div>
-                  </div>
+            <Link href="/owner/kelola-akun/admin" style={{ textDecoration: "none" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "var(--color-success-bg)", borderRadius: 8, border: "1.5px solid #05996918" }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#059669" }}>Akun Admin</div>
+                  <div style={{ fontSize: 11, color: "#64748b" }}>Manajemen akun admin</div>
                 </div>
-              </Link>
-            ))}
+              </div>
+            </Link>
           </div>
         </div>
 

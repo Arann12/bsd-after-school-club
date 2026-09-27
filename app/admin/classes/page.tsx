@@ -236,7 +236,8 @@ export default function ClassesPage() {
                       </div>
                     </td>
                     <td style={{ padding: "14px 16px" }}>
-                      <div style={{ display: "flex", gap: 6 }}>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        <Link href={`/admin/pendaftaran`} className="btn btn-primary btn-sm" style={{ textDecoration: "none" }}>+ Siswa</Link>
                         <button className="btn btn-ghost btn-sm" onClick={() => handleOpenTeacherModal(cls)}>Assign Guru</button>
                         <button className="btn btn-ghost btn-sm" onClick={() => handleOpenModal(cls)}>Edit</button>
                         <button className="btn btn-ghost btn-sm" style={{ color: "var(--color-danger)" }} onClick={() => handleDeleteClassroom(cls.id)}>Hapus</button>

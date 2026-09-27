@@ -377,10 +377,27 @@ export default function PendaftaranPage() {
       {/* Modal Form Daftarkan Siswa Baru */}
       <Modal open={showFormModal} onClose={() => setShowFormModal(false)} title="Pendaftaran Siswa ke Kelas" maxWidth={620}>
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* Pilih Siswa */}
+          {/* Pilih Siswa dengan Pencarian */}
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Pilih Siswa</label>
+            <input 
+              type="text" 
+              className="form-input" 
+              placeholder="Ketik untuk mencari nama atau NIS siswa..." 
+              style={{ marginBottom: 8, fontSize: 13 }}
+              onChange={(e) => {
+                const q = e.target.value.toLowerCase();
+                const sel = document.getElementById("student-select") as HTMLSelectElement;
+                if (sel) {
+                  Array.from(sel.options).forEach(opt => {
+                    const match = opt.text.toLowerCase().includes(q);
+                    opt.style.display = match ? "block" : "none";
+                  });
+                }
+              }}
+            />
             <select
+              id="student-select"
               className="select-control"
               style={{ width: "100%" }}
               value={selectedStudentId}
@@ -389,7 +406,7 @@ export default function PendaftaranPage() {
             >
               {studentsList.map((st) => (
                 <option key={st.id} value={st.id}>
-                  {st.full_name} ({st.student_code || "NIS: -"})
+                  {st.name} ({st.studentCode || "NIS: -"})
                 </option>
               ))}
             </select>

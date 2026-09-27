@@ -1,66 +1,176 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { SkeletonTable } from "@/components/ui/Skeleton";
+import { getClassSessions, getClassSchedules, type ClassSchedule } from "@/lib/api/academic";
 
-interface SesiJadwal {
-  id: string;
-  tanggal: string;
-  hari: string;
-  dateKey: string;
-  jam: string;
-  jamEnd: string;
-  kelas: string;
-  program: string;
-  ruang: string;
-  siswa: number;
-  pertemuan: number;
-  total: number;
-  status: "Hari Ini" | "Mendatang" | "Selesai";
-  warna: string;
+// ─── Helpers ─────────────────────────────────────────────────
+
+type FilterType = "Semua" | "Hari Ini" | "Mendatang" | "Selesai";
+
+function getStatusSesi(sessionDate: string): "Hari Ini" | "Mendatang" | "Selesai" {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const d = new Date(sessionDate); d.setHours(0, 0, 0, 0);
+  if (d.getTime() === today.getTime()) return "Hari Ini";
+  if (d > today) return "Mendatang";
+  return "Selesai";
 }
 
-const daftarJadwal: SesiJadwal[] = [
-  // Hari Ini
-  { id: "SES-001", tanggal: "8 Sep 2026", hari: "Senin", dateKey: "2026-09-08", jam: "14:00", jamEnd: "15:00", kelas: "KLS-A", program: "Calistung Level 1", ruang: "Ruang 1", siswa: 6, pertemuan: 9, total: 12, status: "Hari Ini", warna: "#059669" },
-  { id: "SES-002", tanggal: "8 Sep 2026", hari: "Senin", dateKey: "2026-09-08", jam: "16:00", jamEnd: "17:00", kelas: "KLS-D", program: "Phonics Starter", ruang: "Ruang 3", siswa: 5, pertemuan: 3, total: 8, status: "Hari Ini", warna: "#d97706" },
-  // Besok
-  { id: "SES-003", tanggal: "9 Sep 2026", hari: "Selasa", dateKey: "2026-09-09", jam: "15:00", jamEnd: "16:00", kelas: "KLS-B", program: "English B1", ruang: "Ruang 2", siswa: 5, pertemuan: 6, total: 12, status: "Mendatang", warna: "#1d4ed8" },
-  // Rabu
-  { id: "SES-004", tanggal: "10 Sep 2026", hari: "Rabu", dateKey: "2026-09-10", jam: "14:00", jamEnd: "15:00", kelas: "KLS-A", program: "Calistung Level 1", ruang: "Ruang 1", siswa: 6, pertemuan: 10, total: 12, status: "Mendatang", warna: "#059669" },
-  // Kamis
-  { id: "SES-005", tanggal: "11 Sep 2026", hari: "Kamis", dateKey: "2026-09-11", jam: "13:00", jamEnd: "14:00", kelas: "KLS-D", program: "Phonics Starter", ruang: "Ruang 3", siswa: 5, pertemuan: 4, total: 8, status: "Mendatang", warna: "#d97706" },
-  { id: "SES-011", tanggal: "11 Sep 2026", hari: "Kamis", dateKey: "2026-09-11", jam: "15:00", jamEnd: "16:00", kelas: "KLS-B", program: "English B1", ruang: "Ruang 2", siswa: 5, pertemuan: 7, total: 12, status: "Mendatang", warna: "#1d4ed8" },
-  // Jumat
-  { id: "SES-006", tanggal: "12 Sep 2026", hari: "Jumat", dateKey: "2026-09-12", jam: "14:00", jamEnd: "15:00", kelas: "KLS-A", program: "Calistung Level 1", ruang: "Ruang 1", siswa: 6, pertemuan: 11, total: 12, status: "Mendatang", warna: "#059669" },
-  // Selesai - minggu lalu
-  { id: "SES-010", tanggal: "5 Sep 2026", hari: "Jumat", dateKey: "2026-09-05", jam: "14:00", jamEnd: "15:00", kelas: "KLS-A", program: "Calistung Level 1", ruang: "Ruang 1", siswa: 6, pertemuan: 8, total: 12, status: "Selesai", warna: "#64748b" },
-  { id: "SES-009", tanggal: "3 Sep 2026", hari: "Kamis", dateKey: "2026-09-03", jam: "13:00", jamEnd: "14:00", kelas: "KLS-D", program: "Phonics Starter", ruang: "Ruang 3", siswa: 5, pertemuan: 2, total: 8, status: "Selesai", warna: "#64748b" },
-  { id: "SES-008", tanggal: "1 Sep 2026", hari: "Senin", dateKey: "2026-09-01", jam: "14:00", jamEnd: "15:00", kelas: "KLS-A", program: "Calistung Level 1", ruang: "Ruang 1", siswa: 6, pertemuan: 7, total: 12, status: "Selesai", warna: "#64748b" },
-];
+function formatTgl(iso: string) {
+  try {
+    return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+  } catch { return iso; }
+}
+
+function formatHari(iso: string) {
+  try {
+    return new Date(iso).toLocaleDateString("id-ID", { weekday: "long" });
+  } catch { return ""; }
+}
+
+function warnaStatus(s: string) {
+  if (s === "Hari Ini") return "#059669";
+  if (s === "Mendatang") return "#1d4ed8";
+  return "#64748b";
+}
+
+// ─── Mapped type untuk tampilan ──────────────────────────────
+
+interface SesiTampil {
+  id: string;
+  dateKey: string;       // YYYY-MM-DD
+  tanggal: string;       // "8 Sep 2026"
+  hari: string;          // "Senin"
+  jam: string;           // "14:00"
+  jamEnd: string;        // "15:00"
+  kelas: string;
+  program: string;
+  sessionNumber: number;
+  totalSessions: number;
+  status: "Hari Ini" | "Mendatang" | "Selesai";
+  warna: string;
+  classroomId: string;
+}
+
+function mapSession(s: ClassSession): SesiTampil {
+  const dateKey = s.sessionDate?.split("T")[0] ?? "";
+  const status = getStatusSesi(dateKey);
+
+  return {
+    id: s.id,
+    dateKey,
+    tanggal: formatTgl(dateKey),
+    hari: formatHari(dateKey),
+    jam: s.startTime ? s.startTime.substring(0, 5) : "--:--",
+    jamEnd: s.endTime ? s.endTime.substring(0, 5) : "--",
+    kelas: s.classroom?.name ?? "Kelas",
+    program: s.classroom?.programLevel?.name ?? s.classSchedule?.classroom?.programLevel?.name ?? "Program",
+    sessionNumber: s.sessionNumber ?? 0,
+    totalSessions: 0,
+    status,
+    warna: warnaStatus(status),
+    classroomId: s.classroomId || s.classroom?.id || "",
+  };
+}
+
+function mapSchedule(sc: ClassSchedule): SesiTampil {
+  // Schedule tidak punya tanggal spesifik, gunakan hari berikutnya yang sesuai day_of_week
+  const dayMap: Record<string, number> = {
+    sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,
+    minggu: 0, senin: 1, selasa: 2, rabu: 3, kamis: 4, jumat: 5, sabtu: 6
+  };
+  
+  const targetDay = dayMap[(sc.dayOfWeek || "").toLowerCase()] ?? 1;
+  const d = new Date();
+  const currentDay = d.getDay();
+  let daysUntil = (targetDay - currentDay + 7) % 7;
+  // Jika kelas hari ini tapi jam sudah lewat, biarkan tetap hari ini untuk jadwal fallback
+  d.setDate(d.getDate() + daysUntil);
+  
+  // Gunakan local date parts agar terhindar dari pergeseran zona waktu (UTC issue)
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const dateKey = `${yyyy}-${mm}-${dd}`;
+
+  return {
+    id: sc.id,
+    dateKey,
+    tanggal: formatTgl(dateKey),
+    hari: formatHari(dateKey) || sc.dayOfWeek || "",
+    jam: sc.startTime ? sc.startTime.substring(0, 5) : "--:--",
+    jamEnd: sc.endTime ? sc.endTime.substring(0, 5) : "--",
+    kelas: sc.classroom?.name ?? "Kelas",
+    program: sc.classroom?.programLevel?.name ?? "Program",
+    sessionNumber: 0,
+    totalSessions: 0,
+    status: daysUntil === 0 ? "Hari Ini" : "Mendatang",
+    warna: warnaStatus(daysUntil === 0 ? "Hari Ini" : "Mendatang"),
+    classroomId: sc.classroomId || sc.classroom?.id || "",
+  };
+}
+
+// ─── Page ─────────────────────────────────────────────────────
 
 export default function GuruJadwalPage() {
-  const [filter, setFilter] = useState<"Semua" | "Hari Ini" | "Mendatang" | "Selesai">("Semua");
+  const [sessions, setSessions] = useState<SesiTampil[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<FilterType>("Semua");
 
-  const hariIni = daftarJadwal.filter(j => j.status === "Hari Ini");
-  const terfilter = daftarJadwal.filter(j => filter === "Semua" || j.status === filter);
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Backend auto-filter by auth token untuk role teacher
+      const [sessionsRes, schedulesRes] = await Promise.allSettled([
+        getClassSessions({ per_page: 200 }),
+        getClassSchedules(),
+      ]);
 
-  // Group by date for "Semua" view
-  const groupedByDate = terfilter.reduce<Record<string, SesiJadwal[]>>((acc, sesi) => {
-    if (!acc[sesi.dateKey]) acc[sesi.dateKey] = [];
-    acc[sesi.dateKey].push(sesi);
+      const allSessions: SesiTampil[] = sessionsRes.status === "fulfilled"
+        ? sessionsRes.value.map(mapSession)
+        : [];
+
+      // Tampilkan schedules sebagai fallback jika belum ada sesi
+      const allSchedules: SesiTampil[] =
+        schedulesRes.status === "fulfilled" && allSessions.length === 0
+          ? schedulesRes.value.map(mapSchedule)
+          : [];
+
+      const combined = [...allSessions, ...allSchedules].sort((a, b) =>
+        a.dateKey.localeCompare(b.dateKey)
+      );
+      setSessions(combined);
+    } catch (e) {
+      console.error("Gagal memuat jadwal:", e);
+      setError("Gagal memuat jadwal. Pastikan backend berjalan.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  // ─── Filter & Group ────────────────────────────────────────
+
+  const hariIni = sessions.filter((s) => s.status === "Hari Ini");
+  const terfilter = sessions.filter((s) => filter === "Semua" || s.status === filter);
+
+  const groupedByDate = terfilter.reduce<Record<string, SesiTampil[]>>((acc, s) => {
+    if (!acc[s.dateKey]) acc[s.dateKey] = [];
+    acc[s.dateKey].push(s);
     return acc;
   }, {});
 
-  const sortedDates = Object.keys(groupedByDate).sort((a, b) => {
-    if (filter === "Selesai") return b.localeCompare(a);
-    return a.localeCompare(b);
-  });
+  const sortedDates = Object.keys(groupedByDate).sort((a, b) =>
+    filter === "Selesai" ? b.localeCompare(a) : a.localeCompare(b)
+  );
 
-  const formatHariLabel = (dateKey: string, sesi: SesiJadwal) => {
-    if (sesi.status === "Hari Ini") return "Hari Ini";
-    if (dateKey === "2026-09-09") return "Besok";
-    return `${sesi.hari}, ${sesi.tanggal}`;
-  };
+  const countFilter = (f: FilterType) =>
+    f === "Semua" ? sessions.length : sessions.filter((s) => s.status === f).length;
+
+  if (loading) return <SkeletonTable rows={5} cols={4} />;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -68,7 +178,6 @@ export default function GuruJadwalPage() {
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .6; } }
         .sesi-card { transition: all 0.2s ease; }
         .sesi-card:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
-        .time-slot { min-width: 72px; text-align: center; padding: 10px 8px; border-radius: 12px; flex-shrink: 0; }
         .today-badge { animation: pulse 2s ease-in-out infinite; }
       `}</style>
 
@@ -76,59 +185,52 @@ export default function GuruJadwalPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Jadwal Mengajar</h1>
-          <p className="page-subtitle">Jadwal sesi mengajar minggu ini. Klik kelas untuk mulai absensi atau lihat logbook.</p>
+          <p className="page-subtitle">Jadwal sesi mengajar berdasarkan database. Klik kelas untuk mulai absensi.</p>
         </div>
+        <button className="btn btn-outline" onClick={fetchData}>↻ Refresh</button>
       </div>
 
-      {/* Highlight: Hari Ini */}
+      {/* Error */}
+      {error && (
+        <div style={{ background: "var(--color-danger-bg)", border: "1px solid #fecaca", borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
+          <span>⚠️</span>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--color-danger)" }}>{error}</div>
+            <button className="btn btn-sm btn-outline" style={{ marginTop: 8 }} onClick={fetchData}>Coba Lagi</button>
+          </div>
+        </div>
+      )}
+
+      {/* Highlight Hari Ini */}
       {hariIni.length > 0 && (
-        <div style={{
-          background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
-          borderRadius: 16, padding: "22px 26px", color: "#fff",
-          boxShadow: "0 8px 24px rgba(5,150,105,0.25)",
-        }}>
+        <div style={{ background: "linear-gradient(135deg, #059669 0%, #047857 100%)", borderRadius: 16, padding: "22px 26px", color: "#fff", boxShadow: "0 8px 24px rgba(5,150,105,0.25)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div className="today-badge" style={{ width: 10, height: 10, borderRadius: "50%", background: "#bbf7d0", flexShrink: 0 }} />
               <span style={{ fontSize: 17, fontWeight: 900 }}>Jadwal Hari Ini</span>
-              <span style={{ fontSize: 13, opacity: 0.85, fontWeight: 600 }}>Senin, 8 September 2026</span>
+              <span style={{ fontSize: 13, opacity: 0.85, fontWeight: 600 }}>
+                {new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+              </span>
             </div>
             <span style={{ background: "rgba(255,255,255,0.2)", padding: "4px 14px", borderRadius: 999, fontSize: 12.5, fontWeight: 700 }}>
               {hariIni.length} Sesi
             </span>
           </div>
-
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {hariIni.map(sesi => (
-              <div key={sesi.id} style={{
-                background: "rgba(255,255,255,0.15)", borderRadius: 14, padding: "16px 20px",
-                display: "flex", alignItems: "center", gap: 16, backdropFilter: "blur(4px)",
-                border: "1px solid rgba(255,255,255,0.15)",
-              }}>
-                {/* Time */}
+            {hariIni.map((sesi) => (
+              <div key={sesi.id} style={{ background: "rgba(255,255,255,0.15)", borderRadius: 14, padding: "16px 20px", display: "flex", alignItems: "center", gap: 16, backdropFilter: "blur(4px)", border: "1px solid rgba(255,255,255,0.15)" }}>
                 <div style={{ minWidth: 80, textAlign: "center" }}>
                   <div style={{ fontSize: 20, fontWeight: 900, lineHeight: 1.1 }}>{sesi.jam}</div>
-                  <div style={{ fontSize: 11, opacity: 0.8 }}>{sesi.jamEnd}</div>
+                  <div style={{ fontSize: 11, opacity: 0.8 }}>{sesi.jamEnd !== "--" ? sesi.jamEnd : ""}</div>
                 </div>
-
-                {/* Divider */}
                 <div style={{ width: 1, height: 40, background: "rgba(255,255,255,0.25)", flexShrink: 0 }} />
-
-                {/* Info */}
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 16, fontWeight: 800 }}>{sesi.kelas} — {sesi.program}</div>
-                  <div style={{ fontSize: 12.5, opacity: 0.85, marginTop: 2 }}>{sesi.ruang} · {sesi.siswa} siswa · Pertemuan {sesi.pertemuan}/{sesi.total}</div>
+                  {sesi.totalSessions > 0 && (
+                    <div style={{ fontSize: 12.5, opacity: 0.85, marginTop: 2 }}>Pertemuan {sesi.sessionNumber}/{sesi.totalSessions}</div>
+                  )}
                 </div>
-
-                {/* Aksi */}
-                <Link href={`/guru/kelas/${sesi.id}`} style={{
-                  background: "#fff", color: "#047857", padding: "10px 20px", borderRadius: 10,
-                  fontWeight: 800, fontSize: 13.5, textDecoration: "none", display: "inline-flex",
-                  alignItems: "center", gap: 6, whiteSpace: "nowrap",
-                }}>
-                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-                  </svg>
+                <Link href={`/guru/kelas/${sesi.classroomId || sesi.id}`} style={{ background: "#fff", color: "#047857", padding: "10px 20px", borderRadius: 10, fontWeight: 800, fontSize: 13.5, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
                   Mulai Kelas
                 </Link>
               </div>
@@ -139,74 +241,65 @@ export default function GuruJadwalPage() {
 
       {/* Filter Tabs */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-        {(["Semua", "Mendatang", "Selesai"] as const).map(f => {
-          const count = f === "Semua" ? daftarJadwal.length : daftarJadwal.filter(j => j.status === f).length;
-          return (
-            <button key={f} onClick={() => setFilter(f)} style={{
-              padding: "8px 18px", borderRadius: 999, border: "1.5px solid", fontSize: 13, fontWeight: 700,
-              cursor: "pointer", transition: "all .15s", display: "flex", alignItems: "center", gap: 6,
-              background: filter === f ? "var(--color-primary)" : "white",
-              color: filter === f ? "white" : "var(--color-text-secondary)",
-              borderColor: filter === f ? "var(--color-primary)" : "var(--color-border)",
-            }}>
-              {f}
-              <span style={{
-                fontSize: 11, fontWeight: 800, padding: "1px 7px", borderRadius: 999,
-                background: filter === f ? "rgba(255,255,255,0.25)" : "var(--color-bg)",
-                color: filter === f ? "#fff" : "var(--color-text-muted)",
-              }}>{count}</span>
-            </button>
-          );
-        })}
+        {(["Semua", "Mendatang", "Selesai"] as FilterType[]).map((f) => (
+          <button key={f} onClick={() => setFilter(f)} style={{
+            padding: "8px 18px", borderRadius: 999, border: "1.5px solid", fontSize: 13, fontWeight: 700,
+            cursor: "pointer", transition: "all .15s", display: "flex", alignItems: "center", gap: 6,
+            background: filter === f ? "var(--color-primary)" : "white",
+            color: filter === f ? "white" : "var(--color-text-secondary)",
+            borderColor: filter === f ? "var(--color-primary)" : "var(--color-border)",
+          }}>
+            {f}
+            <span style={{ fontSize: 11, fontWeight: 800, padding: "1px 7px", borderRadius: 999, background: filter === f ? "rgba(255,255,255,0.25)" : "var(--color-bg)", color: filter === f ? "#fff" : "var(--color-text-muted)" }}>
+              {countFilter(f)}
+            </span>
+          </button>
+        ))}
       </div>
 
-      {/* Jadwal Grouped by Date */}
+      {/* Empty */}
+      {sessions.length === 0 && !error && (
+        <div className="card" style={{ padding: "48px 24px", textAlign: "center" }}>
+          <div style={{ fontSize: 36, marginBottom: 12 }}>📅</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)", marginBottom: 6 }}>Belum ada jadwal</div>
+          <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+            {teacherId ? "Tidak ada sesi mengajar yang terdaftar untuk akun ini." : "Akun ini belum terhubung ke data guru di sistem."}
+          </div>
+        </div>
+      )}
+
+      {/* Jadwal grouped by date */}
       <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-        {sortedDates.map(dateKey => {
+        {sortedDates.map((dateKey) => {
           const sesiHari = groupedByDate[dateKey];
-          const labelSesi = sesiHari[0];
-          const isHariIni = labelSesi.status === "Hari Ini";
+          const first = sesiHari[0];
+          const isHariIni = first.status === "Hari Ini";
 
           return (
             <div key={dateKey}>
               {/* Date Header */}
-              <div style={{
-                display: "flex", alignItems: "center", gap: 10, marginBottom: 10,
-                paddingBottom: 8, borderBottom: "2px solid var(--color-border-light)",
-              }}>
-                <div style={{
-                  width: 36, height: 36, borderRadius: 10,
-                  background: isHariIni ? "var(--color-primary)" : "var(--color-bg)",
-                  color: isHariIni ? "#fff" : "var(--color-text-secondary)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontWeight: 900, fontSize: 14, flexShrink: 0,
-                }}>
-                  {labelSesi.hari.slice(0, 2)}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, paddingBottom: 8, borderBottom: "2px solid var(--color-border-light)" }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: isHariIni ? "var(--color-primary)" : "var(--color-bg)", color: isHariIni ? "#fff" : "var(--color-text-secondary)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 14, flexShrink: 0 }}>
+                  {first.hari.slice(0, 2)}
                 </div>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 800, color: "var(--color-text-primary)" }}>
-                    {formatHariLabel(dateKey, labelSesi)}
+                    {isHariIni ? "Hari Ini" : `${first.hari}, ${first.tanggal}`}
                   </div>
                   <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
-                    {labelSesi.tanggal} · {sesiHari.length} sesi
+                    {first.tanggal} · {sesiHari.length} sesi
                   </div>
                 </div>
               </div>
 
-              {/* Cards for this date */}
+              {/* Cards */}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {sesiHari.map(sesi => (
-                  <div key={sesi.id} className="sesi-card" style={{
-                    background: "#fff", borderRadius: 14, border: "1.5px solid var(--color-border-light)",
-                    padding: "16px 20px", display: "flex", alignItems: "center", gap: 16,
-                    borderLeft: `4px solid ${sesi.warna}`,
-                  }}>
-                    {/* Time Block */}
-                    <div className="time-slot" style={{
-                      background: sesi.status === "Hari Ini" ? `${sesi.warna}12` : "var(--color-bg)",
-                    }}>
+                {sesiHari.map((sesi) => (
+                  <div key={sesi.id} className="sesi-card" style={{ background: "#fff", borderRadius: 14, border: "1.5px solid var(--color-border-light)", padding: "16px 20px", display: "flex", alignItems: "center", gap: 16, borderLeft: `4px solid ${sesi.warna}` }}>
+                    {/* Jam */}
+                    <div style={{ minWidth: 72, textAlign: "center", padding: "10px 8px", borderRadius: 12, flexShrink: 0, background: sesi.status === "Hari Ini" ? `${sesi.warna}12` : "var(--color-bg)" }}>
                       <div style={{ fontSize: 18, fontWeight: 900, color: sesi.warna, lineHeight: 1.1 }}>{sesi.jam}</div>
-                      <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 2 }}>{sesi.jamEnd}</div>
+                      {sesi.jamEnd !== "--" && <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 2 }}>{sesi.jamEnd}</div>}
                     </div>
 
                     {/* Info */}
@@ -217,44 +310,30 @@ export default function GuruJadwalPage() {
                         <span style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text-secondary)" }}>{sesi.program}</span>
                       </div>
                       <div style={{ fontSize: 12, color: "var(--color-text-muted)", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                        <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                          <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M3 21h18M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/></svg>
-                          {sesi.ruang}
-                        </span>
-                        <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                          <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                          {sesi.siswa} siswa
-                        </span>
-                        <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                          <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>
-                          {sesi.pertemuan}/{sesi.total} pertemuan
+                        {sesi.totalSessions > 0 && (
+                          <span>Pertemuan {sesi.sessionNumber}/{sesi.totalSessions}</span>
+                        )}
+                        <span style={{ background: `${sesi.warna}15`, color: sesi.warna, fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 999 }}>
+                          {sesi.status}
                         </span>
                       </div>
                     </div>
 
-                    {/* Progress Ring */}
-                    <div style={{ textAlign: "center", minWidth: 56 }}>
-                      <div style={{
-                        width: 48, height: 48, borderRadius: "50%",
-                        border: `3px solid ${sesi.status === "Selesai" ? "var(--color-border)" : sesi.warna}`,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        margin: "0 auto",
-                      }}>
-                        <span style={{ fontSize: 13, fontWeight: 900, color: sesi.status === "Selesai" ? "var(--color-text-muted)" : sesi.warna }}>
-                          {Math.round((sesi.pertemuan / sesi.total) * 100)}%
-                        </span>
+                    {/* Progress ring jika ada total sesi */}
+                    {sesi.totalSessions > 0 && (
+                      <div style={{ textAlign: "center", minWidth: 56 }}>
+                        <div style={{ width: 48, height: 48, borderRadius: "50%", border: `3px solid ${sesi.status === "Selesai" ? "var(--color-border)" : sesi.warna}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto" }}>
+                          <span style={{ fontSize: 12, fontWeight: 900, color: sesi.status === "Selesai" ? "var(--color-text-muted)" : sesi.warna }}>
+                            {Math.round((sesi.sessionNumber / sesi.totalSessions) * 100)}%
+                          </span>
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Aksi */}
                     <div style={{ flexShrink: 0 }}>
                       {sesi.status === "Hari Ini" ? (
-                        <Link href={`/guru/kelas/${sesi.id}`} style={{
-                          background: "var(--color-primary)", color: "#fff", padding: "9px 18px",
-                          borderRadius: 10, fontWeight: 700, fontSize: 13, textDecoration: "none",
-                          display: "inline-flex", alignItems: "center", gap: 6,
-                        }}>
-                          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                        <Link href={`/guru/kelas/${sesi.classroomId || sesi.id}`} style={{ background: "var(--color-primary)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 700, fontSize: 13, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
                           Mulai
                         </Link>
                       ) : sesi.status === "Mendatang" ? (
@@ -262,10 +341,8 @@ export default function GuruJadwalPage() {
                           {sesi.jam}
                         </span>
                       ) : (
-                        <Link href="/guru/logbook" style={{
-                          color: "var(--color-primary)", fontWeight: 600, fontSize: 13, textDecoration: "none",
-                        }}>
-                          Lihat Logbook →
+                        <Link href="/guru/logbook" style={{ color: "var(--color-primary)", fontWeight: 600, fontSize: 13, textDecoration: "none" }}>
+                          Logbook →
                         </Link>
                       )}
                     </div>
@@ -276,7 +353,7 @@ export default function GuruJadwalPage() {
           );
         })}
 
-        {sortedDates.length === 0 && (
+        {sortedDates.length === 0 && sessions.length > 0 && (
           <div className="card" style={{ padding: "48px 24px", textAlign: "center" }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)", marginBottom: 6 }}>Tidak ada jadwal</div>
             <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>Tidak ada sesi mengajar untuk filter ini.</div>

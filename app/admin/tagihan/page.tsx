@@ -9,7 +9,6 @@ import {
   submitCashTransaction,
   confirmCashTransaction,
 } from "@/lib/api/finance";
-import { getEnrollments } from "@/lib/api/enrollments";
 
 export interface TagihanItem {
   id: string;
@@ -47,7 +46,6 @@ export default function AdminTagihanPage() {
 
   // Modal State: Input Cash Manual
   const [showInputCashModal, setShowInputCashModal] = useState(false);
-  const [enrollmentsList, setEnrollmentsList] = useState<any[]>([]);
   const [selectedEnrollmentId, setSelectedEnrollmentId] = useState("");
   const [cashAmount, setCashAmount] = useState<number>(100000);
   const [cashNote, setCashNote] = useState("");
@@ -131,23 +129,22 @@ export default function AdminTagihanPage() {
     }
   }, [showToast]);
 
-  const loadEnrollments = async () => {
-    try {
-      const res = await getEnrollments({ per_page: 50 });
-      const list = Array.isArray(res?.data) ? res.data : [];
-      setEnrollmentsList(list);
-      if (list.length > 0) {
-        setSelectedEnrollmentId(list[0].id);
-      }
-    } catch (e) {
-      console.error("Gagal memuat pendaftaran:", e);
-    }
-  };
-
   useEffect(() => {
     loadData();
-    loadEnrollments();
   }, [loadData]);
+
+  // Derive enrollment options from daftarTagihan (already loaded, no extra API call)
+  const enrollmentOptions = (() => {
+    const seen = new Set<string>();
+    return daftarTagihan
+      .filter(t => t.status !== "Lunas" && t.enrollmentId)
+      .filter(t => {
+        if (seen.has(t.enrollmentId)) return false;
+        seen.add(t.enrollmentId);
+        return true;
+      })
+      .map(t => ({ id: t.enrollmentId, label: `${t.siswa} — ${t.program}` }));
+  })();
 
   const terfilter = daftarTagihan.filter((t) => {
     const q = cari.toLowerCase().trim();
@@ -191,6 +188,7 @@ export default function AdminTagihanPage() {
 
       showToast(`Pembayaran Cash Manual Rp ${cashAmount.toLocaleString("id-ID")} berhasil dicatat!`);
       setShowInputCashModal(false);
+      setSelectedEnrollmentId("");
       setCashNote("");
       await loadData();
     } catch (err: any) {
@@ -375,22 +373,25 @@ export default function AdminTagihanPage() {
       <Modal open={showInputCashModal} onClose={() => setShowInputCashModal(false)} title="Input Pembayaran Cash Manual" maxWidth={500}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Pilih Pendaftaran Siswa</label>
-            {enrollmentsList.length > 0 ? (
+            <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Pilih Pendaftaran Siswa (Belum Lunas)</label>
+            {enrollmentOptions.length > 0 ? (
               <select
                 className="select-control"
                 style={{ width: "100%" }}
                 value={selectedEnrollmentId}
                 onChange={(e) => setSelectedEnrollmentId(e.target.value)}
               >
-                {enrollmentsList.map((en) => (
+                <option value="">-- Pilih Siswa --</option>
+                {enrollmentOptions.map((en) => (
                   <option key={en.id} value={en.id}>
-                    {en.student?.full_name || "Siswa"} — {en.program?.name || "Program"}
+                    {en.label}
                   </option>
                 ))}
               </select>
             ) : (
-              <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Memuat daftar siswa...</div>
+              <div style={{ fontSize: 12, color: "var(--color-text-muted)", padding: "10px 0" }}>
+                ✅ Tidak ada tagihan belum lunas saat ini.
+              </div>
             )}
           </div>
 

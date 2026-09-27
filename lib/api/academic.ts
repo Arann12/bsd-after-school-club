@@ -141,6 +141,8 @@ export interface ClassSessionRaw {
   classroom?: ClassroomRaw;
   teacher?: Teacher;
   class_schedule?: ClassScheduleRaw;
+  teacher_logbook?: any;
+  student_attendances?: any[];
 }
 
 export interface ClassSession {
@@ -158,6 +160,8 @@ export interface ClassSession {
   classroom?: Classroom;
   teacher?: Teacher;
   classSchedule?: ClassSchedule;
+  teacherLogbook?: any;
+  studentAttendances?: any[];
 }
 
 export interface SubmitAttendancePayload {
@@ -265,6 +269,8 @@ export function mapClassSession(raw: ClassSessionRaw): ClassSession {
     classroom: raw.classroom ? mapClassroom(raw.classroom) : undefined,
     teacher: raw.teacher,
     classSchedule: raw.class_schedule ? mapClassSchedule(raw.class_schedule) : undefined,
+    teacherLogbook: raw.teacher_logbook,
+    studentAttendances: raw.student_attendances,
   };
 }
 
