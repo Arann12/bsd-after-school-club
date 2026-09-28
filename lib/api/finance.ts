@@ -12,7 +12,7 @@ import type { PaginatedResponse, ApiResponse } from "./types";
 
 /** GET /invoices */
 export async function getInvoices(
-  params?: { page?: number; student_id?: string; status?: string; search?: string }
+  params?: { page?: number; student_id?: string; status?: string; search?: string; per_page?: number }
 ): Promise<PaginatedResponse<Invoice>> {
   const { data } = await axiosInstance.get<PaginatedResponse<Invoice>>("/invoices", { params });
   return data;

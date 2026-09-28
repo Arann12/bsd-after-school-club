@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { SkeletonTable } from "@/components/ui/Skeleton";
-import { getClassSessions, getClassSchedules, type ClassSchedule } from "@/lib/api/academic";
+import { getClassSessions, getClassSchedules, type ClassSchedule, type ClassSession } from "@/lib/api/academic";
 
 // ─── Helpers ─────────────────────────────────────────────────
 
@@ -271,7 +271,7 @@ export default function GuruJadwalPage() {
           <div style={{ fontSize: 36, marginBottom: 12 }}>📅</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)", marginBottom: 6 }}>Belum ada jadwal</div>
           <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
-            {teacherId ? "Tidak ada sesi mengajar yang terdaftar untuk akun ini." : "Akun ini belum terhubung ke data guru di sistem."}
+            Tidak ada sesi mengajar yang terdaftar untuk akun ini saat ini.
           </div>
         </div>
       )}

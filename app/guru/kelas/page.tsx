@@ -101,7 +101,7 @@ export default function GuruKelasListPage() {
         return {
           id: c.id,
           kelas: c.name,
-          program: c.programLevel?.program?.name || "Program Reguler",
+          program: c.programLevel?.name || "Program Reguler",
           level: c.programLevel?.name || "-",
           jadwal: jadwalStr,
           ruang: "Ruang Kelas",

@@ -94,7 +94,7 @@ export default function GuruKalenderLogbookPage() {
     setLoading(true);
     try {
       const sessionsRes = await getClassSessions({ per_page: 200 });
-      const sessions: ClassSession[] = Array.isArray(sessionsRes) ? sessionsRes : (sessionsRes.data || []);
+      const sessions: ClassSession[] = Array.isArray(sessionsRes) ? sessionsRes : ((sessionsRes as any)?.data || []);
       
       const entries: LogbookEntry[] = sessions.map((s) => {
         const dateKey = s.sessionDate?.split("T")[0] ?? "";
@@ -307,7 +307,7 @@ export default function GuruKalenderLogbookPage() {
             const sessionsToday = logbookList.filter((l) => l.tanggal === dateStr);
             const found = sessionsToday.length > 0 ? sessionsToday[0] : null;
             
-            const isCompleted = found?.materi !== "Belum diisi" && found?.totalSiswa > 0;
+            const isCompleted = found ? (found.materi !== "Belum diisi" && (found.totalSiswa ?? 0) > 0) : false;
             const isPending = found && !isCompleted;
 
             return (

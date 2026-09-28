@@ -90,7 +90,7 @@ export async function deleteAnnouncement(id: string): Promise<any> {
 
 /** GET /inventory */
 export async function getInventory(
-  params?: { page?: number; category?: string; condition?: string; search?: string }
+  params?: { page?: number; category?: string; condition?: string; search?: string; per_page?: number }
 ): Promise<PaginatedResponse<InventoryItem>> {
   const { data } = await axiosInstance.get<PaginatedResponse<InventoryItem>>("/inventory", { params });
   return data;

@@ -443,3 +443,14 @@ export async function submitAttendanceAndLogbook(sessionId: string, payload: Sub
   const res = await axiosInstance.post<ApiResponse<any>>(`/class-sessions/${sessionId}/submit-attendance`, payload);
   return res.data;
 }
+
+// ============================================================================
+// Backward Compatibility Aliases
+// ============================================================================
+export const getClasses = getClassrooms;
+export const getClass = getClassroomById;
+export const createClass = createClassroom;
+export const updateClass = updateClassroom;
+export const deleteClass = deleteClassroom;
+export const submitAttendance = submitAttendanceAndLogbook;
+

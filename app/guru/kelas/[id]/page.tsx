@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, use } from "react";
-import { getClassroomById, getClassSessions, submitAttendanceAndLogbook, type Classroom, type ClassSession } from "@/lib/api/academic";
+import { getClassroomById, getClassSessions, submitAttendanceAndLogbook, type Classroom, type ClassSession, type SubmitAttendancePayload } from "@/lib/api/academic";
 import { SkeletonTable } from "@/components/ui/Skeleton";
 
 type StatusKehadiran = "present" | "absent" | "late" | "excused";
@@ -129,18 +129,18 @@ export default function GuruKelasPage({ params }: { params: Promise<{ id: string
       const [eh, em] = endTimeStr.split(":").map(Number);
       const teachingMins = Math.max(1, (eh * 60 + em) - (sh * 60 + sm));
 
-      const payload = {
+      const payload: SubmitAttendancePayload = {
         students: dataSiswa.map(s => ({
           student_id: s.id,
           attendance_status: kehadiran[s.id] || "absent",
-          notes: catatan || null
+          notes: catatan || undefined
         })),
         logbook: {
           check_in: checkIn,
           check_out: checkOut,
           teaching_minutes: teachingMins,
           material: materi,
-          notes: catatan
+          notes: catatan || undefined
         }
       };
       
@@ -184,7 +184,7 @@ export default function GuruKelasPage({ params }: { params: Promise<{ id: string
       {/* Kepala Halaman */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">{classroom?.name} — {classroom?.programLevel?.program?.name}</h1>
+          <h1 className="page-title">{classroom?.name} — {classroom?.programLevel?.name || "Program"}</h1>
           <p className="page-subtitle">
             {session ? (
               `Pertemuan ke-${session.sessionNumber} · ${new Date(session.sessionDate || "").toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })} · ${session.startTime?.substring(0,5)}–${session.endTime?.substring(0,5)}`

@@ -114,10 +114,10 @@ export default function OwnerDashboardPage() {
       const classrooms = classroomsRes.status === "fulfilled" ? (classroomsRes.value.data ?? []) : [];
       // getClassSessions returns ClassSession[] directly (not paginated)
       const sessions = sessionsRes.status === "fulfilled" ? (Array.isArray(sessionsRes.value) ? sessionsRes.value : []) : [];
-      const invoices = invoicesRes.status === "fulfilled" ? invoicesRes.value.data : [];
-      const cashItems = cashRes.status === "fulfilled" ? cashRes.value.data : [];
-      const announcements = announcementsRes.status === "fulfilled" ? announcementsRes.value.data : [];
-      const inventoryItems = inventoryRes.status === "fulfilled" ? inventoryRes.value.data : [];
+      const invoices: any[] = invoicesRes.status === "fulfilled" ? (Array.isArray(invoicesRes.value.data?.data) ? invoicesRes.value.data.data : Array.isArray(invoicesRes.value.data) ? invoicesRes.value.data : []) : [];
+      const cashItems: any[] = cashRes.status === "fulfilled" ? (Array.isArray(cashRes.value.data?.data) ? cashRes.value.data.data : Array.isArray(cashRes.value.data) ? cashRes.value.data : []) : [];
+      const announcements: any[] = announcementsRes.status === "fulfilled" ? (Array.isArray(announcementsRes.value.data?.data) ? announcementsRes.value.data.data : Array.isArray(announcementsRes.value.data) ? announcementsRes.value.data : []) : [];
+      const inventoryItems: any[] = inventoryRes.status === "fulfilled" ? (Array.isArray(inventoryRes.value.data?.data) ? inventoryRes.value.data.data : Array.isArray(inventoryRes.value.data) ? inventoryRes.value.data : []) : [];
       const finance = financeRes.status === "fulfilled" ? financeRes.value : null;
 
       const overdueInvoices = invoices.filter((inv: any) =>

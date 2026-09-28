@@ -212,10 +212,10 @@ export default function OwnerSiswaPage() {
         <StatCard label="Belum Bayar" value={countBelumBayar} detail="Menunggu integrasi API" color="var(--color-danger)" bg="var(--color-danger-bg)" />
       </div>
 
-      <DataTable
+      <DataTable<Student>
         columns={columns}
-        data={filtered as Record<string, unknown>[]}
-        rowKey={r => (r as unknown as Student).id}
+        data={filtered}
+        rowKey={r => r.id}
         searchPlaceholder="Cari nama siswa, ortu, atau ID..."
         filters={[
           { label: "Status", values: ["Semua", "trial", "active", "on_leave", "inactive", "graduated"] }
