@@ -133,7 +133,7 @@ export default function GuruKelasListPage() {
   if (errorMsg) {
     return (
       <div className="card" style={{ padding: "40px 24px", textAlign: "center" }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-danger)", marginBottom: 8 }}>⚠ Gagal Memuat Data</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-danger)", marginBottom: 8 }}>Gagal Memuat Data</div>
         <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 20 }}>{errorMsg}</div>
         <button className="btn btn-primary" onClick={fetchData}>Coba Lagi</button>
       </div>
@@ -225,8 +225,9 @@ export default function GuruKelasListPage() {
                     {k.siswa} Siswa
                   </div>
                   <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Level: {k.level}</div>
-                  <Link href={`/guru/kelas/${k.id}`} onClick={e => e.stopPropagation()} className="btn btn-accent" style={{ padding: "7px 16px", fontSize: 12.5, textDecoration: "none" }}>
-                    ▶ Mulai Sesi
+                  <Link href={`/guru/kelas/${k.id}`} onClick={e => e.stopPropagation()} className="btn btn-accent" style={{ padding: "7px 16px", fontSize: 12.5, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <svg width={13} height={13} viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Mulai Sesi
                   </Link>
                 </div>
               </div>
@@ -277,8 +278,9 @@ export default function GuruKelasListPage() {
             {/* Tombol Aksi */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
               <button className="btn btn-ghost" onClick={() => setDipilih(null)}>Tutup</button>
-              <Link href={`/guru/kelas/${dipilih?.id}`} className="btn btn-accent" style={{ textDecoration: "none", textAlign: "center" }}>
-                ▶ Mulai Sesi Sekarang
+              <Link href={`/guru/kelas/${dipilih?.id}`} className="btn btn-accent" style={{ textDecoration: "none", textAlign: "center", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                <svg width={13} height={13} viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                Mulai Sesi Sekarang
               </Link>
             </div>
       </Modal>

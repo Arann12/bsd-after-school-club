@@ -36,7 +36,12 @@ export default function OrangTuaSertifikatPage() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                 <div style={{ width: 52, height: 52, borderRadius: "50%", background: c.isGenerated ? "#d1fae5" : "#f1f5f9", color: c.isGenerated ? "#059669" : "#64748b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 900 }}>
-                  {c.isGenerated ? "✓" : "🔒"}
+                  {c.isGenerated ? "✓" : (
+                    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                  )}
                 </div>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -59,8 +64,12 @@ export default function OrangTuaSertifikatPage() {
                   Lihat & Unduh Sertifikat (PDF)
                 </button>
               ) : (
-                <button className="btn btn-ghost" disabled style={{ opacity: 0.6, cursor: "not-allowed", border: "1px solid #cbd5e1" }}>
-                  🔒 Sertifikat Tergembok
+                <button className="btn btn-ghost" disabled style={{ opacity: 0.6, cursor: "not-allowed", border: "1px solid #cbd5e1", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                  Sertifikat Terkunci
                 </button>
               )}
             </div>

@@ -1,4 +1,4 @@
-# 🎨 UI/UX Design System
+# UI/UX Design System
 ## BSD After School Club — Panduan Konsistensi Visual
 
 > **Versi:** 1.0 | **Terakhir diperbarui:** 31 Agustus 2026  
@@ -415,15 +415,15 @@ Logo icon bg  : #1a5c8a (--color-primary)
 > [!CAUTION]
 > Pelanggaran berikut akan menciptakan inkonsistensi visual antar halaman:
 
-- ❌ Hardcode warna hex tanpa token (`color: #1a5c8a` → `color: var(--color-primary)`)
-- ❌ Menggunakan font selain **Inter**
-- ❌ Membuat ukuran radius baru di luar token yang ada
-- ❌ Spinner polos sebagai loading state (gunakan skeleton)
-- ❌ Status badge dengan warna berbeda dari standar di atas
-- ❌ Mengubah `--sidebar-width` atau `--header-height` per halaman
-- ❌ Z-index acak — modal harus `z-index: 100`, sidebar `z-index: 40`, header `z-index: 30`
-- ❌ Animasi dengan durasi > 400ms untuk interaksi rutin (terasa lambat)
-- ❌ Halaman kosong tanpa empty state (selalu sertakan ilustrasi + CTA)
+- [X] Hardcode warna hex tanpa token (`color: #1a5c8a` → `color: var(--color-primary)`)
+- [X] Menggunakan font selain **Inter**
+- [X] Membuat ukuran radius baru di luar token yang ada
+- [X] Spinner polos sebagai loading state (gunakan skeleton)
+- [X] Status badge dengan warna berbeda dari standar di atas
+- [X] Mengubah `--sidebar-width` atau `--header-height` per halaman
+- [X] Z-index acak — modal harus `z-index: 100`, sidebar `z-index: 40`, header `z-index: 30`
+- [X] Animasi dengan durasi > 400ms untuk interaksi rutin (terasa lambat)
+- [X] Halaman kosong tanpa empty state (selalu sertakan ilustrasi + CTA)
 
 ---
 
