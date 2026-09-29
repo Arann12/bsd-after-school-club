@@ -89,7 +89,7 @@ export default function AdminDashboardPage() {
       {/* ============ ACADEMIC SECTION ============ */}
       <div className="card" style={{ padding: 22 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>📚 Akses Cepat Master Data & Operasional</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Akses Cepat Master Data & Operasional</h3>
         </div>
         <ShortcutGrid items={[
           { label: "Siswa", sub: `${stats.activeStudents} Aktif`, href: "/admin/students", color: "#1d4ed8", bg: "var(--color-info-bg)" },

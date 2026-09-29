@@ -196,8 +196,6 @@ export const ownerNav: NavSection[] = [
     items: [
       { label: "Pendaftaran", href: "/owner/pendaftaran", icon: "UserPlus" },
       { label: "Siswa", href: "/owner/siswa", icon: "Users" },
-      { label: "Orang Tua", href: "/owner/orang-tua", icon: "Users" },
-      { label: "Guru & Staff", href: "/owner/guru", icon: "GraduationCap" },
       { label: "Program", href: "/owner/program", icon: "BookOpen" },
       { label: "Level", href: "/owner/level", icon: "Layers" },
       { label: "Kelas", href: "/owner/kelas", icon: "Door" },
@@ -234,8 +232,8 @@ export const ownerNav: NavSection[] = [
     section: "KELOLA AKUN",
     items: [
       { label: "Akun Admin", href: "/owner/kelola-akun/admin", icon: "ShieldCheck" },
-      { label: "Akun Guru", href: "/owner/kelola-akun/guru", icon: "GraduationCap" },
-      { label: "Akun Orang Tua", href: "/owner/kelola-akun/orang-tua", icon: "Users" },
+      { label: "Guru & Staff", href: "/owner/guru", icon: "GraduationCap" },
+      { label: "Orang Tua", href: "/owner/orang-tua", icon: "Users" },
     ],
   },
   {
@@ -259,8 +257,6 @@ export const adminNav: NavSection[] = [
     items: [
       { label: "Pendaftaran", href: "/admin/pendaftaran", icon: "UserPlus" },
       { label: "Siswa", href: "/admin/students", icon: "Users" },
-      { label: "Orang Tua", href: "/admin/orang-tua", icon: "Users" },
-      { label: "Guru & Staff", href: "/admin/guru", icon: "GraduationCap" },
       { label: "Program", href: "/admin/programs", icon: "BookOpen" },
       { label: "Level", href: "/admin/level", icon: "Layers" },
       { label: "Kelas", href: "/admin/classes", icon: "Door" },
@@ -287,8 +283,8 @@ export const adminNav: NavSection[] = [
   {
     section: "KELOLA AKUN",
     items: [
-      { label: "Akun Guru", href: "/admin/kelola-akun/guru", icon: "GraduationCap" },
-      { label: "Akun Orang Tua", href: "/admin/kelola-akun/orang-tua", icon: "Users" },
+      { label: "Guru & Staff", href: "/admin/guru", icon: "GraduationCap" },
+      { label: "Orang Tua", href: "/admin/orang-tua", icon: "Users" },
     ],
   },
 ];
