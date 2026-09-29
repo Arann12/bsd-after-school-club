@@ -196,8 +196,7 @@ export const ownerNav: NavSection[] = [
     items: [
       { label: "Pendaftaran", href: "/owner/pendaftaran", icon: "UserPlus" },
       { label: "Siswa", href: "/owner/siswa", icon: "Users" },
-      { label: "Program", href: "/owner/program", icon: "BookOpen" },
-      { label: "Level", href: "/owner/level", icon: "Layers" },
+      { label: "Program & Level", href: "/owner/program", icon: "BookOpen" },
       { label: "Kelas", href: "/owner/kelas", icon: "Door" },
       { label: "Jadwal", href: "/owner/jadwal", icon: "Calendar" },
       { label: "Absensi & Logbook", href: "/owner/absensi", icon: "ClipboardCheck" },
@@ -257,8 +256,7 @@ export const adminNav: NavSection[] = [
     items: [
       { label: "Pendaftaran", href: "/admin/pendaftaran", icon: "UserPlus" },
       { label: "Siswa", href: "/admin/students", icon: "Users" },
-      { label: "Program", href: "/admin/programs", icon: "BookOpen" },
-      { label: "Level", href: "/admin/level", icon: "Layers" },
+      { label: "Program & Level", href: "/admin/programs", icon: "BookOpen" },
       { label: "Kelas", href: "/admin/classes", icon: "Door" },
       { label: "Jadwal", href: "/admin/schedule", icon: "Calendar" },
       { label: "Absensi & Logbook", href: "/admin/absensi", icon: "ClipboardCheck" },

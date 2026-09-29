@@ -159,7 +159,17 @@ export default function PendaftaranPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStudentId || !selectedClassroomId) {
-      showToast("Silakan pilih siswa dan kelas.", "warning");
+      showToast("Silakan pilih siswa dan kelas terlebih dahulu.", "warning");
+      return;
+    }
+
+    if (isAlreadyInSelectedClass) {
+      showToast("Siswa ini sudah terdaftar aktif di kelas yang dipilih.", "warning");
+      return;
+    }
+
+    if (isStudentMaxPrograms) {
+      showToast("Siswa ini sudah terdaftar di 2 program aktif (batas maksimal per siswa).", "warning");
       return;
     }
 
@@ -183,7 +193,13 @@ export default function PendaftaranPage() {
       await loadData();
     } catch (err: any) {
       console.error("Gagal submit pendaftaran:", err);
-      const msg = err?.response?.data?.message || "Gagal mendaftarkan siswa ke kelas.";
+      let msg = err?.response?.data?.message || "Gagal mendaftarkan siswa ke kelas.";
+      if (err?.response?.data?.errors) {
+        const errorDetails = Object.values(err.response.data.errors).flat().filter(Boolean);
+        if (errorDetails.length > 0) {
+          msg = errorDetails.join(". ");
+        }
+      }
       showToast(msg, "danger");
     } finally {
       setSubmitting(false);
@@ -209,6 +225,35 @@ export default function PendaftaranPage() {
   const countInactive = enrollments.filter((e) => e.status === "inactive").length;
 
   const kelasDipilih = classesList.find((c) => c.id === selectedClassroomId);
+  const siswaDipilih = studentsList.find((s) => s.id === selectedStudentId);
+
+  // Validasi real-time status enrollment siswa yang dipilih
+  const isAlreadyInSelectedClass = !!(
+    selectedStudentId &&
+    selectedClassroomId &&
+    enrollments.some(
+      (e) =>
+        (e.raw?.student_id === selectedStudentId || e.raw?.student?.id === selectedStudentId) &&
+        (e.raw?.classroom_id === selectedClassroomId || e.raw?.classroom?.id === selectedClassroomId) &&
+        e.status === "active"
+    )
+  );
+
+  const activeProgramsForStudent = selectedStudentId
+    ? Array.from(
+        new Set(
+          enrollments
+            .filter(
+              (e) =>
+                (e.raw?.student_id === selectedStudentId || e.raw?.student?.id === selectedStudentId) &&
+                e.status === "active"
+            )
+            .map((e) => e.programName)
+        )
+      )
+    : [];
+
+  const isStudentMaxPrograms = activeProgramsForStudent.length >= 2;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -404,11 +449,31 @@ export default function PendaftaranPage() {
               onChange={(e) => setSelectedStudentId(e.target.value)}
               required
             >
-              {studentsList.map((st) => (
-                <option key={st.id} value={st.id}>
-                  {st.name} ({st.studentCode || "NIS: -"})
-                </option>
-              ))}
+              {studentsList.map((st) => {
+                const studentProgs = Array.from(
+                  new Set(
+                    enrollments
+                      .filter(
+                        (e) =>
+                          (e.raw?.student_id === st.id || e.raw?.student?.id === st.id) &&
+                          e.status === "active"
+                      )
+                      .map((e) => e.programName)
+                  )
+                );
+                const infoTag =
+                  studentProgs.length >= 2
+                    ? ` [2 Program: ${studentProgs.join(", ")}]`
+                    : studentProgs.length === 1
+                    ? ` [Aktif: ${studentProgs[0]}]`
+                    : " [Belum ada kelas]";
+
+                return (
+                  <option key={st.id} value={st.id}>
+                    {st.name} ({st.studentCode || "NIS: -"}){infoTag}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -423,21 +488,32 @@ export default function PendaftaranPage() {
               required
             >
               {classesList.map((cls) => {
-                const progName = cls.program_level?.program?.name || cls.program || "Program";
-                const levelName = cls.program_level?.name || cls.level || "";
                 return (
                   <option key={cls.id} value={cls.id}>
-                    {cls.name} — {progName} {levelName ? `(${levelName})` : ""} [Kapasitas: {cls.capacity || 20}]
+                    {cls.name} [Kapasitas: {cls.capacity || 20}]
                   </option>
                 );
               })}
             </select>
             {kelasDipilih && (
               <div style={{ fontSize: 11.5, color: "var(--color-text-muted)", marginTop: 4 }}>
-                Program: <strong>{kelasDipilih.program_level?.program?.name || kelasDipilih.program || "Program"}</strong>
+                Kelas: <strong>{kelasDipilih.name}</strong> (Kapasitas: {kelasDipilih.capacity || 20})
               </div>
             )}
           </div>
+
+          {/* Peringatan Validasi Bisnis (Jika Duplikat Kelas atau Sudah 2 Program) */}
+          {isAlreadyInSelectedClass && (
+            <div style={{ background: "#fef2f2", border: "1.5px solid #fecaca", borderRadius: 10, padding: "10px 14px", fontSize: 12.5, color: "#dc2626", fontWeight: 600 }}>
+              ⚠️ Siswa <strong>{siswaDipilih?.name}</strong> sudah terdaftar di kelas <strong>{kelasDipilih?.name}</strong>. Silakan pilih kelas lain atau pilih siswa lain.
+            </div>
+          )}
+
+          {isStudentMaxPrograms && !isAlreadyInSelectedClass && (
+            <div style={{ background: "#fffbeb", border: "1.5px solid #fde68a", borderRadius: 10, padding: "10px 14px", fontSize: 12.5, color: "#b45309", fontWeight: 600 }}>
+              ⚠️ Siswa <strong>{siswaDipilih?.name}</strong> sudah terdaftar di 2 program aktif ({activeProgramsForStudent.join(", ")}). Sesuai aturan akademik, 1 siswa maksimal terdaftar di 2 program aktif secara bersamaan.
+            </div>
+          )}
 
           {/* Paket Pertemuan & Tanggal Mulai */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -518,11 +594,19 @@ export default function PendaftaranPage() {
             <strong>💡 Otomasi Tagihan:</strong> Setelah pendaftaran disimpan, sistem backend akan langsung menerbitkan <strong>Rencana Tagihan (Payment Plans)</strong> sesuai skema yang dipilih. Orang tua dapat langsung membayar via menu Pembayaran.
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 6 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 10, marginTop: 6 }}>
             <button type="button" className="btn btn-ghost" onClick={() => setShowFormModal(false)} disabled={submitting}>
               Batal
             </button>
-            <button type="submit" className="btn btn-accent" disabled={submitting}>
+            <button
+              type="submit"
+              className="btn btn-accent"
+              disabled={submitting || isAlreadyInSelectedClass || isStudentMaxPrograms}
+              style={{
+                opacity: isAlreadyInSelectedClass || isStudentMaxPrograms ? 0.6 : 1,
+                cursor: isAlreadyInSelectedClass || isStudentMaxPrograms ? "not-allowed" : "pointer",
+              }}
+            >
               {submitting ? "Mendaftarkan..." : "Daftarkan & Terbitkan Tagihan"}
             </button>
           </div>

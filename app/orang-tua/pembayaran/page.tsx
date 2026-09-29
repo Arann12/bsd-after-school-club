@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { checkPaymentStatus, getPaymentMethods, getPaymentPlans, getPayments } from "@/lib/api/finance";
 import { getStudents } from "@/lib/api/students";
 import { getMyParentProfile } from "@/lib/api/parents";
+import { SkeletonTable } from "@/components/ui/Skeleton";
 
 interface PanduanItem {
   title?: string;
@@ -40,6 +41,7 @@ export default function PembayaranPage() {
   const [paymentPlans, setPaymentPlans] = useState<any[]>([]);
   const [paymentsHistory, setPaymentsHistory] = useState<any[]>([]);
   const [isLoadingFinance, setIsLoadingFinance] = useState<boolean>(false);
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
 
   const loadFinanceData = async (studentId?: string) => {
     setIsLoadingFinance(true);
@@ -110,6 +112,8 @@ export default function PembayaranPage() {
         await loadFinanceData(initialStudentId);
       } catch (err) {
         console.warn("Gagal inisialisasi data:", err);
+      } finally {
+        setIsInitialLoading(false);
       }
     }
     initData();
@@ -332,6 +336,7 @@ export default function PembayaranPage() {
         },
         body: JSON.stringify({
           payment_plan_id: targetPlanId,
+          payment_type: paymentType,
           payment_method: method,
           payment_channel: channel,
           expired_time: "2h",
@@ -361,20 +366,13 @@ export default function PembayaranPage() {
     }
   };
 
-  // Auto-scroll ke bawah saat memilih metode/bank/ewallet atau berganti step modal
+  // Hilangkan auto-scroll paksa yang membuat layar mobile melompat / pindah-pindah
+  // Scroll halus hanya saat user pertama kali membuka modal
   useEffect(() => {
-    if (modalStep === "select_method" || modalStep === "payment_detail") {
-      const timer = setTimeout(() => {
-        if (modalContentRef.current) {
-          modalContentRef.current.scrollTo({
-            top: modalContentRef.current.scrollHeight,
-            behavior: "smooth",
-          });
-        }
-      }, 50);
-      return () => clearTimeout(timer);
+    if (modalStep === "select_method" && modalContentRef.current) {
+      modalContentRef.current.scrollTop = 0;
     }
-  }, [modalStep, selectedMethod, selectedBank, selectedEwallet]);
+  }, [modalStep]);
 
   // Smart Polling realtime: cek status transaksi ke backend setiap 3 detik begitu pembayaran di-generate
   useEffect(() => {
@@ -700,6 +698,10 @@ export default function PembayaranPage() {
     }, 100);
   };
 
+  if (isInitialLoading) {
+    return <SkeletonTable rows={4} cols={3} />;
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 1200, margin: "0 auto", width: "100%" }}>
       {/* CSS Animations */}
@@ -745,10 +747,42 @@ export default function PembayaranPage() {
         .bank-card-active {
           animation: cardSelect 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
+        @media (max-width: 640px) {
+          .pembayaran-header-wrap {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 12px !important;
+          }
+          .pembayaran-student-select {
+            width: 100% !important;
+            min-width: 100% !important;
+          }
+          .pembayaran-stat-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .pembayaran-main-columns {
+            grid-template-columns: 1fr !important;
+          }
+          .pembayaran-modal-wrapper {
+            padding: 8px !important;
+          }
+          .pembayaran-modal-card {
+            padding: 16px !important;
+            max-height: 94vh !important;
+            border-radius: 14px !important;
+          }
+          .bank-grid-responsive {
+            grid-template-columns: 1fr !important;
+          }
+          .modal-footer-responsive {
+            grid-template-columns: 1fr !important;
+            gap: 8px !important;
+          }
+        }
       `}</style>
 
       {/* ── 1. TOP HEADER & CHILD SELECTOR ───────────────────────────────── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+      <div className="pembayaran-header-wrap" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 800, color: "#1e293b", margin: 0, letterSpacing: "-0.02em" }}>
             Pembayaran Siswa
@@ -760,11 +794,11 @@ export default function PembayaranPage() {
 
         {/* Child Selector Dropdown */}
         {students.length > 0 && (
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <label htmlFor="student-selector" style={{ fontSize: 13, fontWeight: 600, color: "#475569" }}>
+          <div className="pembayaran-student-select" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <label htmlFor="student-selector" style={{ fontSize: 13, fontWeight: 600, color: "#475569", flexShrink: 0 }}>
               Pilih Siswa:
             </label>
-            <div style={{ position: "relative", minWidth: 220 }}>
+            <div style={{ position: "relative", width: "100%", minWidth: 220 }}>
               <select
                 id="student-selector"
                 value={selectedStudentId}
@@ -829,7 +863,7 @@ export default function PembayaranPage() {
       )}
 
       {/* ── 2. TOP 3 STAT CARDS GRID ───────────────────────────────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
+      <div className="pembayaran-stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
         {/* Card 1: TOTAL TAGIHAN TERTUNDA */}
         <div
           style={{
@@ -958,7 +992,7 @@ export default function PembayaranPage() {
       </div>
 
       {/* ── 3. MIDDLE SECTION: 2 COLUMNS ─────────────────────────────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
+      <div className="pembayaran-main-columns" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
         {/* LEFT COLUMN: Detail Program & Progress Pertemuan */}
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {/* Card 1: Detail Program */}
@@ -1372,6 +1406,7 @@ export default function PembayaranPage() {
       {/* =================================================================== */}
       {modalStep !== null && (
         <div
+          className="pembayaran-modal-wrapper"
           style={{
             position: "fixed",
             inset: 0,
@@ -1390,6 +1425,7 @@ export default function PembayaranPage() {
         >
           <div
             ref={modalContentRef}
+            className="pembayaran-modal-card"
             style={{
               background: "#ffffff",
               borderRadius: 18,
@@ -1647,7 +1683,7 @@ export default function PembayaranPage() {
                 </div>
 
                 {/* Footer Buttons */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 12 }}>
+                <div className="modal-footer-responsive" style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 12 }}>
                   <button
                     onClick={() => setModalStep(null)}
                     style={{
@@ -1745,18 +1781,29 @@ export default function PembayaranPage() {
                     RINGKASAN PEMBAYARAN
                   </div>
                   {paymentType === "per_pertemuan" ? (
-                    <>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
-                        <span>Pertemuan 7</span><span>Rp 50.000</span>
+                    nextUnpaidSessions.length > 0 ? (
+                      nextUnpaidSessions.map((session) => (
+                        <div key={session.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: liveFee ? 4 : 8 }}>
+                          <span>Pertemuan {session.session_number}</span>
+                          <span>Rp {Number(session.amount).toLocaleString("id-ID")}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ fontSize: 13, color: "#16a34a", fontWeight: 600, marginBottom: 8 }}>
+                        Semua pertemuan sudah lunas
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: liveFee ? 4 : 10 }}>
-                        <span>Pertemuan 8</span><span>Rp 50.000</span>
-                      </div>
-                    </>
+                    )
                   ) : (
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: liveFee ? 4 : 10 }}>
-                      <span>Sisa Pertemuan (7-12)</span><span>6 x Rp 50.000</span>
-                    </div>
+                    unpaidPlans.length > 0 ? (
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: liveFee ? 4 : 8 }}>
+                        <span>Sisa Pertemuan ({unpaidPlans[0]?.session_number} - {unpaidPlans[unpaidPlans.length - 1]?.session_number})</span>
+                        <span>{unpaidPlans.length} x Rp {Number(unpaidPlans[0]?.amount || 50000).toLocaleString("id-ID")}</span>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 13, color: "#16a34a", fontWeight: 600, marginBottom: 8 }}>
+                        Seluruh paket sudah lunas
+                      </div>
+                    )
                   )}
 
                   {/* Biaya Layanan Gateway jika sudah digenerate */}
@@ -1788,7 +1835,7 @@ export default function PembayaranPage() {
                     </div>
 
                     {/* Bank Grid Selector — branded cards with real logos */}
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 16 }}>
+                    <div className="bank-grid-responsive" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 16 }}>
                       {vaGatewayList.length > 0 ? (
                         vaGatewayList.map((bank) => {
                           const bankKey = bank.code.replace("VA", "");
@@ -2105,7 +2152,7 @@ export default function PembayaranPage() {
 
                 {/* ── DETAILS FOR E-WALLET ── */}
                 {selectedMethod === "ewallet" && (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 20 }}>
+                  <div className="bank-grid-responsive" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 20 }}>
                     {ewalletGatewayList.length > 0 ? (
                       ewalletGatewayList.map((ew) => {
                         const isActive = selectedEwallet.toUpperCase() === ew.code.toUpperCase() || selectedEwallet.toUpperCase() === ew.name.toUpperCase();
@@ -2361,7 +2408,7 @@ export default function PembayaranPage() {
                 })()}
 
                 {/* Footer Action Buttons */}
-                <div style={{ display: "grid", gridTemplateColumns: selectedMethod === "cash" ? (isGenerated ? "1fr 1.4fr" : "1fr 1.4fr") : "1fr", gap: 12 }}>
+                <div className="modal-footer-responsive" style={{ display: "grid", gridTemplateColumns: selectedMethod === "cash" ? (isGenerated ? "1fr 1.4fr" : "1fr 1.4fr") : "1fr", gap: 12 }}>
                   <button
                     onClick={() => setModalStep("select_method")}
                     style={{
@@ -2511,18 +2558,29 @@ export default function PembayaranPage() {
                     RINGKASAN TAGIHAN
                   </div>
                   {paymentType === "per_pertemuan" ? (
-                    <>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
-                        <span>Pertemuan 7</span><span>Rp 50.000</span>
+                    nextUnpaidSessions.length > 0 ? (
+                      nextUnpaidSessions.map((session) => (
+                        <div key={session.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
+                          <span>Pertemuan {session.session_number}</span>
+                          <span>Rp {Number(session.amount).toLocaleString("id-ID")}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ fontSize: 13, color: "#16a34a", fontWeight: 600, marginBottom: 6 }}>
+                        Semua pertemuan sudah lunas
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 10 }}>
-                        <span>Pertemuan 8</span><span>Rp 50.000</span>
-                      </div>
-                    </>
+                    )
                   ) : (
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 10 }}>
-                      <span>Sisa Pertemuan (7-12)</span><span>6 x Rp 50.000</span>
-                    </div>
+                    unpaidPlans.length > 0 ? (
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
+                        <span>Sisa Pertemuan ({unpaidPlans[0]?.session_number} - {unpaidPlans[unpaidPlans.length - 1]?.session_number})</span>
+                        <span>{unpaidPlans.length} x Rp {Number(unpaidPlans[0]?.amount || 50000).toLocaleString("id-ID")}</span>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 13, color: "#16a34a", fontWeight: 600, marginBottom: 6 }}>
+                        Seluruh paket sudah lunas
+                      </div>
+                    )
                   )}
 
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #e2e8f0", paddingTop: 8 }}>
