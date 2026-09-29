@@ -161,6 +161,7 @@ export default function PembayaranPage() {
   const [liveFee, setLiveFee] = useState<number | null>(null);
   const [liveAmount, setLiveAmount] = useState<number | null>(null);
   const [liveTotalAmount, setLiveTotalAmount] = useState<number | null>(null);
+  const [lastSuccessAmount, setLastSuccessAmount] = useState<string>("");
   const [isCharging, setIsCharging] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [isGenerated, setIsGenerated] = useState(false);
@@ -267,6 +268,11 @@ export default function PembayaranPage() {
       alert("Semua tagihan pertemuan sudah berstatus lunas.");
       return;
     }
+    const currentNominalStr =
+      type === "per_pertemuan"
+        ? `Rp ${nextUnpaidNominal.toLocaleString("id-ID")}`
+        : `Rp ${totalUnpaidNominal.toLocaleString("id-ID")}`;
+    setLastSuccessAmount(currentNominalStr);
     setPaymentType(type);
     setSelectedMethod("va");
     setSelectedBank("BCA");
@@ -354,7 +360,10 @@ export default function PembayaranPage() {
         if (inst.expired_at) setLiveExpiredAt(inst.expired_at);
         if (inst.fee !== undefined) setLiveFee(inst.fee);
         if (inst.amount !== undefined) setLiveAmount(inst.amount);
-        if (inst.total_amount !== undefined) setLiveTotalAmount(inst.total_amount);
+        if (inst.total_amount !== undefined) {
+          setLiveTotalAmount(inst.total_amount);
+          setLastSuccessAmount(`Rp ${Number(inst.total_amount).toLocaleString("id-ID")}`);
+        }
         setIsGenerated(true);
       } else if (res && !res.success) {
         alert(res.message || "Gagal membuat tagihan pembayaran.");
@@ -388,6 +397,14 @@ export default function PembayaranPage() {
         if (data?.is_paid || data?.payment_status === "paid") {
           clearInterval(interval);
 
+          const paidAmountDisplay = data?.total_amount
+            ? `Rp ${Number(data.total_amount).toLocaleString("id-ID")}`
+            : liveTotalAmount
+            ? `Rp ${liveTotalAmount.toLocaleString("id-ID")}`
+            : lastSuccessAmount || totalAmount;
+
+          setLastSuccessAmount(paidAmountDisplay);
+
           // Refresh data rencana pembayaran & riwayat dari backend
           loadFinanceData();
 
@@ -408,7 +425,7 @@ export default function PembayaranPage() {
               tanggal: "14 Sep 2026",
               keterangan: itemDescription,
               metode: methodText,
-              jumlah: totalAmount,
+              jumlah: paidAmountDisplay,
               status: "Selesai",
             },
             ...prev,
@@ -669,6 +686,12 @@ export default function PembayaranPage() {
 
     setIsChecking(false);
 
+    const paidAmountDisplay = liveTotalAmount
+      ? `Rp ${liveTotalAmount.toLocaleString("id-ID")}`
+      : lastSuccessAmount || totalAmount;
+
+    setLastSuccessAmount(paidAmountDisplay);
+
     // Add new payment record to history
     const newInvId = `#INV-08-00${historyList.length + 1}`;
     const methodText =
@@ -686,7 +709,7 @@ export default function PembayaranPage() {
         tanggal: "14 Sep 2026",
         keterangan: itemDescription,
         metode: methodText,
-        jumlah: totalAmount,
+        jumlah: paidAmountDisplay,
         status: selectedMethod === "cash" ? "Menunggu Verifikasi" : "Selesai",
       },
       ...historyList,
@@ -2642,11 +2665,11 @@ export default function PembayaranPage() {
                 <p style={{ fontSize: 13, color: "#64748b", marginBottom: 20, lineHeight: 1.5 }}>
                   {selectedMethod === "cash" ? (
                     <>
-                      Bukti pembayaran tunai sebesar <strong>{totalAmount}</strong> untuk <strong>{childName}</strong> telah berhasil terkirim. Status saat ini: <strong>Menunggu ACC / Verifikasi Kasir Admin</strong>.
+                      Bukti pembayaran tunai sebesar <strong>{lastSuccessAmount || (liveTotalAmount ? `Rp ${liveTotalAmount.toLocaleString("id-ID")}` : totalAmount)}</strong> untuk <strong>{childName}</strong> telah berhasil terkirim. Status saat ini: <strong>Menunggu ACC / Verifikasi Kasir Admin</strong>.
                     </>
                   ) : (
                     <>
-                      Transaksi sebesar <strong>{totalAmount}</strong> untuk <strong>{childName}</strong> telah <strong>terverifikasi OTOMATIS LUNAS</strong> oleh sistem Payment Gateway.
+                      Transaksi sebesar <strong>{lastSuccessAmount || (liveTotalAmount ? `Rp ${liveTotalAmount.toLocaleString("id-ID")}` : totalAmount)}</strong> untuk <strong>{childName}</strong> telah <strong>terverifikasi OTOMATIS LUNAS</strong> oleh sistem Payment Gateway.
                     </>
                   )}
                 </p>

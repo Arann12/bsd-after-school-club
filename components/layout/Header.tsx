@@ -1,6 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import NotificationDropdown from "@/components/ui/NotificationDropdown";
+import { getLocalUser, getMe } from "@/lib/api/auth";
 
 interface HeaderProps {
   userName?: string;
@@ -15,16 +19,12 @@ interface HeaderProps {
   selectedChildLevel?: string;
 }
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import NotificationDropdown from "@/components/ui/NotificationDropdown";
-
 export default function Header({
-  userName = "Owner",
-  userEmail = "admin@bsdafterschool.com",
-  userRole,
-  userInitial = "O",
-  userColor = "linear-gradient(135deg, #1a5c8a, #2a7ab8)",
+  userName: propUserName,
+  userEmail: propUserEmail,
+  userRole: propUserRole,
+  userInitial: propUserInitial,
+  userColor: propUserColor,
   greetingText,
   showSearch = true,
   showChildSelector = false,
@@ -37,6 +37,81 @@ export default function Header({
   const [currentChild, setCurrentChild] = useState(selectedChild);
   const [currentLevel, setCurrentLevel] = useState(selectedChildLevel);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Live Authenticated User Info
+  const [displayName, setDisplayName] = useState<string>(propUserName || "");
+  const [displayEmail, setDisplayEmail] = useState<string>(propUserEmail || "");
+  const [displayRole, setDisplayRole] = useState<string>(propUserRole || "");
+
+  const syncUserInfo = useCallback(() => {
+    const local = getLocalUser();
+    if (local) {
+      if (local.name) setDisplayName(local.name);
+      if (local.email) setDisplayEmail(local.email);
+      if (!propUserRole && local.role) {
+        const roleMap: Record<string, string> = {
+          owner: "Owner & Founder",
+          admin: "Staff Administrasi",
+          teacher: "Guru Pengajar",
+          parent: "Orang Tua",
+        };
+        setDisplayRole(roleMap[local.role] || local.role);
+      }
+    } else {
+      if (propUserName) setDisplayName(propUserName);
+      if (propUserEmail) setDisplayEmail(propUserEmail);
+      if (propUserRole) setDisplayRole(propUserRole);
+    }
+  }, [propUserName, propUserEmail, propUserRole]);
+
+  useEffect(() => {
+    syncUserInfo();
+
+    // Re-sync on custom update event & storage event
+    const handleUpdate = () => syncUserInfo();
+    window.addEventListener("user_profile_updated", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+
+    // Also fetch fresh from server
+    getMe()
+      .then((user) => {
+        if (user) {
+          if (user.name) setDisplayName(user.name);
+          if (user.email) setDisplayEmail(user.email);
+        }
+      })
+      .catch(() => {
+        // use local / fallback
+      });
+
+    return () => {
+      window.removeEventListener("user_profile_updated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
+  }, [syncUserInfo]);
+
+  // Compute initials
+  const computeInitial = () => {
+    if (propUserInitial) return propUserInitial;
+    if (displayName) {
+      const parts = displayName.trim().split(" ").filter(Boolean);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+      return displayName.charAt(0).toUpperCase();
+    }
+    return "U";
+  };
+
+  // Determine user badge color
+  const computeColor = () => {
+    if (propUserColor) return propUserColor;
+    if (pathname.startsWith("/owner")) return "linear-gradient(135deg, #1a5c8a, #2a7ab8)";
+    if (pathname.startsWith("/admin")) return "linear-gradient(135deg, #10b981, #059669)";
+    if (pathname.startsWith("/guru")) return "linear-gradient(135deg, #1a5c8a, #3AABE3)";
+    if (pathname.startsWith("/orang-tua")) return "linear-gradient(135deg, #f59e0b, #d97706)";
+    return "linear-gradient(135deg, #1a5c8a, #2a7ab8)";
+  };
 
   const toggleSidebar = () => {
     const next = !sidebarOpen;
@@ -53,6 +128,10 @@ export default function Header({
     { name: "Budi", level: "Phonics L2", id: "STD-88921" },
     { name: "Annisa", level: "Calistung L1", id: "STD-88925" },
   ];
+
+  const finalName = displayName || propUserName || "Pengguna";
+  const finalEmail = displayEmail || propUserEmail || "";
+  const finalRole = displayRole || propUserRole;
 
   return (
     <header className="header" style={{ justifyContent: "space-between", position: "relative" }}>
@@ -236,7 +315,7 @@ export default function Header({
                 width: 36,
                 height: 36,
                 borderRadius: "50%",
-                background: userColor,
+                background: computeColor(),
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -247,17 +326,17 @@ export default function Header({
                 flexShrink: 0,
               }}
             >
-              {userInitial}
+              {computeInitial()}
             </div>
             <div className="header-user-info" style={{ textAlign: "left" }}>
-              <span className="header-user-name">{userName}</span>
-              {userRole ? (
+              <span className="header-user-name">{finalName}</span>
+              {finalRole ? (
                 <span className="badge badge-info" style={{ fontSize: 10, padding: "1px 6px", alignSelf: "flex-start", marginTop: 2 }}>
-                  {userRole}
+                  {finalRole}
                 </span>
-              ) : (
-                <span className="header-user-email">{userEmail}</span>
-              )}
+              ) : finalEmail ? (
+                <span className="header-user-email">{finalEmail}</span>
+              ) : null}
             </div>
             <svg
               width={14}
@@ -295,11 +374,13 @@ export default function Header({
               {/* Dropdown Header */}
               <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--color-border-light)", background: "#f8fafc" }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)", lineHeight: 1.2 }}>
-                  {userName}
+                  {finalName}
                 </div>
-                <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 2 }}>
-                  {userEmail}
-                </div>
+                {finalEmail && (
+                  <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 2 }}>
+                    {finalEmail}
+                  </div>
+                )}
               </div>
 
               {/* Menu Items */}

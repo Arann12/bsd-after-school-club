@@ -9,7 +9,7 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
     <div className="app-shell">
       <OwnerSidebar />
       <div className="main-area">
-        <Header />
+        <Header userRole="Owner & Founder" />
         <main className="page-content">
           <Breadcrumb />
           {children}

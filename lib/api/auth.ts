@@ -101,9 +101,39 @@ export async function logout(): Promise<void> {
  * Ambil profil user yang sedang login (requires token)
  * Response: { success, data: User }
  */
-export async function getMe(): Promise<AuthUser> {
-  const { data } = await axiosInstance.get<BackendMeResponse>("/auth/me");
+export async function getMe(): Promise<any> {
+  const { data } = await axiosInstance.get<any>("/auth/me");
   return data.data;
+}
+
+/**
+ * PUT /auth/profile
+ * Update nama, email, no hp user yang login
+ */
+export async function updateProfile(payload: { name: string; email: string; phone?: string }): Promise<AuthUser> {
+  const { data } = await axiosInstance.put<any>("/auth/profile", payload);
+  if (data.success && data.data && typeof window !== "undefined") {
+    const existing = getLocalUser();
+    const updated = { ...existing, ...data.data };
+    localStorage.setItem("auth_user", JSON.stringify(updated));
+    window.dispatchEvent(new Event("user_profile_updated"));
+  }
+  return data.data;
+}
+
+/**
+ * PUT /auth/password
+ * Ubah password akun
+ */
+export async function updatePassword(payload: {
+  current_password: string;
+  new_password: string;
+  confirm_password: string;
+}): Promise<void> {
+  const { data } = await axiosInstance.put<any>("/auth/password", payload);
+  if (!data.success) {
+    throw new Error(data.message || "Gagal mengubah password.");
+  }
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

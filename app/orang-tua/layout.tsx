@@ -14,8 +14,6 @@ export default function OrangTuaLayout({ children }: { children: React.ReactNode
     if (user?.name) setUserName(user.name);
   }, []);
 
-  const initial = userName.trim().charAt(0).toUpperCase() || "O";
-
   return (
     <div className="app-shell">
       <OrangTuaSidebar />
@@ -23,10 +21,7 @@ export default function OrangTuaLayout({ children }: { children: React.ReactNode
         <Header
           greetingText={`Halo, ${userName}!`}
           showChildSelector={false}
-          userName={userName}
           userRole="Orang Tua"
-          userInitial={initial}
-          userColor="linear-gradient(135deg, #0284c7, #0369a1)"
         />
         <main className="page-content">
           <Breadcrumb />

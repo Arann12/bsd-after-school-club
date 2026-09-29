@@ -9,12 +9,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="app-shell">
       <AdminSidebar />
       <div className="main-area">
-        <Header
-          userName="Admin"
-          userEmail="admin@bsdafterschool.com"
-          userInitial="A"
-          userColor="linear-gradient(135deg, #10b981, #059669)"
-        />
+        <Header userRole="Staff Administrasi" />
         <main className="page-content">
           <Breadcrumb />
           {children}
