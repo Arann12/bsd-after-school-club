@@ -88,7 +88,7 @@ export default function OrangTuaDashboardPage() {
       {/* Daftar Anak */}
       <div className="card" style={{ padding: 22 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>👶 Anak Saya</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Anak Saya</h3>
           <Link href="/orang-tua/anak" style={{ fontSize: 12.5, fontWeight: 700, color: "var(--color-primary)", textDecoration: "none" }}>Lihat Detail →</Link>
         </div>
 
@@ -121,18 +121,17 @@ export default function OrangTuaDashboardPage() {
       {/* Info & Links */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
         {[
-          { href: "/orang-tua/jadwal", icon: "📅", label: "Jadwal Kelas", desc: "Lihat jadwal belajar anak" },
-          { href: "/orang-tua/absensi", icon: "✅", label: "Absensi", desc: "Pantau kehadiran anak" },
-          { href: "/orang-tua/progress", icon: "📈", label: "Progress Belajar", desc: "Perkembangan akademik anak" },
-          { href: "/orang-tua/pembayaran", icon: "💳", label: "Pembayaran", desc: "Status SPP dan tagihan" },
-          { href: "/orang-tua/laporan", icon: "📋", label: "Laporan", desc: "Laporan akhir & evaluasi" },
-          { href: "/orang-tua/pengumuman", icon: "🔔", label: "Pengumuman", desc: "Info terbaru dari sekolah" },
+          { href: "/orang-tua/jadwal", label: "Jadwal Kelas", desc: "Lihat jadwal belajar anak" },
+          { href: "/orang-tua/absensi", label: "Absensi", desc: "Pantau kehadiran anak" },
+          { href: "/orang-tua/progress", label: "Progress Belajar", desc: "Perkembangan akademik anak" },
+          { href: "/orang-tua/pembayaran", label: "Pembayaran", desc: "Status SPP dan tagihan" },
+          { href: "/orang-tua/laporan", label: "Laporan", desc: "Laporan akhir & evaluasi" },
+          { href: "/orang-tua/pengumuman", label: "Pengumuman", desc: "Info terbaru dari sekolah" },
         ].map(item => (
           <Link key={item.href} href={item.href} style={{ textDecoration: "none" }}>
             <div className="card" style={{ padding: "18px 20px", cursor: "pointer", transition: "all .2s ease" }}
               onMouseEnter={e => (e.currentTarget.style.transform = "translateY(-2px)")}
               onMouseLeave={e => (e.currentTarget.style.transform = "translateY(0)")}>
-              <div style={{ fontSize: 24, marginBottom: 8 }}>{item.icon}</div>
               <div style={{ fontSize: 14, fontWeight: 800, color: "var(--color-text-primary)", marginBottom: 3 }}>{item.label}</div>
               <div style={{ fontSize: 12.5, color: "var(--color-text-muted)" }}>{item.desc}</div>
             </div>
@@ -142,7 +141,7 @@ export default function OrangTuaDashboardPage() {
 
       {/* Profil Info */}
       <div className="card" style={{ padding: 22 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 14px" }}>📋 Informasi Akun</h3>
+        <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 14px" }}>Informasi Akun</h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
           {[
             { label: "Nama", value: parent?.name },

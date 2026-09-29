@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/ui/Modal";
-import { getAnnouncements, type BackendAnnouncement } from "@/lib/api/operational";
+import { getAnnouncements, resolveMediaUrl, type BackendAnnouncement } from "@/lib/api/operational";
 import { SkeletonCardGrid } from "@/components/ui/Skeleton";
 
 interface PengumumanView {
@@ -79,7 +79,7 @@ export default function OrangTuaPengumumanPage() {
           tanggal: formatTanggal(item.published_at || item.created_at),
           ringkasan: item.description,
           isFlyer: !!item.poster_url,
-          posterUrl: item.poster_url,
+          posterUrl: resolveMediaUrl(item.poster_url),
           detail: item.description,
           penting: isImportant,
         };
@@ -143,6 +143,12 @@ export default function OrangTuaPengumumanPage() {
                     {p.ringkasan}
                   </p>
                 </div>
+                {p.posterUrl && (
+                  <div style={{ width: 72, height: 72, borderRadius: 10, overflow: "hidden", flexShrink: 0, border: "1px solid var(--color-border-light)", background: "var(--color-bg)" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.posterUrl} alt={p.judul} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  </div>
+                )}
                 <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--color-primary)", whiteSpace: "nowrap" }}>Baca Selengkapnya →</span>
               </div>
             </div>

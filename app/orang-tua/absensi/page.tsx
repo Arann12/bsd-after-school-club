@@ -165,7 +165,7 @@ export default function OrangTuaAbsensiPage() {
                 color: selectedChild?.id === c.id ? "#fff" : "var(--color-text-secondary)",
                 borderColor: selectedChild?.id === c.id ? "var(--color-primary)" : "var(--color-border)",
               }}>
-              👶 {c.name}
+              {c.name}
             </button>
           ))}
         </div>
@@ -198,7 +198,6 @@ export default function OrangTuaAbsensiPage() {
 
           {classGroups.length === 0 ? (
             <div className="card" style={{ padding: "48px 24px", textAlign: "center" }}>
-              <div style={{ fontSize: 36, marginBottom: 12 }}>📋</div>
               <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)", marginBottom: 6 }}>
                 Belum Ada Data Absensi
               </div>

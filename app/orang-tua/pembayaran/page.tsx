@@ -4,6 +4,7 @@
 import { useState, useRef, useEffect } from "react";
 import { checkPaymentStatus, getPaymentMethods, getPaymentPlans, getPayments } from "@/lib/api/finance";
 import { getStudents } from "@/lib/api/students";
+import { getMyParentProfile } from "@/lib/api/parents";
 
 interface PanduanItem {
   title?: string;
@@ -68,8 +69,9 @@ export default function PembayaranPage() {
   useEffect(() => {
     async function initData() {
       try {
-        const [methodsRes, studentsRes] = await Promise.allSettled([
+        const [methodsRes, parentRes, studentsRes] = await Promise.allSettled([
           getPaymentMethods(true),
+          getMyParentProfile(),
           getStudents({ per_page: 20 }),
         ]);
 
@@ -77,15 +79,32 @@ export default function PembayaranPage() {
           setGatewayMethods(methodsRes.value.data);
         }
 
-        let initialStudentId = "";
-        if (studentsRes.status === "fulfilled" && studentsRes.value) {
+        let studentArray: any[] = [];
+        if (parentRes.status === "fulfilled" && parentRes.value?.students && parentRes.value.students.length > 0) {
+          studentArray = parentRes.value.students.map((s) => ({
+            id: s.id,
+            name: s.name,
+            full_name: s.name,
+            relation: s.relation,
+          }));
+        } else if (studentsRes.status === "fulfilled" && studentsRes.value) {
           const rawStudents = (studentsRes.value as any)?.data || (studentsRes.value as any) || [];
-          const studentArray = Array.isArray(rawStudents) ? rawStudents : [];
-          setStudents(studentArray);
-          if (studentArray.length > 0) {
-            initialStudentId = studentArray[0].id;
-            setSelectedStudentId(initialStudentId);
-          }
+          studentArray = Array.isArray(rawStudents)
+            ? rawStudents.map((s: any) => ({
+                id: s.id,
+                name: s.name || s.full_name || s.studentCode || "Siswa",
+                full_name: s.full_name || s.name || "Siswa",
+                studentCode: s.studentCode || s.student_code,
+              }))
+            : [];
+        }
+
+        setStudents(studentArray);
+
+        let initialStudentId = "";
+        if (studentArray.length > 0) {
+          initialStudentId = studentArray[0].id;
+          setSelectedStudentId(initialStudentId);
         }
 
         await loadFinanceData(initialStudentId);
@@ -183,20 +202,30 @@ export default function PembayaranPage() {
   const progressPercent = totalSessionsCount > 0 ? Math.round((completedSessionsCount / totalSessionsCount) * 100) : 0;
 
   const totalUnpaidNominal = unpaidPlans.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-  const nextUnpaidSessions = unpaidPlans.slice(0, 2);
-  const nextUnpaidNominal = nextUnpaidSessions.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const nextUnpaidSession = unpaidPlans[0] || null;
+  const nextUnpaidSessions = nextUnpaidSession ? [nextUnpaidSession] : [];
+  const nextUnpaidNominal = nextUnpaidSession ? (Number(nextUnpaidSession.amount) || 0) : 0;
 
   // Active target plan ID to charge
-  const targetPlanId = nextUnpaidSessions[0]?.id || unpaidPlans[0]?.id || null;
+  const targetPlanId = nextUnpaidSession?.id || unpaidPlans[0]?.id || null;
 
   const totalAmount =
     paymentType === "per_pertemuan"
       ? `Rp ${nextUnpaidNominal.toLocaleString("id-ID")}`
       : `Rp ${totalUnpaidNominal.toLocaleString("id-ID")}`;
 
-  const childName = paymentPlans[0]?.enrollment?.student?.full_name || "Andi Siswa";
+  const selectedStudent = students.find((s) => s.id === selectedStudentId);
+  const childName =
+    selectedStudent?.name ||
+    selectedStudent?.full_name ||
+    paymentPlans[0]?.enrollment?.student?.full_name ||
+    paymentPlans[0]?.enrollment?.student?.name ||
+    "Siswa";
   const programName = paymentPlans[0]?.enrollment?.program?.name || "Kumon Matematika";
-  const levelName = paymentPlans[0]?.enrollment?.program_level?.name || "Level A (Dasar)";
+  const levelName =
+    paymentPlans[0]?.enrollment?.program_level?.name ||
+    paymentPlans[0]?.enrollment?.programLevel?.name ||
+    "Level A (Dasar)";
 
   const formattedHistoryList = paymentsHistory.length > 0
     ? paymentsHistory.map((p) => {
@@ -400,8 +429,23 @@ export default function PembayaranPage() {
     return () => clearInterval(interval);
   }, [activePaymentId, isGenerated, modalStep, selectedMethod, selectedBank, selectedEwallet, historyList.length, itemDescription, totalAmount]);
 
+  const handleSelectMethod = (method: "va" | "ewallet" | "qris" | "cash") => {
+    setSelectedMethod(method);
+    setActivePaymentId(null);
+    setIsGenerated(false);
+    setExpandedGuideIndex(null);
+    setLiveVaNumber(null);
+    setLiveQrUrl(null);
+    setLiveCheckoutUrl(null);
+    setLiveExpiredAt(null);
+    setLiveFee(null);
+    setLiveAmount(null);
+    setLiveTotalAmount(null);
+  };
+
   const handleSelectBank = (bankKey: string) => {
     setSelectedBank(bankKey);
+    setActivePaymentId(null);
     setIsGenerated(false);
     setExpandedGuideIndex(null);
     setLiveVaNumber(null);
@@ -414,6 +458,7 @@ export default function PembayaranPage() {
 
   const handleSelectEwallet = (ewalletKey: string) => {
     setSelectedEwallet(ewalletKey);
+    setActivePaymentId(null);
     setIsGenerated(false);
     setExpandedGuideIndex(null);
     setLiveCheckoutUrl(null);
@@ -424,6 +469,7 @@ export default function PembayaranPage() {
   };
 
   const handleProceedToDetail = () => {
+    setActivePaymentId(null);
     setIsGenerated(false);
     setExpandedGuideIndex(null);
     setLiveVaNumber(null);
@@ -712,36 +758,75 @@ export default function PembayaranPage() {
           </p>
         </div>
 
-        {/* Child Selector Pills / Dropdown */}
-        {students.length > 1 && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f1f5f9", padding: "4px 6px", borderRadius: 12 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#64748b", paddingLeft: 8 }}>Pilih Siswa:</span>
-            {students.map((s) => {
-              const isSelected = s.id === selectedStudentId;
-              return (
-                <button
-                  key={s.id}
-                  onClick={() => handleSelectStudent(s.id)}
-                  style={{
-                    border: "none",
-                    background: isSelected ? "#0e7490" : "transparent",
-                    color: isSelected ? "#ffffff" : "#475569",
-                    padding: "6px 14px",
-                    borderRadius: 8,
-                    fontSize: 12.5,
-                    fontWeight: isSelected ? 800 : 600,
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                    boxShadow: isSelected ? "0 2px 6px rgba(14,116,144,0.25)" : "none",
-                  }}
-                >
-                  {s.full_name}
-                </button>
-              );
-            })}
+        {/* Child Selector Dropdown */}
+        {students.length > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <label htmlFor="student-selector" style={{ fontSize: 13, fontWeight: 600, color: "#475569" }}>
+              Pilih Siswa:
+            </label>
+            <div style={{ position: "relative", minWidth: 220 }}>
+              <select
+                id="student-selector"
+                value={selectedStudentId}
+                onChange={(e) => handleSelectStudent(e.target.value)}
+                style={{
+                  width: "100%",
+                  appearance: "none",
+                  WebkitAppearance: "none",
+                  MozAppearance: "none",
+                  background: "#ffffff",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 10,
+                  padding: "9px 38px 9px 14px",
+                  fontSize: 13.5,
+                  fontWeight: 600,
+                  color: "#1e293b",
+                  cursor: "pointer",
+                  outline: "none",
+                  transition: "all 0.15s ease",
+                  boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+                }}
+                onFocus={(e) => (e.target.style.borderColor = "#0e7490")}
+                onBlur={(e) => (e.target.style.borderColor = "#cbd5e1")}
+              >
+                {students.map((s) => {
+                  const studentLabel = s.name || s.full_name || "Siswa";
+                  const extraInfo = s.studentCode ? ` (${s.studentCode})` : s.relation ? ` (${s.relation})` : "";
+                  return (
+                    <option key={s.id} value={s.id}>
+                      {studentLabel}{extraInfo}
+                    </option>
+                  );
+                })}
+              </select>
+              <div
+                style={{
+                  position: "absolute",
+                  right: 12,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  pointerEvents: "none",
+                  color: "#64748b",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+            </div>
           </div>
         )}
       </div>
+
+      {/* Loading Indicator saat ganti siswa */}
+      {isLoadingFinance && (
+        <div style={{ fontSize: 12, color: "#0e7490", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ display: "inline-block", width: 12, height: 12, border: "2px solid #0e7490", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+          Memperbarui data tagihan siswa...
+        </div>
+      )}
 
       {/* ── 2. TOP 3 STAT CARDS GRID ───────────────────────────────────── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
@@ -1060,7 +1145,7 @@ export default function PembayaranPage() {
                   </div>
                 ))
               ) : (
-                <div style={{ fontSize: 13, color: "#16a34a", fontWeight: 700 }}>Semua tagihan pertemuan sudah lunas 🎉</div>
+                <div style={{ fontSize: 13, color: "#16a34a", fontWeight: 700 }}>Semua tagihan pertemuan sudah lunas.</div>
               )}
               <div style={{ height: 1, background: "#e2e8f0", margin: "4px 0" }} />
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -1346,18 +1431,29 @@ export default function PembayaranPage() {
                     RINGKASAN TAGIHAN
                   </div>
                   {paymentType === "per_pertemuan" ? (
-                    <>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
-                        <span>Pertemuan 7</span><span>Rp 50.000</span>
+                    nextUnpaidSessions.length > 0 ? (
+                      nextUnpaidSessions.map((session) => (
+                        <div key={session.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
+                          <span>Pertemuan {session.session_number}</span>
+                          <span>Rp {Number(session.amount).toLocaleString("id-ID")}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ fontSize: 13, color: "#16a34a", fontWeight: 600, marginBottom: 6 }}>
+                        Semua pertemuan sudah lunas
                       </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 10 }}>
-                        <span>Pertemuan 8</span><span>Rp 50.000</span>
-                      </div>
-                    </>
+                    )
                   ) : (
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 10 }}>
-                      <span>Sisa Pertemuan (7-12)</span><span>6 x Rp 50.000</span>
-                    </div>
+                    unpaidPlans.length > 0 ? (
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
+                        <span>Sisa Pertemuan ({unpaidPlans[0]?.session_number} - {unpaidPlans[unpaidPlans.length - 1]?.session_number})</span>
+                        <span>{unpaidPlans.length} x Rp {Number(unpaidPlans[0]?.amount || 50000).toLocaleString("id-ID")}</span>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 13, color: "#16a34a", fontWeight: 600, marginBottom: 6 }}>
+                        Seluruh paket sudah lunas
+                      </div>
+                    )
                   )}
 
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #e2e8f0", paddingTop: 8 }}>
@@ -1373,7 +1469,7 @@ export default function PembayaranPage() {
                     const isSelected = selectedMethod === "va";
                     return (
                     <div
-                      onClick={() => setSelectedMethod("va")}
+                      onClick={() => handleSelectMethod("va")}
                       style={{
                         display: "flex", alignItems: "center", gap: 14,
                         padding: "14px 16px",
@@ -1429,7 +1525,7 @@ export default function PembayaranPage() {
                     const isSelected = selectedMethod === "ewallet";
                     return (
                     <div
-                      onClick={() => setSelectedMethod("ewallet")}
+                      onClick={() => handleSelectMethod("ewallet")}
                       style={{
                         display: "flex", alignItems: "center", gap: 14,
                         padding: "14px 16px",
@@ -1480,7 +1576,7 @@ export default function PembayaranPage() {
                     const isSelected = selectedMethod === "qris";
                     return (
                     <div
-                      onClick={() => setSelectedMethod("qris")}
+                      onClick={() => handleSelectMethod("qris")}
                       style={{
                         display: "flex", alignItems: "center", gap: 14,
                         padding: "14px 16px",
@@ -1524,7 +1620,7 @@ export default function PembayaranPage() {
                     const isSelected = selectedMethod === "cash";
                     return (
                     <div
-                      onClick={() => setSelectedMethod("cash")}
+                      onClick={() => handleSelectMethod("cash")}
                       style={{
                         display: "flex", alignItems: "center", gap: 14,
                         padding: "14px 16px",

@@ -191,7 +191,7 @@ export default function OrangTuaProgressPage() {
                 color: selectedChild?.id === c.id ? "#fff" : "var(--color-text-secondary)",
                 borderColor: selectedChild?.id === c.id ? "var(--color-primary)" : "var(--color-border)",
               }}>
-              👶 {c.name}
+              {c.name}
             </button>
           ))}
         </div>
@@ -219,7 +219,6 @@ export default function OrangTuaProgressPage() {
         <SkeletonTable rows={3} cols={3} />
       ) : progressData.length === 0 ? (
         <div className="card" style={{ padding: "48px 24px", textAlign: "center" }}>
-          <div style={{ fontSize: 36, marginBottom: 12 }}>📊</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)", marginBottom: 6 }}>Belum Ada Data Progress</div>
           <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
             {selectedChild?.name} belum memiliki pendaftaran kelas. Hubungi Admin untuk mendaftarkan anak.
@@ -342,7 +341,6 @@ export default function OrangTuaProgressPage() {
                   </div>
                 ) : (
                   <div style={{ background: "var(--color-bg)", borderRadius: 10, padding: "14px 16px", textAlign: "center" }}>
-                    <div style={{ fontSize: 20, marginBottom: 4 }}>📝</div>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text-muted)" }}>
                       Belum ada penilaian
                     </div>
@@ -355,7 +353,7 @@ export default function OrangTuaProgressPage() {
                 {/* No sessions info */}
                 {prog.totalSessions === 0 && (
                   <div style={{ background: "#fef9c3", borderRadius: 10, padding: "10px 14px", fontSize: 12.5, color: "#854d0e" }}>
-                    💡 Sesi kelas belum dimulai atau guru belum menyimpan absensi.
+                    Sesi kelas belum dimulai atau guru belum menyimpan absensi.
                   </div>
                 )}
               </div>

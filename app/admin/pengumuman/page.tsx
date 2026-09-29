@@ -5,6 +5,7 @@ import {
   getAnnouncements,
   createAnnouncement,
   deleteAnnouncement,
+  resolveMediaUrl,
   type BackendAnnouncement,
 } from "@/lib/api/operational";
 import Toast, { useToast } from "@/components/ui/Toast";
@@ -130,7 +131,7 @@ export default function PengumumanPage({ peran = "admin" }: Props) {
           status: isPublished ? "Aktif" : isDraft ? "Draft" : "Selesai",
           dibuat: item.author?.name || (item.author?.role === "owner" ? "Owner" : "Admin"),
           penting: item.title.toLowerCase().includes("penting") || item.description.toLowerCase().includes("penting"),
-          poster_url: item.poster_url,
+          poster_url: resolveMediaUrl(item.poster_url),
           rawStatus: item.status,
         };
       });
@@ -357,6 +358,12 @@ export default function PengumumanPage({ peran = "admin" }: Props) {
                     ))}
                   </div>
                 </div>
+                {p.poster_url && (
+                  <div style={{ width: 72, height: 72, borderRadius: 10, overflow: "hidden", flexShrink: 0, border: "1px solid var(--color-border-light)", background: "var(--color-bg)" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.poster_url} alt={p.judul} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  </div>
+                )}
                 <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
                   <polyline points="9 18 15 12 9 6" />
                 </svg>

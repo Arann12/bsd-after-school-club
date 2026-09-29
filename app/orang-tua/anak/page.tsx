@@ -40,7 +40,6 @@ export default function OrangTuaAnakPage() {
 
       {children.length === 0 ? (
         <div className="card" style={{ padding: "48px 24px", textAlign: "center" }}>
-          <div style={{ fontSize: 36, marginBottom: 12 }}>👶</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)", marginBottom: 6 }}>Belum Ada Data Anak</div>
           <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
             Hubungi Admin untuk menghubungkan data anak ke akun Anda.
@@ -58,7 +57,7 @@ export default function OrangTuaAnakPage() {
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 900, color: "var(--color-text-primary)" }}>{child.name}</div>
                   <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 2 }}>
-                    {child.isPrimary ? "🌟 Anak Utama" : "Anak"} · Hubungan: {child.relation}
+                    {child.isPrimary ? "Anak Utama" : "Anak"} · Hubungan: {child.relation}
                   </div>
                 </div>
                 <div style={{ marginLeft: "auto" }}>
@@ -85,13 +84,13 @@ export default function OrangTuaAnakPage() {
               {/* Quick Links */}
               <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
                 <a href="/orang-tua/absensi" style={{ fontSize: 12.5, fontWeight: 700, color: "var(--color-primary)", textDecoration: "none", padding: "7px 16px", border: "1.5px solid var(--color-primary)", borderRadius: 8 }}>
-                  ✅ Lihat Absensi
+                  Lihat Absensi
                 </a>
                 <a href="/orang-tua/progress" style={{ fontSize: 12.5, fontWeight: 700, color: "#7c3aed", textDecoration: "none", padding: "7px 16px", border: "1.5px solid #7c3aed", borderRadius: 8 }}>
-                  📈 Progress Belajar
+                  Progress Belajar
                 </a>
                 <a href="/orang-tua/laporan" style={{ fontSize: 12.5, fontWeight: 700, color: "#d97706", textDecoration: "none", padding: "7px 16px", border: "1.5px solid #d97706", borderRadius: 8 }}>
-                  📋 Laporan
+                  Laporan
                 </a>
               </div>
             </div>

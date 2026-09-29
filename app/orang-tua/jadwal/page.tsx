@@ -211,7 +211,7 @@ export default function OrangTuaJadwalPage() {
                 color: selectedChild?.id === c.id ? "#fff" : "var(--color-text-secondary)",
                 borderColor: selectedChild?.id === c.id ? "var(--color-primary)" : "var(--color-border)",
               }}>
-              👶 {c.name}
+              {c.name}
             </button>
           ))}
         </div>
@@ -239,7 +239,6 @@ export default function OrangTuaJadwalPage() {
         <SkeletonTable rows={3} cols={3} />
       ) : sessions.length === 0 ? (
         <div className="card" style={{ padding: "48px 24px", textAlign: "center" }}>
-          <div style={{ fontSize: 36, marginBottom: 12 }}>📅</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)", marginBottom: 6 }}>Belum Ada Jadwal</div>
           <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
             Jadwal kelas akan muncul setelah admin membuat sesi untuk kelas yang diikuti anak.
@@ -329,9 +328,9 @@ export default function OrangTuaJadwalPage() {
                         {s.programName}
                       </div>
                       <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 3, display: "flex", gap: 12, flexWrap: "wrap" }}>
-                        <span>📅 {s.dayName}, {s.sessionDateDisplay}</span>
-                        <span>👨‍🏫 {s.teacherName}</span>
-                        <span>📖 Sesi #{s.sessionNumber}</span>
+                        <span>{s.dayName}, {s.sessionDateDisplay}</span>
+                        <span>Guru: {s.teacherName}</span>
+                        <span>Sesi #{s.sessionNumber}</span>
                       </div>
                       {s.material && s.status === "Selesai" && (
                         <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 4, fontStyle: "italic" }}>
