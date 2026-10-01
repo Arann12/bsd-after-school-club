@@ -589,9 +589,15 @@ export default function PendaftaranPage() {
             </div>
           </div>
 
-          {/* Banner Informasi Tagihan Otomatis */}
+          {/* Banner Informasi Tagihan & Sesi Otomatis */}
           <div style={{ background: "#f0f9ff", border: "1.5px solid #bae6fd", borderRadius: 10, padding: "12px 14px", fontSize: 12, color: "#0369a1" }}>
-            <strong>💡 Otomasi Tagihan:</strong> Setelah pendaftaran disimpan, sistem backend akan langsung menerbitkan <strong>Rencana Tagihan (Payment Plans)</strong> sesuai skema yang dipilih. Orang tua dapat langsung membayar via menu Pembayaran.
+            <div style={{ fontWeight: 700, marginBottom: 3, display: "flex", alignItems: "center", gap: 6 }}>
+              <span>💡</span>
+              <span>Otomasi Terpadu Tagihan & Kalender Sesi ({totalSessions} Pertemuan):</span>
+            </div>
+            <div>
+              Setelah pendaftaran disimpan, sistem backend akan langsung menerbitkan <strong>Rencana Tagihan (Payment Plans)</strong> serta otomatis membuat <strong>{totalSessions} Sesi Kelas & Absensi</strong> di kalender kelas sesuai jadwal rutin yang aktif.
+            </div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 10, marginTop: 6 }}>

@@ -117,8 +117,8 @@ export default function OrangTuaJadwalPage() {
         return;
       }
 
-      // 2. Fetch sessions for each classroom in parallel
-      const allSessions: ClassSession[] = [];
+      // 2. Fetch sessions for each unique classroom in parallel
+      const sessionMap = new Map<string, ClassSession>();
       await Promise.all(
         enrollments.map(async (enroll: any) => {
           if (!enroll.classroom?.id) return;
@@ -128,9 +128,10 @@ export default function OrangTuaJadwalPage() {
             });
             const rawSessions: any[] = sesRes.data.data || [];
             for (const s of rawSessions) {
+              if (sessionMap.has(s.id)) continue;
               const dateStr = s.session_date?.substring(0, 10) ?? "";
               const logbook = s.teacher_logbook || s.teacherLogbook || null;
-              allSessions.push({
+              sessionMap.set(s.id, {
                 id: s.id,
                 sessionNumber: s.session_number ?? 0,
                 sessionDate: dateStr,
@@ -150,6 +151,7 @@ export default function OrangTuaJadwalPage() {
         })
       );
 
+      const allSessions = Array.from(sessionMap.values());
       // Sort by date ascending
       allSessions.sort((a, b) => a.sessionDate.localeCompare(b.sessionDate));
       setSessions(allSessions);

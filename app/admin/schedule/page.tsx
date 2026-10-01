@@ -2,12 +2,32 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/ui/Modal";
-import { 
-  getClassSchedules, createClassSchedule, updateClassSchedule, deleteClassSchedule, generateClassSessions,
+import {
+  getClassSchedules, createClassSchedule, updateClassSchedule, deleteClassSchedule,
   getClassrooms,
   type ClassSchedule, type Classroom
 } from "@/lib/api/academic";
 import { getTeachers, type Teacher } from "@/lib/api/teachers";
+
+const DAY_NAMES_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+const DAYS: Record<string, string> = {
+  Monday: "Senin",
+  Tuesday: "Selasa",
+  Wednesday: "Rabu",
+  Thursday: "Kamis",
+  Friday: "Jumat",
+  Saturday: "Sabtu",
+  Sunday: "Minggu"
+};
+
+function getDayOfWeekFromDate(dateStr: string): string {
+  if (!dateStr) return "Monday";
+  const parts = dateStr.split("-").map(Number);
+  if (parts.length < 3 || !parts[0] || !parts[1] || !parts[2]) return "Monday";
+  const date = new Date(parts[0], parts[1] - 1, parts[2]);
+  return DAY_NAMES_EN[date.getDay()] || "Monday";
+}
 
 export default function SchedulePage() {
   const [schedules, setSchedules] = useState<ClassSchedule[]>([]);
@@ -29,16 +49,6 @@ export default function SchedulePage() {
     effective_until: "",
   });
   const [saving, setSaving] = useState(false);
-
-  // Generate Sessions State
-  const [showGenerateModal, setShowGenerateModal] = useState(false);
-  const [activeSchedule, setActiveSchedule] = useState<ClassSchedule | null>(null);
-  const [generateForm, setGenerateForm] = useState({
-    start_date: new Date().toISOString().split("T")[0],
-    total_sessions: 12
-  });
-  const [generating, setGenerating] = useState(false);
-  const [generateResult, setGenerateResult] = useState<any>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -66,29 +76,41 @@ export default function SchedulePage() {
 
   const handleOpenModal = (sched?: ClassSchedule) => {
     if (sched) {
+      const effFrom = sched.effectiveFrom || "";
+      const derivedDay = effFrom ? getDayOfWeekFromDate(effFrom) : (sched.dayOfWeek || "Monday");
       setEditingSchedule(sched);
       setFormData({
         classroom_id: sched.classroomId,
         teacher_id: sched.teacherId,
-        day_of_week: sched.dayOfWeek,
+        day_of_week: derivedDay,
         start_time: sched.startTime.substring(0, 5), // Format HH:mm
         end_time: sched.endTime.substring(0, 5),
-        effective_from: sched.effectiveFrom,
+        effective_from: effFrom,
         effective_until: sched.effectiveUntil || "",
       });
     } else {
+      const todayStr = new Date().toISOString().split("T")[0];
       setEditingSchedule(null);
       setFormData({
         classroom_id: "",
         teacher_id: "",
-        day_of_week: "Monday",
+        day_of_week: getDayOfWeekFromDate(todayStr),
         start_time: "15:00",
         end_time: "16:30",
-        effective_from: new Date().toISOString().split("T")[0],
+        effective_from: todayStr,
         effective_until: "",
       });
     }
     setShowModal(true);
+  };
+
+  const handleEffectiveFromChange = (dateVal: string) => {
+    const calculatedDay = getDayOfWeekFromDate(dateVal);
+    setFormData(prev => ({
+      ...prev,
+      effective_from: dateVal,
+      day_of_week: calculatedDay,
+    }));
   };
 
   const handleSave = async () => {
@@ -97,8 +119,10 @@ export default function SchedulePage() {
     }
     setSaving(true);
     try {
+      const calculatedDay = getDayOfWeekFromDate(formData.effective_from);
       const payload = {
         ...formData,
+        day_of_week: calculatedDay,
         effective_until: formData.effective_until || null
       };
 
@@ -127,35 +151,6 @@ export default function SchedulePage() {
     }
   };
 
-  const handleOpenGenerate = (sched: ClassSchedule) => {
-    setActiveSchedule(sched);
-    setGenerateResult(null);
-    setGenerateForm({
-      start_date: new Date().toISOString().split("T")[0],
-      total_sessions: 12
-    });
-    setShowGenerateModal(true);
-  };
-
-  const handleGenerate = async () => {
-    if (!activeSchedule) return;
-    if (generateForm.total_sessions < 1 || generateForm.total_sessions > 50) {
-      return alert("Jumlah sesi harus antara 1 sampai 50.");
-    }
-    
-    setGenerating(true);
-    setGenerateResult(null);
-    try {
-      const res = await generateClassSessions(activeSchedule.id, generateForm);
-      setGenerateResult(res);
-    } catch (err: any) {
-      console.error(err);
-      alert("Gagal generate sesi: " + (err.response?.data?.message || err.message));
-    } finally {
-      setGenerating(false);
-    }
-  };
-
   const DAYS = {
     Monday: "Senin",
     Tuesday: "Selasa",
@@ -174,7 +169,7 @@ export default function SchedulePage() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Jadwal Rutin Mingguan</h1>
-          <p style={{ color: "var(--color-text-secondary)", margin: "4px 0 0 0", fontSize: 14 }}>Kelola master jadwal dan otomatisasi generate kalender sesi kelas.</p>
+          <p style={{ color: "var(--color-text-secondary)", margin: "4px 0 0 0", fontSize: 14 }}>Kelola master jadwal kelas mingguan. Sesi absensi akan otomatis dibuat saat siswa didaftarkan.</p>
         </div>
         <button className="btn btn-primary" onClick={() => handleOpenModal()}>+ Tambah Jadwal</button>
       </div>
@@ -212,7 +207,6 @@ export default function SchedulePage() {
                   </td>
                   <td style={{ padding: "14px 16px" }}>
                     <div style={{ display: "flex", gap: 6 }}>
-                      <button className="btn btn-primary btn-sm" onClick={() => handleOpenGenerate(s)}>Generate Sesi</button>
                       <button className="btn btn-ghost btn-sm" onClick={() => handleOpenModal(s)}>Edit</button>
                       <button className="btn btn-ghost btn-sm" style={{ color: "var(--color-danger)" }} onClick={() => handleDelete(s.id)}>Hapus</button>
                     </div>
@@ -243,13 +237,7 @@ export default function SchedulePage() {
             </select>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Hari *</label>
-              <select className="form-input" value={formData.day_of_week} onChange={e => setFormData({ ...formData, day_of_week: e.target.value })}>
-                {Object.entries(DAYS).map(([eng, idn]) => <option key={eng} value={eng}>{idn}</option>)}
-              </select>
-            </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Jam Mulai *</label>
               <input type="time" className="form-input" value={formData.start_time} onChange={e => setFormData({ ...formData, start_time: e.target.value })} />
@@ -262,12 +250,38 @@ export default function SchedulePage() {
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Efektif Mulai *</label>
-              <input type="date" className="form-input" value={formData.effective_from} onChange={e => setFormData({ ...formData, effective_from: e.target.value })} />
+              <label className="form-label">Tanggal Efektif Mulai *</label>
+              <input
+                type="date"
+                className="form-input"
+                value={formData.effective_from}
+                onChange={e => handleEffectiveFromChange(e.target.value)}
+              />
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Sampai Dengan (Opsional)</label>
-              <input type="date" className="form-input" value={formData.effective_until} onChange={e => setFormData({ ...formData, effective_until: e.target.value })} />
+              <input
+                type="date"
+                className="form-input"
+                value={formData.effective_until}
+                onChange={e => setFormData({ ...formData, effective_until: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* Info Badge Hari Terhitung Otomatis */}
+          <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#166534" }}>
+            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <div>
+              Hari Rutin: <strong style={{ fontSize: 14 }}>{DAYS[formData.day_of_week] || formData.day_of_week}</strong>
+              <span style={{ fontSize: 11.5, opacity: 0.85, display: "block", marginTop: 2 }}>
+                Otomatis ditentukan berdasarkan Tanggal Efektif Mulai ({formData.effective_from || "belum dipilih"})
+              </span>
             </div>
           </div>
 
@@ -277,49 +291,6 @@ export default function SchedulePage() {
           </div>
         </div>
       </Modal>
-
-      {/* MODAL GENERATE SESI */}
-      <Modal open={showGenerateModal} onClose={() => setShowGenerateModal(false)} title="Generate Sesi Absensi" maxWidth={500}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ padding: 12, background: "#f8fafc", borderRadius: 8, fontSize: 13, color: "var(--color-text-secondary)" }}>
-            Sistem akan secara otomatis membuatkan sesi absensi nyata di kalender berdasarkan templat jadwal ini. Hari libur (Holidays) atau jadwal yang bentrok akan dilompati (di-skip).
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Tgl. Mulai Sesi Pertama</label>
-              <input type="date" className="form-input" value={generateForm.start_date} onChange={e => setGenerateForm({ ...generateForm, start_date: e.target.value })} disabled={generating} />
-            </div>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Jumlah Sesi (Max 50)</label>
-              <input type="number" className="form-input" value={generateForm.total_sessions} onChange={e => setGenerateForm({ ...generateForm, total_sessions: parseInt(e.target.value) || 0 })} min={1} max={50} disabled={generating} />
-            </div>
-          </div>
-
-          {generateResult && (
-            <div style={{ padding: 16, background: "#dcfce7", border: "1px solid #86efac", borderRadius: 8 }}>
-              <h4 style={{ margin: "0 0 8px 0", color: "#166534", fontSize: 14 }}>Generate Selesai!</h4>
-              <ul style={{ margin: 0, paddingLeft: 16, fontSize: 13, color: "#166534" }}>
-                <li><strong>{generateResult.sessions_count}</strong> Sesi berhasil dibuat.</li>
-                {generateResult.skipped_holidays?.length > 0 && (
-                  <li><strong>{generateResult.skipped_holidays.length}</strong> sesi dilewati karena bentrok dengan Hari Libur.</li>
-                )}
-                {generateResult.skipped_conflicts?.length > 0 && (
-                  <li><strong>{generateResult.skipped_conflicts.length}</strong> sesi dilewati karena bentrok jadwal guru/ruangan.</li>
-                )}
-              </ul>
-            </div>
-          )}
-
-          <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
-            <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setShowGenerateModal(false)} disabled={generating}>{generateResult ? "Tutup" : "Batal"}</button>
-            {!generateResult && (
-              <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleGenerate} disabled={generating}>{generating ? "Memproses..." : "Generate Sekarang"}</button>
-            )}
-          </div>
-        </div>
-      </Modal>
-
     </div>
   );
 }
