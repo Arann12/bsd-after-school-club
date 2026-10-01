@@ -1,63 +1,167 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Modal from "@/components/ui/Modal";
+import { getStudents, Student } from "@/lib/api/students";
+import { getAssessments, createAssessment, getCertificates, createCertificate } from "@/lib/api/assessments";
+import { SkeletonTable } from "@/components/ui/Skeleton";
 
-export interface StudentAssessment {
+export interface StudentAssessmentDisplay {
   idSiswa: string;
+  enrollmentId: string;
+  programLevelId: string;
   namaSiswa: string;
   program: string;
   level: string;
   nilaiReading: number;
   nilaiWriting: number;
   nilaiLogic: number;
+  avgScore: number;
   predikat: string;
   statusSertifikat: "Sudah Digenerate" | "Belum Digenerate";
   nomorSertifikat?: string;
   tglTerbit?: string;
 }
 
-const initialAssessments: StudentAssessment[] = [
-  { idSiswa: "STD-001", namaSiswa: "Andi Setiawan", program: "Calistung", level: "Level 1", nilaiReading: 0, nilaiWriting: 0, nilaiLogic: 0, predikat: "", statusSertifikat: "Belum Digenerate" },
-  { idSiswa: "STD-002", namaSiswa: "Budi Santoso", program: "English", level: "Level 2 (B1)", nilaiReading: 85, nilaiWriting: 86, nilaiLogic: 88, predikat: "Sangat Baik", statusSertifikat: "Sudah Digenerate", nomorSertifikat: "BSD/CERT/2026/002", tglTerbit: "20 Agt 2026" },
-  { idSiswa: "STD-003", namaSiswa: "Citra Kirana", program: "Math", level: "Level 3 (Advance)", nilaiReading: 0, nilaiWriting: 0, nilaiLogic: 0, predikat: "", statusSertifikat: "Belum Digenerate" },
-  { idSiswa: "STD-004", namaSiswa: "Dian Pratama", program: "Phonics", level: "Starter", nilaiReading: 80, nilaiWriting: 78, nilaiLogic: 82, predikat: "Baik", statusSertifikat: "Belum Digenerate" },
-];
-
 export default function OwnerPenilaianSertifikatPage() {
-  const [assessments, setAssessments] = useState<StudentAssessment[]>(initialAssessments);
-  const [selectedStudent, setSelectedStudent] = useState<StudentAssessment | null>(null);
-  const [readingScore, setReadingScore] = useState(90);
-  const [writingScore, setWritingScore] = useState(88);
-  const [logicScore, setLogicScore] = useState(92);
-  const [predikat, setPredikat] = useState("Dengan Pujian (Cumlaude)");
+  const [assessments, setAssessments] = useState<StudentAssessmentDisplay[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedStudent, setSelectedStudent] = useState<StudentAssessmentDisplay | null>(null);
+
+  const [readingScore, setReadingScore] = useState(85);
+  const [writingScore, setWritingScore] = useState(85);
+  const [logicScore, setLogicScore] = useState(85);
+  const [predikat, setPredikat] = useState("Sangat Baik");
+  const [generating, setGenerating] = useState(false);
   const [notifToast, setNotifToast] = useState<string | null>(null);
 
-  const handleGenerateCertificate = (siswa: StudentAssessment) => {
-    const avgScore = Math.round((readingScore + writingScore + logicScore) / 3);
-    const finalPredikat = avgScore >= 90 ? "Dengan Pujian (Cumlaude)" : avgScore >= 80 ? "Sangat Baik" : avgScore >= 70 ? "Baik" : "Cukup";
-    const certNo = `BSD/CERT/2026/00${assessments.filter(a => a.statusSertifikat === "Sudah Digenerate").length + 1}`;
+  const fetchAssessmentData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [studentsRes, certsRes, assessRes] = await Promise.allSettled([
+        getStudents({ per_page: 100 }),
+        getCertificates({ per_page: 100 }),
+        getAssessments({ per_page: 100 }),
+      ]);
 
-    setAssessments(prev =>
-      prev.map(a =>
-        a.idSiswa === siswa.idSiswa
-          ? {
-              ...a,
-              nilaiReading: readingScore,
-              nilaiWriting: writingScore,
-              nilaiLogic: logicScore,
-              predikat,
-              statusSertifikat: "Sudah Digenerate" as const,
-              nomorSertifikat: certNo,
-              tglTerbit: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
-            }
-          : a
-      )
-    );
+      const students = studentsRes.status === "fulfilled" && Array.isArray(studentsRes.value?.data) ? studentsRes.value.data : [];
+      const certs = certsRes.status === "fulfilled" && Array.isArray(certsRes.value?.data) ? certsRes.value.data : [];
+      const certByStudent = new Map<string, any>();
+      certs.forEach((c: any) => certByStudent.set(c.student_id, c));
 
-    setSelectedStudent(null);
-    setNotifToast(`Sertifikat ${siswa.namaSiswa} berhasil digenerate!`);
-    setTimeout(() => setNotifToast(null), 3000);
+      const rawAssessments = assessRes.status === "fulfilled" && Array.isArray(assessRes.value?.data?.data || assessRes.value?.data) ? (assessRes.value.data.data || assessRes.value.data) : [];
+      const assessByStudent = new Map<string, any[]>();
+      rawAssessments.forEach((a: any) => {
+        const arr = assessByStudent.get(a.student_id) || [];
+        arr.push(a);
+        assessByStudent.set(a.student_id, arr);
+      });
+
+      const list: StudentAssessmentDisplay[] = students.map((s: Student) => {
+        const existingCert = certByStudent.get(s.id);
+        const myAssess = assessByStudent.get(s.id) || [];
+
+        const readItem = myAssess.find((a) => a.assessment_name.toLowerCase().includes("reading") || a.assessment_name.toLowerCase().includes("baca"));
+        const writeItem = myAssess.find((a) => a.assessment_name.toLowerCase().includes("writing") || a.assessment_name.toLowerCase().includes("tulis"));
+        const logicItem = myAssess.find((a) => a.assessment_name.toLowerCase().includes("logic") || a.assessment_name.toLowerCase().includes("hitung"));
+
+        const nRead = readItem ? Number(readItem.score) : 80;
+        const nWrite = writeItem ? Number(writeItem.score) : 82;
+        const nLogic = logicItem ? Number(logicItem.score) : 85;
+
+        const avg = Math.round((nRead + nWrite + nLogic) / 3);
+        let pred = "Baik";
+        if (avg >= 90) pred = "Dengan Pujian (Cumlaude)";
+        else if (avg >= 80) pred = "Sangat Baik";
+        else if (avg >= 70) pred = "Baik";
+        else pred = "Cukup";
+
+        // Find primary enrollment
+        const primaryEnrollment = s.enrollments?.[0];
+
+        return {
+          idSiswa: s.id,
+          enrollmentId: primaryEnrollment?.id || s.id,
+          programLevelId: primaryEnrollment?.program_level_id || s.id,
+          namaSiswa: s.name,
+          program: primaryEnrollment?.classroom?.program_level?.program?.name || s.program?.name || "Program Reguler",
+          level: primaryEnrollment?.classroom?.program_level?.name || "Level 1",
+          nilaiReading: nRead,
+          nilaiWriting: nWrite,
+          nilaiLogic: nLogic,
+          avgScore: avg,
+          predikat: pred,
+          statusSertifikat: existingCert ? "Sudah Digenerate" : "Belum Digenerate",
+          nomorSertifikat: existingCert?.certificate_code,
+          tglTerbit: existingCert?.issued_date,
+        };
+      });
+
+      setAssessments(list);
+    } catch (err) {
+      console.warn("Gagal memuat data penilaian:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAssessmentData();
+  }, [fetchAssessmentData]);
+
+  const handleOpenModal = (siswa: StudentAssessmentDisplay) => {
+    setSelectedStudent(siswa);
+    setReadingScore(siswa.nilaiReading || 85);
+    setWritingScore(siswa.nilaiWriting || 85);
+    setLogicScore(siswa.nilaiLogic || 85);
+  };
+
+  const handleGenerateCertificate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedStudent) return;
+    setGenerating(true);
+
+    try {
+      // 1. Simpan assessment
+      await Promise.allSettled([
+        createAssessment({
+          student_id: selectedStudent.idSiswa,
+          enrollment_id: selectedStudent.enrollmentId,
+          program_level_id: selectedStudent.programLevelId,
+          assessment_name: "Reading / Membaca",
+          score: readingScore,
+          assessment_date: new Date().toISOString().split("T")[0],
+          status: "final",
+        }),
+        createAssessment({
+          student_id: selectedStudent.idSiswa,
+          enrollment_id: selectedStudent.enrollmentId,
+          program_level_id: selectedStudent.programLevelId,
+          assessment_name: "Writing / Menulis",
+          score: writingScore,
+          assessment_date: new Date().toISOString().split("T")[0],
+          status: "final",
+        }),
+      ]);
+
+      // 2. Generate sertifikat
+      await createCertificate({
+        student_id: selectedStudent.idSiswa,
+        enrollment_id: selectedStudent.enrollmentId,
+        issued_date: new Date().toISOString().split("T")[0],
+      });
+
+      setSelectedStudent(null);
+      setNotifToast(`Sertifikat ${selectedStudent.namaSiswa} berhasil digenerate dan tersimpan di database!`);
+      setTimeout(() => setNotifToast(null), 4000);
+      await fetchAssessmentData();
+    } catch (err) {
+      console.error("Gagal generate sertifikat:", err);
+      alert("Gagal menerbitkan sertifikat.");
+    } finally {
+      setGenerating(false);
+    }
   };
 
   return (
@@ -66,17 +170,19 @@ export default function OwnerPenilaianSertifikatPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Penilaian & Generate Sertifikat</h1>
-          <p className="page-subtitle">Input nilai siswa dan generate sertifikat kelulusan.</p>
+          <p className="page-subtitle">Input nilai kelulusan siswa dan generate sertifikat resmi BSD After School Club.</p>
         </div>
         <Link href="/owner/sertifikat" className="btn btn-outline">
-          Lihat Sertifikat &rarr;
+          Lihat Daftar Sertifikat &rarr;
         </Link>
       </div>
 
       {/* Notification Toast */}
       {notifToast && (
         <div style={{ background: "#d1fae5", border: "1.5px solid #6ee7b7", borderRadius: 12, padding: "12px 18px", color: "#047857", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}>
-          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
           {notifToast}
         </div>
       )}
@@ -84,118 +190,143 @@ export default function OwnerPenilaianSertifikatPage() {
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
         {[
-          { label: "Total Siswa", value: assessments.length, color: "#1d4ed8" },
-          { label: "Sudah Digenerate", value: assessments.filter(a => a.statusSertifikat === "Sudah Digenerate").length, color: "#059669" },
-          { label: "Belum Digenerate", value: assessments.filter(a => a.statusSertifikat === "Belum Digenerate").length, color: "#b45309" },
-        ].map(s => (
+          { label: "Total Siswa Terdata", value: assessments.length, color: "#1d4ed8" },
+          { label: "Sertifikat Diterbitkan", value: assessments.filter((a) => a.statusSertifikat === "Sudah Digenerate").length, color: "#059669" },
+          { label: "Belum Diterbitkan", value: assessments.filter((a) => a.statusSertifikat === "Belum Digenerate").length, color: "#b45309" },
+        ].map((s) => (
           <div key={s.label} className="stat-card" style={{ gap: 8 }}>
             <span className="stat-card-label">{s.label}</span>
-            <div className="stat-card-value" style={{ fontSize: 28, color: s.color }}>{s.value}</div>
+            <div className="stat-card-value" style={{ fontSize: 28, color: s.color }}>
+              {loading ? "..." : s.value}
+            </div>
           </div>
         ))}
       </div>
 
       {/* Tabel */}
       <div className="card" style={{ overflow: "hidden" }}>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-            <thead>
-              <tr style={{ borderBottom: "1px solid var(--color-border)", background: "var(--color-bg)" }}>
-                {["ID Siswa", "Nama Siswa", "Program & Level", "Nilai Rata-Rata", "Predikat", "Status Sertifikat", "Aksi"].map(h => (
-                  <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {assessments.map((a, idx) => {
-                const avg = a.nilaiReading + a.nilaiWriting + a.nilaiLogic > 0
-                  ? Math.round((a.nilaiReading + a.nilaiWriting + a.nilaiLogic) / 3)
-                  : null;
-                return (
-                  <tr key={a.idSiswa} style={{ borderBottom: idx < assessments.length - 1 ? "1px solid var(--color-border-light)" : "none" }}>
-                    <td style={{ padding: "14px 16px", fontFamily: "monospace", fontSize: 12, color: "var(--color-text-muted)", fontWeight: 600 }}>{a.idSiswa}</td>
-                    <td style={{ padding: "14px 16px", fontWeight: 800, fontSize: 13.5, color: "var(--color-text-primary)" }}>{a.namaSiswa}</td>
+        {loading ? (
+          <div style={{ padding: 24 }}>
+            <SkeletonTable rows={4} />
+          </div>
+        ) : assessments.length === 0 ? (
+          <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--color-text-muted)" }}>
+            Belum ada siswa terdaftar dalam sistem.
+          </div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}>
+                  {["Nama Siswa", "Program & Level", "Reading", "Writing", "Logic", "Rata-Rata", "Status Sertifikat", "Aksi"].map((h) => (
+                    <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {assessments.map((a, i) => (
+                  <tr key={a.idSiswa} style={{ borderBottom: i < assessments.length - 1 ? "1px solid var(--color-border-light)" : "none" }}>
+                    <td style={{ padding: "14px 16px", fontWeight: 800, color: "var(--color-text-primary)" }}>{a.namaSiswa}</td>
                     <td style={{ padding: "14px 16px" }}>
-                      <div style={{ fontWeight: 700, fontSize: 13 }}>{a.program}</div>
+                      <div style={{ fontWeight: 700 }}>{a.program}</div>
                       <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>{a.level}</div>
                     </td>
-                    <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 800, color: avg !== null ? "#1d4ed8" : "#94a3b8" }}>
-                      {avg !== null ? `${avg} / 100` : "-"}
-                    </td>
-                    <td style={{ padding: "14px 16px", fontSize: 12, fontWeight: 700, color: "var(--color-text-primary)" }}>
-                      {a.predikat || "-"}
-                    </td>
+                    <td style={{ padding: "14px 16px", fontWeight: 700 }}>{a.nilaiReading}</td>
+                    <td style={{ padding: "14px 16px", fontWeight: 700 }}>{a.nilaiWriting}</td>
+                    <td style={{ padding: "14px 16px", fontWeight: 700 }}>{a.nilaiLogic}</td>
+                    <td style={{ padding: "14px 16px", fontWeight: 900, color: "#059669" }}>{a.avgScore}</td>
                     <td style={{ padding: "14px 16px" }}>
-                      <span style={{
-                        background: a.statusSertifikat === "Sudah Digenerate" ? "#d1fae5" : "#fee2e2",
-                        color: a.statusSertifikat === "Sudah Digenerate" ? "#059669" : "#dc2626",
-                        fontSize: 11.5, fontWeight: 700, padding: "3px 10px", borderRadius: 999
-                      }}>
-                        {a.statusSertifikat === "Sudah Digenerate" ? "✓ Digenerate" : "Tergembok"}
+                      <span
+                        style={{
+                          background: a.statusSertifikat === "Sudah Digenerate" ? "#d1fae5" : "#fef3c7",
+                          color: a.statusSertifikat === "Sudah Digenerate" ? "#059669" : "#b45309",
+                          fontSize: 11,
+                          fontWeight: 800,
+                          padding: "3px 10px",
+                          borderRadius: 999,
+                        }}
+                      >
+                        {a.statusSertifikat}
                       </span>
                     </td>
                     <td style={{ padding: "14px 16px" }}>
-                      <button
-                        className="btn btn-accent btn-sm"
-                        onClick={() => {
-                          setSelectedStudent(a);
-                          setReadingScore(a.nilaiReading || 90);
-                          setWritingScore(a.nilaiWriting || 88);
-                          setLogicScore(a.nilaiLogic || 92);
-                          setPredikat(a.predikat || "Dengan Pujian (Cumlaude)");
-                        }}
-                      >
-                        {a.statusSertifikat === "Sudah Digenerate" ? "Edit / Re-Generate" : "+ Input Nilai & Generate"}
+                      <button className="btn btn-accent btn-sm" onClick={() => handleOpenModal(a)}>
+                        {a.statusSertifikat === "Sudah Digenerate" ? "Edit Nilai" : "Input Nilai & Generate"}
                       </button>
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {/* MODAL INPUT NILAI & GENERATE SERTIFIKAT */}
-      <Modal open={!!selectedStudent} onClose={() => setSelectedStudent(null)} title={`Input Nilai — ${selectedStudent?.namaSiswa}`} maxWidth={480}>
-        <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: -8, marginBottom: 16 }}>{selectedStudent?.program} · {selectedStudent?.level}</div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ fontSize: 11, fontWeight: 700 }}>Reading</label>
-              <input className="form-input" type="number" min={0} max={100} value={readingScore} onChange={e => setReadingScore(Number(e.target.value))} />
+      {/* Modal Input Nilai */}
+      {selectedStudent && (
+        <Modal open onClose={() => setSelectedStudent(null)} title={`Penilaian & Sertifikat: ${selectedStudent.namaSiswa}`} maxWidth={480}>
+          <form onSubmit={handleGenerateCertificate} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div>
+              <label style={{ display: "block", fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Nilai Reading / Pemahaman (0–100)</label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                required
+                className="input-control"
+                value={readingScore}
+                onChange={(e) => setReadingScore(Number(e.target.value))}
+                style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid var(--color-border)" }}
+              />
             </div>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ fontSize: 11, fontWeight: 700 }}>Writing</label>
-              <input className="form-input" type="number" min={0} max={100} value={writingScore} onChange={e => setWritingScore(Number(e.target.value))} />
+
+            <div>
+              <label style={{ display: "block", fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Nilai Writing / Menulis (0–100)</label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                required
+                className="input-control"
+                value={writingScore}
+                onChange={(e) => setWritingScore(Number(e.target.value))}
+                style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid var(--color-border)" }}
+              />
             </div>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ fontSize: 11, fontWeight: 700 }}>Logic</label>
-              <input className="form-input" type="number" min={0} max={100} value={logicScore} onChange={e => setLogicScore(Number(e.target.value))} />
+
+            <div>
+              <label style={{ display: "block", fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Nilai Logic & Matematika (0–100)</label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                required
+                className="input-control"
+                value={logicScore}
+                onChange={(e) => setLogicScore(Number(e.target.value))}
+                style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid var(--color-border)" }}
+              />
             </div>
-          </div>
 
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Predikat</label>
-            <select className="form-input" value={predikat} onChange={e => setPredikat(e.target.value)}>
-              <option>Dengan Pujian (Cumlaude)</option>
-              <option>Sangat Baik</option>
-              <option>Baik</option>
-              <option>Cukup</option>
-            </select>
-          </div>
+            <div style={{ background: "var(--color-bg)", padding: "10px 14px", borderRadius: 8, marginTop: 4 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text-secondary)" }}>
+                Rata-rata Nilai: <span style={{ color: "#059669", fontSize: 15 }}>{Math.round((readingScore + writingScore + logicScore) / 3)}</span>
+              </div>
+            </div>
 
-          <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "var(--radius-md)", padding: "10px 14px", fontSize: 12, color: "#1e40af" }}>
-            Setelah Generate, sertifikat akan terbuka di menu <strong>Sertifikat</strong> dan bisa diunduh oleh Orang Tua.
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
-            <button className="btn btn-ghost" onClick={() => setSelectedStudent(null)}>Batal</button>
-            <button className="btn btn-accent" onClick={() => handleGenerateCertificate(selectedStudent!)}>Generate Sertifikat</button>
-          </div>
-        </div>
-      </Modal>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 10 }}>
+              <button type="button" className="btn btn-ghost" onClick={() => setSelectedStudent(null)}>
+                Batal
+              </button>
+              <button type="submit" className="btn btn-primary" disabled={generating}>
+                {generating ? "Menerbitkan..." : "Terbitkan Sertifikat"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 }

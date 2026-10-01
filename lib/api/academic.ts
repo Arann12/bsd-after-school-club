@@ -444,6 +444,11 @@ export async function submitAttendanceAndLogbook(sessionId: string, payload: Sub
   return res.data;
 }
 
+export async function getHolidays(params?: { per_page?: number }) {
+  const res = await axiosInstance.get<ApiResponse<any>>("/holidays", { params });
+  return res.data;
+}
+
 // ============================================================================
 // Backward Compatibility Aliases
 // ============================================================================

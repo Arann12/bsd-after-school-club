@@ -299,3 +299,27 @@ export async function getFinanceSummary(period?: string): Promise<FinanceSummary
   });
   return data.data;
 }
+
+/** GET /finance/dashboard */
+export async function getFinanceDashboard(params?: { year?: number; month?: number }): Promise<any> {
+  const { data } = await axiosInstance.get("/finance/dashboard", { params });
+  return data.data || data;
+}
+
+/** GET /finance/reports/income */
+export async function getIncomeReport(params?: { start_date?: string; end_date?: string; payment_method?: string }): Promise<any> {
+  const { data } = await axiosInstance.get("/finance/reports/income", { params });
+  return data.data || data;
+}
+
+/** GET /finance/reports/outstanding */
+export async function getOutstandingReport(params?: { status?: string }): Promise<any> {
+  const { data } = await axiosInstance.get("/finance/reports/outstanding", { params });
+  return data.data || data;
+}
+
+/** GET /finance/reports/reconciliation */
+export async function getReconciliationReport(params?: { date?: string; month?: string }): Promise<any> {
+  const { data } = await axiosInstance.get("/finance/reports/reconciliation", { params });
+  return data.data || data;
+}

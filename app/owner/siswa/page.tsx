@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import { programs } from "@/lib/data"; 
 import StatusBadge from "@/components/ui/StatusBadge";
 import StatCard from "@/components/ui/StatCard";
 import PageHeader from "@/components/ui/PageHeader";

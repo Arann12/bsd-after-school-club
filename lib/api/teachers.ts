@@ -69,6 +69,11 @@ export async function getTeacher(id: string) {
   return mapTeacher(res.data.data);
 }
 
+export async function getMyTeacherProfile() {
+  const res = await axiosInstance.get<ApiResponse<TeacherRaw>>("/teachers/my-profile");
+  return mapTeacher(res.data.data);
+}
+
 export async function createTeacher(data: Record<string, any>) {
   const res = await axiosInstance.post<ApiResponse<TeacherRaw>>("/teachers", data);
   return mapTeacher(res.data.data);

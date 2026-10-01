@@ -1,76 +1,186 @@
 "use client";
-import { useState } from "react";
-import Modal from "@/components/ui/Modal";
 
-export interface LevelItem {
+import { useState, useEffect, useCallback } from "react";
+import Modal from "@/components/ui/Modal";
+import { getPrograms, addProgramLevel, updateProgramLevel, deleteProgramLevel, Program, ProgramLevel } from "@/lib/api/academic";
+import { SkeletonCard } from "@/components/ui/Skeleton";
+
+export interface LevelItemDisplay {
   id: string;
-  program: string;
+  programId: string;
+  programName: string;
   levelName: string;
   levelCode: string;
-  prasyarat: string;
-  durasi: string;
-  totalSiswa: number;
-  kurikulum: string;
+  order: number;
+  isActive: boolean;
 }
 
-const initialLevels: LevelItem[] = [
-  // Calistung (3 Tingkatan Level)
-  { id: "LVL-001", program: "Calistung", levelCode: "Level 1", levelName: "Calistung Level 1 (Mengenal Huruf & Angka)", prasyarat: "Usia Min. 4 Tahun", durasi: "12 Pertemuan", totalSiswa: 16, kurikulum: "Pengenalan abjad A-Z, pengenalan angka 1-20, menggambar pola garis." },
-  { id: "LVL-002", program: "Calistung", levelCode: "Level 2", levelName: "Calistung Level 2 (Membaca Suku Kata & Penjumlahan)", prasyarat: "Lulus Level 1 / Tes Penempatan", durasi: "12 Pertemuan", totalSiswa: 12, kurikulum: "Membaca 2 suku kata, penjumlahan 1-10, menulis kata sederhana." },
-  { id: "LVL-003", program: "Calistung", levelCode: "Level 3", levelName: "Calistung Level 3 (Membaca Kalimat & Pengurangan)", prasyarat: "Lulus Level 2", durasi: "12 Pertemuan", totalSiswa: 6, kurikulum: "Membaca cerita pendek, penjumlahan & pengurangan hingga 50, pemahaman soal cerita." },
-
-  // English (3 Tingkatan Level)
-  { id: "LVL-004", program: "English", levelCode: "Starter (A1)", levelName: "English Starter A1", prasyarat: "Usia Min. 5 Tahun", durasi: "12 Pertemuan", totalSiswa: 10, kurikulum: "Basic vocabulary, family members, colors, shapes, simple greetings." },
-  { id: "LVL-005", program: "English", levelCode: "Intermediate (B1)", levelName: "English Intermediate B1", prasyarat: "Lulus A1 / Tes Lisan", durasi: "12 Pertemuan", totalSiswa: 12, kurikulum: "Daily conversation, present simple tense, sentence building, listening exercises." },
-  { id: "LVL-006", program: "English", levelCode: "Advanced (B2)", levelName: "English Advanced B2", prasyarat: "Lulus B1", durasi: "12 Pertemuan", totalSiswa: 6, kurikulum: "Public speaking, story telling, essay writing, advanced grammar." },
-
-  // Phonics (2 Tingkatan Level)
-  { id: "LVL-007", program: "Phonics", levelCode: "Level 1", levelName: "Phonics Level 1 (Single Sound & Blends)", prasyarat: "Usia Min. 4.5 Tahun", durasi: "8 Pertemuan", totalSiswa: 10, kurikulum: "Letter sounds (s,a,t,p,i,n), CVC words (cat, dog, pin)." },
-  { id: "LVL-008", program: "Phonics", levelCode: "Level 2", levelName: "Phonics Level 2 (Digraphs & Complex Sounds)", prasyarat: "Lulus Phonics Level 1", durasi: "8 Pertemuan", totalSiswa: 8, kurikulum: "Long vowels, digraphs (ch, sh, th, wh), reading short decodable books." },
-
-  // Math (3 Tingkatan Level)
-  { id: "LVL-009", program: "Math", levelCode: "Basic Math", levelName: "Basic Math (Matematika Dasar Visual)", prasyarat: "Usia Min. 6 Tahun", durasi: "12 Pertemuan", totalSiswa: 8, kurikulum: "Operasi hitung tambah kurang, pecahan sederhana dengan gambar, jam & waktu." },
-  { id: "LVL-010", program: "Math", levelCode: "Intermediate", levelName: "Math Intermediate (Perkalian & Pembagian)", prasyarat: "Lulus Basic Math", durasi: "12 Pertemuan", totalSiswa: 9, kurikulum: "Perkalian 1-10, pembagian dasar, pengukuran panjang & berat." },
-  { id: "LVL-011", program: "Math", levelCode: "Math Advance", levelName: "Math Advance (Penalaran Soal Cerita)", prasyarat: "Lulus Intermediate Math", durasi: "12 Pertemuan", totalSiswa: 5, kurikulum: "Bangun datar & ruang, logika olimpiade dasar, matematika nalar." },
-];
-
 export default function AdminLevelPage() {
-  const [levelList, setLevelList] = useState<LevelItem[]>(initialLevels);
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [levels, setLevels] = useState<LevelItemDisplay[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedProgramFilter, setSelectedProgramFilter] = useState("Semua");
   const [showModal, setShowModal] = useState(false);
-  const [editingLevel, setEditingLevel] = useState<LevelItem | null>(null);
+  const [editingLevel, setEditingLevel] = useState<LevelItemDisplay | null>(null);
 
-  const programs = ["Semua", "Calistung", "English", "Phonics", "Math"];
+  const [formData, setFormData] = useState({
+    programId: "",
+    name: "",
+    level_order: 1,
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [notifToast, setNotifToast] = useState<string | null>(null);
 
-  const filtered = levelList.filter(l =>
-    selectedProgramFilter === "Semua" || l.program === selectedProgramFilter
+  const fetchProgramLevels = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await getPrograms({ per_page: 100 });
+      const programList = res.data || [];
+      setPrograms(programList);
+
+      const allLevels: LevelItemDisplay[] = [];
+      programList.forEach((p) => {
+        (p.levels || []).forEach((lvl) => {
+          allLevels.push({
+            id: lvl.id,
+            programId: p.id,
+            programName: p.name,
+            levelName: lvl.name,
+            levelCode: lvl.levelCode || `LVL-${lvl.levelOrder}`,
+            order: lvl.levelOrder || 1,
+            isActive: lvl.isActive ?? true,
+          });
+        });
+      });
+
+      setLevels(allLevels);
+      if (programList.length > 0 && !formData.programId) {
+        setFormData((prev) => ({ ...prev, programId: programList[0].id }));
+      }
+    } catch (err) {
+      console.warn("Gagal memuat level program:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [formData.programId]);
+
+  useEffect(() => {
+    fetchProgramLevels();
+  }, [fetchProgramLevels]);
+
+  const programNames = ["Semua", ...programs.map((p) => p.name)];
+
+  const handleOpenAdd = (progId?: string) => {
+    setEditingLevel(null);
+    setFormData({
+      programId: progId || (programs[0]?.id || ""),
+      name: "",
+      level_order: (levels.filter((l) => l.programId === (progId || programs[0]?.id)).length + 1),
+    });
+    setShowModal(true);
+  };
+
+  const handleOpenEdit = (lvl: LevelItemDisplay) => {
+    setEditingLevel(lvl);
+    setFormData({
+      programId: lvl.programId,
+      name: lvl.levelName,
+      level_order: lvl.order,
+    });
+    setShowModal(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.programId) return;
+    setSubmitting(true);
+
+    try {
+      if (editingLevel) {
+        await updateProgramLevel(editingLevel.programId, editingLevel.id, {
+          name: formData.name,
+          level_order: formData.level_order,
+        });
+        setNotifToast("Level program berhasil diperbarui!");
+      } else {
+        await addProgramLevel(formData.programId, {
+          name: formData.name,
+          level_order: formData.level_order,
+        });
+        setNotifToast("Level baru berhasil ditambahkan!");
+      }
+
+      setTimeout(() => setNotifToast(null), 3500);
+      setShowModal(false);
+      await fetchProgramLevels();
+    } catch (err) {
+      console.error("Gagal simpan level:", err);
+      alert("Gagal menyimpan tingkatan level.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (lvl: LevelItemDisplay) => {
+    if (!confirm(`Hapus tingkatan ${lvl.levelName}?`)) return;
+    try {
+      await deleteProgramLevel(lvl.programId, lvl.id);
+      setNotifToast(`Tingkatan ${lvl.levelName} berhasil dihapus.`);
+      setTimeout(() => setNotifToast(null), 3500);
+      await fetchProgramLevels();
+    } catch (err) {
+      console.error("Gagal hapus level:", err);
+      alert("Gagal menghapus level.");
+    }
+  };
+
+  const filteredPrograms = programs.filter(
+    (p) => selectedProgramFilter === "Semua" || p.name === selectedProgramFilter
   );
-
-  // Group by program for visual clarity
-  const groupedPrograms = programs.filter(p => p !== "Semua");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-
-
       {/* Header */}
       <div className="page-header">
         <div>
           <h1 className="page-title">Level & Tingkatan Program</h1>
-          <p className="page-subtitle">Kelola tingkatan kesulitan (level) untuk setiap program kursus (Calistung, English, Phonics, Math, dll).</p>
+          <p className="page-subtitle">
+            Kelola tingkatan kesulitan (level) untuk setiap program kursus (Calistung, English, Phonics, Math, dll).
+          </p>
         </div>
-        <button className="btn btn-accent" onClick={() => { setEditingLevel(null); setShowModal(true); }}>
+        <button className="btn btn-accent" onClick={() => handleOpenAdd()}>
           + Tambah Level Baru
         </button>
       </div>
 
+      {/* Notification Toast Inline */}
+      {notifToast && (
+        <div style={{ background: "#d1fae5", border: "1.5px solid #6ee7b7", borderRadius: 12, padding: "12px 18px", color: "#047857", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}>
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          {notifToast}
+        </div>
+      )}
+
       {/* Program Filter Chips */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        {programs.map(p => (
+        {programNames.map((p) => (
           <button
             key={p}
             onClick={() => setSelectedProgramFilter(p)}
             className={`filter-chip${selectedProgramFilter === p ? " active" : ""}`}
+            style={{
+              padding: "8px 16px",
+              borderRadius: "var(--radius-full)",
+              border: "1.5px solid",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+              background: selectedProgramFilter === p ? "var(--color-primary)" : "white",
+              color: selectedProgramFilter === p ? "white" : "var(--color-text-secondary)",
+              borderColor: selectedProgramFilter === p ? "var(--color-primary)" : "var(--color-border)",
+            }}
           >
             {p === "Semua" ? "Semua Program" : `Program ${p}`}
           </button>
@@ -78,122 +188,145 @@ export default function AdminLevelPage() {
       </div>
 
       {/* Grouped View by Program */}
-      {groupedPrograms
-        .filter(progName => selectedProgramFilter === "Semua" || selectedProgramFilter === progName)
-        .map(progName => {
-          const levelsForProg = levelList.filter(l => l.program === progName);
-          if (levelsForProg.length === 0) return null;
+      {loading ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      ) : filteredPrograms.length === 0 ? (
+        <div className="card" style={{ padding: "40px 24px", textAlign: "center", color: "var(--color-text-muted)" }}>
+          Belum ada program kursus yang terdaftar.
+        </div>
+      ) : (
+        filteredPrograms.map((prog) => {
+          const progLevels = levels.filter((l) => l.programId === prog.id);
 
           return (
-            <div key={progName} className="card" style={{ padding: 24 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <div key={prog.id} className="card" style={{ padding: 24 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
                 <div>
                   <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>
-                    Program {progName}
+                    Program {prog.name}
                   </h2>
                   <span style={{ fontSize: 12.5, color: "var(--color-text-muted)" }}>
-                    Total {levelsForProg.length} Tingkatan Level
+                    Total {progLevels.length} Tingkatan Level
                   </span>
                 </div>
-                <button
-                  className="btn btn-outline btn-sm"
-                  onClick={() => { setEditingLevel(null); setShowModal(true); }}
-                >
-                  + Tambah Level {progName}
+                <button className="btn btn-outline btn-sm" onClick={() => handleOpenAdd(prog.id)}>
+                  + Tambah Level di {prog.name}
                 </button>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 14 }}>
-                {levelsForProg.map(l => (
-                  <div
-                    key={l.id}
-                    style={{
-                      background: "var(--color-bg)",
-                      borderRadius: 12,
-                      padding: 16,
-                      border: "1px solid var(--color-border)",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                      gap: 10,
-                    }}
-                  >
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                        <span style={{ background: "var(--color-primary-bg)", color: "var(--color-primary)", fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 999 }}>
-                          {l.levelCode}
-                        </span>
-                        <span style={{ fontSize: 11, fontFamily: "monospace", color: "var(--color-text-muted)" }}>{l.id}</span>
-                      </div>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)" }}>{l.levelName}</div>
-                      <div style={{ fontSize: 12, color: "var(--color-text-secondary)", marginTop: 6, lineHeight: 1.4 }}>
-                        {l.kurikulum}
-                      </div>
-                    </div>
-
-                    <div style={{ borderTop: "1px solid var(--color-border-light)", paddingTop: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              {progLevels.length === 0 ? (
+                <div style={{ padding: 20, textAlign: "center", color: "var(--color-text-muted)", fontSize: 13, background: "var(--color-bg)", borderRadius: 8 }}>
+                  Belum ada tingkatan level untuk program ini.
+                </div>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}>
+                  {progLevels.map((lvl) => (
+                    <div
+                      key={lvl.id}
+                      style={{
+                        background: "var(--color-bg)",
+                        borderRadius: 12,
+                        padding: "16px 18px",
+                        border: "1px solid var(--color-border)",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                        gap: 12,
+                      }}
+                    >
                       <div>
-                        <div style={{ fontSize: 10, color: "var(--color-text-muted)", textTransform: "uppercase", fontWeight: 700 }}>Prasyarat</div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text-primary)" }}>{l.prasyarat}</div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ fontSize: 11, fontFamily: "monospace", color: "var(--color-primary)", fontWeight: 800 }}>
+                            {lvl.levelCode}
+                          </span>
+                          <span style={{ background: "#d1fae5", color: "#059669", fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 999 }}>
+                            Urutan: {lvl.order}
+                          </span>
+                        </div>
+                        <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: "8px 0 4px" }}>
+                          {lvl.levelName}
+                        </h3>
                       </div>
-                      <button className="btn btn-ghost btn-sm" onClick={() => { setEditingLevel(l); setShowModal(true); }}>
-                        Edit
-                      </button>
+
+                      <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, borderTop: "1px solid var(--color-border-light)", paddingTop: 10 }}>
+                        <button className="btn btn-ghost btn-sm" style={{ fontSize: 12 }} onClick={() => handleOpenEdit(lvl)}>
+                          Edit
+                        </button>
+                        <button className="btn btn-danger btn-sm" style={{ fontSize: 12 }} onClick={() => handleDelete(lvl)}>
+                          Hapus
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           );
-        })}
+        })
+      )}
 
-      {/* Modal Edit / Tambah Level */}
-      <Modal
-        open={showModal}
-        onClose={() => setShowModal(false)}
-        title={editingLevel ? `Edit Level — ${editingLevel.levelCode}` : "Tambah Level Baru"}
-        maxWidth={480}
-      >
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Program Kursus</label>
-                <select className="form-input" defaultValue={editingLevel?.program || "Calistung"}>
-                  <option value="Calistung">Calistung</option>
-                  <option value="English">English</option>
-                  <option value="Phonics">Phonics</option>
-                  <option value="Math">Math</option>
-                </select>
-              </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Nama Level & Kode</label>
-                <input className="form-input" defaultValue={editingLevel?.levelName || ""} placeholder="Contoh: Calistung Level 1 (Mengenal Abjad)" />
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Kode Level Singkat</label>
-                  <input className="form-input" defaultValue={editingLevel?.levelCode || ""} placeholder="Level 1 / Starter" />
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Target Durasi</label>
-                  <input className="form-input" defaultValue={editingLevel?.durasi || "12 Pertemuan"} placeholder="12 Pertemuan" />
-                </div>
-              </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Prasyarat Masuk Level</label>
-                <input className="form-input" defaultValue={editingLevel?.prasyarat || ""} placeholder="Contoh: Lulus Level 1 / Usia min. 5 thn" />
-              </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Ringkasan Kurikulum & Target</label>
-                <textarea className="form-input" defaultValue={editingLevel?.kurikulum || ""} placeholder="Ringkasan materi pembelajaran..." style={{ minHeight: 80 }} />
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 8 }}>
-                <button className="btn btn-ghost" onClick={() => setShowModal(false)}>Batal</button>
-                <button className="btn btn-accent" onClick={() => setShowModal(false)}>Simpan Level</button>
-              </div>
+      {/* Modal Add/Edit Level */}
+      {showModal && (
+        <Modal open onClose={() => setShowModal(false)} title={editingLevel ? "Edit Tingkatan Level" : "Tambah Level Baru"} maxWidth={480}>
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div>
+              <label style={{ display: "block", fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Program Kursus</label>
+              <select
+                className="select-control"
+                required
+                value={formData.programId}
+                onChange={(e) => setFormData({ ...formData, programId: e.target.value })}
+                disabled={!!editingLevel}
+                style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid var(--color-border)" }}
+              >
+                {programs.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
             </div>
-      </Modal>
+
+            <div>
+              <label style={{ display: "block", fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Nama Level / Tingkatan</label>
+              <input
+                type="text"
+                required
+                className="input-control"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Contoh: Level 1 (Mengenal Huruf & Angka)"
+                style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid var(--color-border)" }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Urutan Tingkat (Level Order)</label>
+              <input
+                type="number"
+                min={1}
+                required
+                className="input-control"
+                value={formData.level_order}
+                onChange={(e) => setFormData({ ...formData, level_order: Number(e.target.value) })}
+                style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid var(--color-border)" }}
+              />
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 10 }}>
+              <button type="button" className="btn btn-ghost" onClick={() => setShowModal(false)}>
+                Batal
+              </button>
+              <button type="submit" className="btn btn-primary" disabled={submitting}>
+                {submitting ? "Menyimpan..." : editingLevel ? "Simpan Perubahan" : "Tambah Level"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 }
