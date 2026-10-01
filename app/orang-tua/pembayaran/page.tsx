@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useState, useRef, useEffect } from "react";
-import { checkPaymentStatus, getPaymentMethods, getPaymentPlans, getPayments } from "@/lib/api/finance";
+import { chargePayment, checkPaymentStatus, getPaymentMethods, getPaymentPlans, getPayments, submitCashTransaction } from "@/lib/api/finance";
 import { getStudents } from "@/lib/api/students";
 import { getMyParentProfile } from "@/lib/api/parents";
 import { SkeletonTable } from "@/components/ui/Skeleton";
@@ -67,19 +67,14 @@ export default function PembayaranPage() {
     }
   };
 
-  // Fetch Payment Methods & Students list on mount
+  // Fetch Students list on mount (load cepat & non-blocking)
   useEffect(() => {
     async function initData() {
       try {
-        const [methodsRes, parentRes, studentsRes] = await Promise.allSettled([
-          getPaymentMethods(true),
+        const [parentRes, studentsRes] = await Promise.allSettled([
           getMyParentProfile(),
           getStudents({ per_page: 20 }),
         ]);
-
-        if (methodsRes.status === "fulfilled" && methodsRes.value?.data && Array.isArray(methodsRes.value.data)) {
-          setGatewayMethods(methodsRes.value.data);
-        }
 
         let studentArray: any[] = [];
         if (parentRes.status === "fulfilled" && parentRes.value?.students && parentRes.value.students.length > 0) {
@@ -107,14 +102,23 @@ export default function PembayaranPage() {
         if (studentArray.length > 0) {
           initialStudentId = studentArray[0].id;
           setSelectedStudentId(initialStudentId);
+          // Langsung muat data tagihan siswa tanpa tertahan oleh gateway eksternal
+          loadFinanceData(initialStudentId);
         }
-
-        await loadFinanceData(initialStudentId);
       } catch (err) {
         console.warn("Gagal inisialisasi data:", err);
       } finally {
         setIsInitialLoading(false);
       }
+
+      // Ambil daftar metode pembayaran secara background agar tidak menghambat load awal
+      getPaymentMethods(true)
+        .then((methodsRes) => {
+          if (methodsRes?.data && Array.isArray(methodsRes.data)) {
+            setGatewayMethods(methodsRes.data);
+          }
+        })
+        .catch((e) => console.warn("Background fetch methods:", e));
     }
     initData();
   }, []);
@@ -149,8 +153,9 @@ export default function PembayaranPage() {
   // Copy VA feedback
   const [vaCopied, setVaCopied] = useState(false);
 
-  // Uploaded proof file name for cash payment
+  // Uploaded proof file name and file object for cash payment
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
+  const [proofFile, setProofFile] = useState<File | null>(null);
 
   // Real Payment Gateway State
   const [activePaymentId, setActivePaymentId] = useState<string | null>(null);
@@ -171,38 +176,13 @@ export default function PembayaranPage() {
   const ewalletGatewayList = gatewayMethods.filter((m) => m.category === "E-Wallet" && (m.status === "aktif" || m.status === "on"));
   const qrisGatewayList = gatewayMethods.filter((m) => m.category === "QRIS" && (m.status === "aktif" || m.status === "on"));
 
-  // History list state to demonstrate dynamic status updates
-  const [historyList, setHistoryList] = useState([
-    {
-      id: "#INV-08-002",
-      tanggal: "25 Ags 2024",
-      keterangan: "Pertemuan 6",
-      metode: "Cash (Di Cabang)",
-      jumlah: "Rp 50.000",
-      status: "Menunggu Verifikasi",
-    },
-    {
-      id: "#INV-08-001",
-      tanggal: "15 Ags 2024",
-      keterangan: "Pertemuan 1 - 5 (Paket)",
-      metode: "Virtual Account BCA",
-      jumlah: "Rp 250.000",
-      status: "Selesai",
-    },
-    {
-      id: "#INV-07-015",
-      tanggal: "01 Jul 2024",
-      keterangan: "Biaya Pendaftaran & Seragam",
-      metode: "QRIS",
-      jumlah: "Rp 150.000",
-      status: "Selesai",
-    },
-  ]);
+  // History list state
+  const [historyList, setHistoryList] = useState<any[]>([]);
 
   // Dynamic calculations from real Payment Plans
   const paidPlans = paymentPlans.filter((p) => p.is_paid || p.status === "paid");
   const unpaidPlans = paymentPlans.filter((p) => !p.is_paid && p.status !== "paid");
-  const totalSessionsCount = paymentPlans.length > 0 ? paymentPlans.length : 12;
+  const totalSessionsCount = paymentPlans.length > 0 ? paymentPlans.length : 0;
   const completedSessionsCount = paidPlans.length;
   const progressPercent = totalSessionsCount > 0 ? Math.round((completedSessionsCount / totalSessionsCount) * 100) : 0;
 
@@ -213,6 +193,21 @@ export default function PembayaranPage() {
 
   // Active target plan ID to charge
   const targetPlanId = nextUnpaidSession?.id || unpaidPlans[0]?.id || null;
+
+  // Track pending cash submissions to prevent double submit and 422 errors
+  const pendingCashPlanIds = new Set<string>();
+  paymentsHistory.forEach((p: any) => {
+    if (p.payment_method === "cash" && p.payment_status === "pending" && p.payment_plan_id) {
+      pendingCashPlanIds.add(p.payment_plan_id);
+    }
+  });
+  paymentPlans.forEach((plan: any) => {
+    if (plan.cash_transactions?.some((c: any) => c.status === "menunggu_konfirmasi_admin")) {
+      pendingCashPlanIds.add(plan.id);
+    }
+  });
+
+  const nextUnpaidIsPendingCash = nextUnpaidSession ? pendingCashPlanIds.has(nextUnpaidSession.id) : false;
 
   const totalAmount =
     paymentType === "per_pertemuan"
@@ -226,33 +221,35 @@ export default function PembayaranPage() {
     paymentPlans[0]?.enrollment?.student?.full_name ||
     paymentPlans[0]?.enrollment?.student?.name ||
     "Siswa";
-  const programName = paymentPlans[0]?.enrollment?.program?.name || "Kumon Matematika";
+  const programName =
+    paymentPlans[0]?.enrollment?.program?.name ||
+    (selectedStudent as any)?.program?.name ||
+    (selectedStudent as any)?.enrollment?.program?.name ||
+    (paymentPlans.length > 0 ? "Program Belajar" : "Belum Ada Program Aktif");
   const levelName =
     paymentPlans[0]?.enrollment?.program_level?.name ||
     paymentPlans[0]?.enrollment?.programLevel?.name ||
-    "Level A (Dasar)";
+    (paymentPlans.length > 0 ? "Reguler" : "–");
 
-  const formattedHistoryList = paymentsHistory.length > 0
-    ? paymentsHistory.map((p) => {
-        let statusLabel = "Selesai";
-        if (p.payment_status === "pending") {
-          statusLabel = p.payment_method === "cash" ? "Menunggu Verifikasi" : "Menunggu Pembayaran";
-        } else if (p.payment_status === "expired") {
-          statusLabel = "Kedaluwarsa";
-        } else if (p.payment_status === "failed") {
-          statusLabel = "Gagal";
-        }
+  const formattedHistoryList = paymentsHistory.map((p) => {
+    let statusLabel = "Selesai";
+    if (p.payment_status === "pending") {
+      statusLabel = p.payment_method === "cash" ? "Menunggu Verifikasi" : "Menunggu Pembayaran";
+    } else if (p.payment_status === "expired") {
+      statusLabel = "Kedaluwarsa";
+    } else if (p.payment_status === "failed") {
+      statusLabel = "Gagal";
+    }
 
-        return {
-          id: p.payment_code || p.id,
-          tanggal: new Date(p.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
-          keterangan: p.notes || (p.payment_plan ? `Pertemuan ${p.payment_plan.session_number}` : "Pembayaran Tagihan"),
-          metode: p.payment_channel ? `${p.payment_channel}` : (p.payment_method?.toUpperCase() || "Digital"),
-          jumlah: `Rp ${Number(p.total_amount || p.amount).toLocaleString("id-ID")}`,
-          status: statusLabel,
-        };
-      })
-    : historyList;
+    return {
+      id: p.payment_code || p.id,
+      tanggal: new Date(p.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
+      keterangan: p.notes || (p.payment_plan ? `Pertemuan ${p.payment_plan.session_number}` : "Pembayaran Tagihan"),
+      metode: p.payment_method === "cash" ? "Cash (Di Cabang)" : (p.payment_channel ? `${p.payment_channel}` : (p.payment_method?.toUpperCase() || "Digital")),
+      jumlah: `Rp ${Number(p.total_amount || p.amount).toLocaleString("id-ID")}`,
+      status: statusLabel,
+    };
+  });
 
   const itemDescription =
     paymentType === "per_pertemuan"
@@ -264,8 +261,16 @@ export default function PembayaranPage() {
       : "Paket Lunas";
 
   const handleStartPayment = (type: "per_pertemuan" | "pelunasan") => {
+    if (paymentPlans.length === 0) {
+      alert("Siswa belum memiliki tagihan bimbingan belajar aktif.");
+      return;
+    }
     if (unpaidPlans.length === 0) {
       alert("Semua tagihan pertemuan sudah berstatus lunas.");
+      return;
+    }
+    if (type === "per_pertemuan" && nextUnpaidIsPendingCash) {
+      alert("Pengajuan pembayaran tunai untuk pertemuan ini sudah tercatat dan sedang menunggu verifikasi kasir di cabang.");
       return;
     }
     const currentNominalStr =
@@ -279,6 +284,7 @@ export default function PembayaranPage() {
     setSelectedEwallet("ShopeePay");
     setVaCopied(false);
     setUploadedFile(null);
+    setProofFile(null);
     setIsGenerated(false);
     setLiveVaNumber(null);
     setLiveQrUrl(null);
@@ -299,6 +305,238 @@ export default function PembayaranPage() {
     }
   };
 
+  const handlePrintReceipt = (item: any) => {
+    if (!item) return;
+    const receiptWindow = window.open("", "_blank", "width=700,height=800");
+    if (!receiptWindow) {
+      window.print();
+      return;
+    }
+    const isPaid = item.status === "Selesai" || item.status === "paid" || item.status === "Lunas";
+    const receiptHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Kuitansi Pembayaran - ${item.id}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+            * { box-sizing: border-box; }
+            body {
+              font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+              color: #1e293b;
+              background: #ffffff;
+              margin: 0;
+              padding: 36px 20px;
+            }
+            .receipt-card {
+              max-width: 580px;
+              margin: 0 auto;
+              border: 1.5px solid #e2e8f0;
+              border-radius: 16px;
+              padding: 32px 28px;
+              box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+              background: #fff;
+            }
+            .header-flex {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              border-bottom: 2px solid #0e7490;
+              padding-bottom: 18px;
+              margin-bottom: 24px;
+            }
+            .brand-name {
+              font-size: 20px;
+              font-weight: 800;
+              color: #0e7490;
+              margin: 0;
+            }
+            .brand-desc {
+              font-size: 12px;
+              color: #64748b;
+              margin-top: 4px;
+            }
+            .badge-status {
+              background: ${isPaid ? "#dcfce7" : "#fef3c7"};
+              color: ${isPaid ? "#16a34a" : "#b45309"};
+              border: 1px solid ${isPaid ? "#bbf7d0" : "#fde68a"};
+              font-weight: 800;
+              font-size: 12px;
+              padding: 5px 14px;
+              border-radius: 999px;
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+            }
+            .title-receipt {
+              font-size: 16px;
+              font-weight: 800;
+              color: #0f172a;
+              margin-bottom: 16px;
+              text-align: center;
+              letter-spacing: 0.05em;
+              text-transform: uppercase;
+            }
+            .data-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 22px;
+            }
+            .data-table td {
+              padding: 10px 0;
+              font-size: 13.5px;
+              border-bottom: 1px dashed #e2e8f0;
+            }
+            .data-table .label {
+              color: #64748b;
+              width: 38%;
+            }
+            .data-table .val {
+              font-weight: 700;
+              color: #1e293b;
+              text-align: right;
+            }
+            .total-panel {
+              background: #f8fafc;
+              border: 1.5px solid #e2e8f0;
+              border-radius: 12px;
+              padding: 16px 20px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 26px;
+            }
+            .total-text {
+              font-size: 14px;
+              font-weight: 700;
+              color: #334155;
+            }
+            .total-val {
+              font-size: 24px;
+              font-weight: 800;
+              color: #0e7490;
+            }
+            .stamp-row {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-end;
+              margin-top: 24px;
+              padding-top: 20px;
+              border-top: 1px solid #f1f5f9;
+            }
+            .stamp-box {
+              border: 2.5px dashed ${isPaid ? "#16a34a" : "#d97706"};
+              color: ${isPaid ? "#16a34a" : "#d97706"};
+              font-weight: 800;
+              font-size: 13px;
+              padding: 8px 16px;
+              border-radius: 8px;
+              text-transform: uppercase;
+              letter-spacing: 0.08em;
+              display: inline-block;
+            }
+            .signature-box {
+              text-align: right;
+            }
+            .sig-title {
+              font-size: 11.5px;
+              color: #64748b;
+            }
+            .sig-name {
+              font-size: 13px;
+              font-weight: 700;
+              color: #1e293b;
+              margin-top: 40px;
+              border-bottom: 1px solid #cbd5e1;
+              display: inline-block;
+              padding-bottom: 2px;
+            }
+            .footer-note {
+              font-size: 11px;
+              color: #94a3b8;
+              text-align: center;
+              margin-top: 24px;
+              line-height: 1.4;
+            }
+            @media print {
+              body { padding: 0; }
+              .receipt-card { border: none; box-shadow: none; max-width: 100%; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt-card">
+            <div class="header-flex">
+              <div>
+                <div class="brand-name">BSD After School Club</div>
+                <div class="brand-desc">Pusat Belajar & Bimbingan Akademik Siswa</div>
+              </div>
+              <div class="badge-status">${isPaid ? "LUNAS (PAID)" : item.status}</div>
+            </div>
+
+            <div class="title-receipt">
+              Kuitansi Bukti Pembayaran Resmi
+            </div>
+
+            <table class="data-table">
+              <tr>
+                <td class="label">ID Transaksi / Invoice</td>
+                <td class="val" style="font-family: monospace;">${item.id}</td>
+              </tr>
+              <tr>
+                <td class="label">Tanggal Transaksi</td>
+                <td class="val">${item.tanggal}</td>
+              </tr>
+              <tr>
+                <td class="label">Nama Siswa</td>
+                <td class="val">${childName}</td>
+              </tr>
+              <tr>
+                <td class="label">Program Kursus</td>
+                <td class="val">${programName} (${levelName})</td>
+              </tr>
+              <tr>
+                <td class="label">Keterangan / Sesi</td>
+                <td class="val">${item.keterangan}</td>
+              </tr>
+              <tr>
+                <td class="label">Metode Pembayaran</td>
+                <td class="val">${item.metode}</td>
+              </tr>
+            </table>
+
+            <div class="total-panel">
+              <div class="total-text">Total Pembayaran Lunas</div>
+              <div class="total-val">${item.jumlah}</div>
+            </div>
+
+            <div class="stamp-row">
+              <div>
+                <div class="stamp-box">${isPaid ? "✓ TERVERIFIKASI LUNAS" : item.status}</div>
+                <div style="font-size: 10px; color: #94a3b8; margin-top: 6px;">Sistem Payment Digital BSD After School Club</div>
+              </div>
+              <div class="signature-box">
+                <div class="sig-title">Administrasi & Keuangan</div>
+                <div class="sig-name">BSD After School Club</div>
+              </div>
+            </div>
+
+            <div class="footer-note">
+              Bukti pembayaran ini sah dan diterbitkan secara digital oleh sistem BSD After School Club. Terima kasih atas kepercayaan Anda.
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `;
+    receiptWindow.document.write(receiptHtml);
+    receiptWindow.document.close();
+  };
+
   const requestCharge = async (method: "va" | "qris" | "ewallet", channelName: string) => {
     if (!targetPlanId) {
       alert("Semua tagihan untuk paket ini sudah berstatus lunas.");
@@ -307,25 +545,6 @@ export default function PembayaranPage() {
 
     setIsCharging(true);
     try {
-      let currentToken = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-      if (!currentToken) {
-        try {
-          const authRes = await fetch("http://127.0.0.1:8000/api/v1/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Accept: "application/json" },
-            body: JSON.stringify({ email: "ortu@bsd.test", password: "password" }),
-          });
-          const authData = await authRes.json();
-          if (authData.data && authData.data.token) {
-            currentToken = authData.data.token;
-            localStorage.setItem("auth_token", authData.data.token);
-            localStorage.setItem("auth_user", JSON.stringify(authData.data.user));
-          }
-        } catch (e) {
-          console.error("Auto login error:", e);
-        }
-      }
-
       let channel = channelName;
       if (method === "va") {
         channel = channelName.toUpperCase().endsWith("VA") ? channelName.toUpperCase() : `${channelName.toUpperCase()}VA`;
@@ -333,23 +552,13 @@ export default function PembayaranPage() {
         channel = channelName.toUpperCase();
       }
 
-      const chargeRes = await fetch("http://127.0.0.1:8000/api/v1/payments/charge", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: currentToken ? `Bearer ${currentToken}` : "",
-        },
-        body: JSON.stringify({
-          payment_plan_id: targetPlanId,
-          payment_type: paymentType,
-          payment_method: method,
-          payment_channel: channel,
-          expired_time: "2h",
-        }),
+      const res = await chargePayment({
+        payment_plan_id: targetPlanId,
+        payment_type: paymentType,
+        payment_method: method,
+        payment_channel: channel,
+        expired_time: "2h",
       });
-
-      const res = await chargeRes.json();
 
       if (res && res.data) {
         const inst = res.data.instructions;
@@ -368,8 +577,9 @@ export default function PembayaranPage() {
       } else if (res && !res.success) {
         alert(res.message || "Gagal membuat tagihan pembayaran.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Gagal inisiasi payment gateway:", err);
+      alert(err.response?.data?.message || err.message || "Gagal membuat tagihan pembayaran.");
     } finally {
       setIsCharging(false);
     }
@@ -406,30 +616,7 @@ export default function PembayaranPage() {
           setLastSuccessAmount(paidAmountDisplay);
 
           // Refresh data rencana pembayaran & riwayat dari backend
-          loadFinanceData();
-
-          // Tambahkan ke riwayat pembayaran secara otomatis
-          const newInvId = `#INV-08-00${historyList.length + 1}`;
-          const methodText =
-            selectedMethod === "va"
-              ? `Virtual Account ${selectedBank}`
-              : selectedMethod === "qris"
-              ? "QRIS"
-              : selectedMethod === "ewallet"
-              ? `E-Wallet (${selectedEwallet})`
-              : "Cash (Di Cabang)";
-
-          setHistoryList((prev) => [
-            {
-              id: newInvId,
-              tanggal: "14 Sep 2026",
-              keterangan: itemDescription,
-              metode: methodText,
-              jumlah: paidAmountDisplay,
-              status: "Selesai",
-            },
-            ...prev,
-          ]);
+          await loadFinanceData();
 
           setModalStep("success");
           setTimeout(() => {
@@ -442,7 +629,7 @@ export default function PembayaranPage() {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [activePaymentId, isGenerated, modalStep, selectedMethod, selectedBank, selectedEwallet, historyList.length, itemDescription, totalAmount]);
+  }, [activePaymentId, isGenerated, modalStep, itemDescription, totalAmount]);
 
   const handleSelectMethod = (method: "va" | "ewallet" | "qris" | "cash") => {
     setSelectedMethod(method);
@@ -661,7 +848,35 @@ export default function PembayaranPage() {
 
   const handleGeneratePayment = async () => {
     if (selectedMethod === "cash") {
-      setModalStep("waiting_confirm");
+      if (!targetPlanId) {
+        alert("Semua tagihan pertemuan sudah berstatus lunas.");
+        return;
+      }
+      if (paymentType === "per_pertemuan" && nextUnpaidIsPendingCash) {
+        alert("Pengajuan pembayaran tunai untuk pertemuan ini sudah tercatat dan sedang menunggu verifikasi kasir di cabang.");
+        return;
+      }
+
+      setIsCharging(true);
+      try {
+        await submitCashTransaction({
+          payment_plan_id: targetPlanId,
+          payment_type: paymentType,
+          proof_image: proofFile || undefined,
+          notes:
+            paymentType === "pelunasan"
+              ? `Pelunasan Sisa Paket (${unpaidPlans.length} Sesi)`
+              : `Pembayaran Tunai Sesi #${nextUnpaidSession?.session_number || 1}`,
+        });
+        await loadFinanceData();
+        setModalStep("success");
+      } catch (err: any) {
+        console.warn("Gagal submit pembayaran tunai:", err);
+        const errMsg = err?.response?.data?.message || err?.message || "Gagal mengajukan pembayaran tunai.";
+        alert(errMsg);
+      } finally {
+        setIsCharging(false);
+      }
       return;
     }
 
@@ -669,56 +884,25 @@ export default function PembayaranPage() {
     await requestCharge(selectedMethod, channel);
   };
 
-  const handleConfirmWaiting = () => {
-    setModalStep("waiting_confirm");
-  };
-
   const handleCheckStatus = async () => {
     setIsChecking(true);
 
     if (activePaymentId) {
       try {
-        await checkPaymentStatus(activePaymentId);
+        const res = await checkPaymentStatus(activePaymentId);
+        if (res?.data?.is_paid || res?.data?.payment_status === "paid") {
+          await loadFinanceData();
+          setModalStep("success");
+          setIsChecking(false);
+          return;
+        }
       } catch (err) {
         console.warn("Check status error:", err);
       }
     }
 
+    await loadFinanceData();
     setIsChecking(false);
-
-    const paidAmountDisplay = liveTotalAmount
-      ? `Rp ${liveTotalAmount.toLocaleString("id-ID")}`
-      : lastSuccessAmount || totalAmount;
-
-    setLastSuccessAmount(paidAmountDisplay);
-
-    // Add new payment record to history
-    const newInvId = `#INV-08-00${historyList.length + 1}`;
-    const methodText =
-      selectedMethod === "va"
-        ? `Virtual Account ${selectedBank}`
-        : selectedMethod === "qris"
-        ? "QRIS (Nobu Bank)"
-        : selectedMethod === "ewallet"
-        ? `E-Wallet (${selectedEwallet})`
-        : "Cash (Di Cabang)";
-
-    setHistoryList([
-      {
-        id: newInvId,
-        tanggal: "14 Sep 2026",
-        keterangan: itemDescription,
-        metode: methodText,
-        jumlah: paidAmountDisplay,
-        status: selectedMethod === "cash" ? "Menunggu Verifikasi" : "Selesai",
-      },
-      ...historyList,
-    ]);
-
-    setModalStep("success");
-    setTimeout(() => {
-      historyRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 100);
   };
 
   if (isInitialLoading) {
@@ -1092,6 +1276,7 @@ export default function PembayaranPage() {
               {paymentPlans.length > 0 ? (
                 paymentPlans.map((plan) => {
                   const isPlanPaid = plan.is_paid || plan.status === "paid";
+                  const isPendingCash = pendingCashPlanIds.has(plan.id);
                   return (
                     <div
                       key={plan.id}
@@ -1101,8 +1286,8 @@ export default function PembayaranPage() {
                         justifyContent: "space-between",
                         padding: "10px 14px",
                         borderRadius: 10,
-                        background: isPlanPaid ? "#f8fafc" : "#ffffff",
-                        border: "1px solid #f1f5f9",
+                        background: isPlanPaid ? "#f8fafc" : isPendingCash ? "#fffbeb" : "#ffffff",
+                        border: isPendingCash ? "1px solid #fde68a" : "1px solid #f1f5f9",
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -1111,9 +1296,9 @@ export default function PembayaranPage() {
                             width: 22,
                             height: 22,
                             borderRadius: "50%",
-                            background: isPlanPaid ? "#22c55e" : "#f1f5f9",
-                            border: isPlanPaid ? "none" : "2px solid #cbd5e1",
-                            color: isPlanPaid ? "#ffffff" : "#94a3b8",
+                            background: isPlanPaid ? "#22c55e" : isPendingCash ? "#fef3c7" : "#f1f5f9",
+                            border: isPlanPaid ? "none" : isPendingCash ? "2px solid #f59e0b" : "2px solid #cbd5e1",
+                            color: isPlanPaid ? "#ffffff" : isPendingCash ? "#d97706" : "#94a3b8",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -1124,6 +1309,8 @@ export default function PembayaranPage() {
                             <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
                               <polyline points="20 6 9 17 4 12" />
                             </svg>
+                          ) : isPendingCash ? (
+                            <span style={{ fontSize: 11, fontWeight: 900 }}>⏳</span>
                           ) : (
                             <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                               <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
@@ -1135,27 +1322,41 @@ export default function PembayaranPage() {
                             Pertemuan {plan.session_number}
                           </div>
                           <div style={{ fontSize: 12, color: "#64748b" }}>
-                            {isPlanPaid ? "Lunas" : `Jatuh tempo ${new Date(plan.due_date).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}`} • Rp {Number(plan.amount).toLocaleString("id-ID")}
+                            {isPlanPaid
+                              ? "Lunas"
+                              : isPendingCash
+                              ? "Menunggu verifikasi kasir di cabang"
+                              : `Jatuh tempo ${new Date(plan.due_date).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}`} • Rp {Number(plan.amount).toLocaleString("id-ID")}
                           </div>
                         </div>
                       </div>
                       <span
                         style={{
-                          background: isPlanPaid ? "#dcfce7" : "#fee2e2",
-                          color: isPlanPaid ? "#16a34a" : "#dc2626",
+                          background: isPlanPaid ? "#dcfce7" : isPendingCash ? "#fef3c7" : "#fee2e2",
+                          color: isPlanPaid ? "#16a34a" : isPendingCash ? "#b45309" : "#dc2626",
                           fontSize: 11,
                           fontWeight: 800,
                           padding: "3px 10px",
                           borderRadius: 999,
                         }}
                       >
-                        {isPlanPaid ? "LUNAS" : "BELUM DIBAYAR"}
+                        {isPlanPaid ? "LUNAS" : isPendingCash ? "⏳ MENUNGGU KASIR" : "BELUM DIBAYAR"}
                       </span>
                     </div>
                   );
                 })
+              ) : isLoadingFinance ? (
+                <div style={{ fontSize: 13, color: "#94a3b8", display: "flex", alignItems: "center", gap: 8, padding: "16px 8px" }}>
+                  <span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid #0e7490", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                  Memuat daftar pertemuan...
+                </div>
               ) : (
-                <div style={{ fontSize: 13, color: "#94a3b8" }}>Memuat daftar pertemuan...</div>
+                <div style={{ padding: "28px 16px", textAlign: "center", background: "#f8fafc", borderRadius: 10, border: "1px dashed #cbd5e1" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#475569", marginBottom: 4 }}>Belum Ada Tagihan Pertemuan</div>
+                  <div style={{ fontSize: 12, color: "#64748b", maxWidth: 360, margin: "0 auto" }}>
+                    Siswa {childName} belum memiliki paket bimbingan aktif atau pendaftaran sedang diproses oleh admin.
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -1185,8 +1386,8 @@ export default function PembayaranPage() {
               <h3 style={{ fontSize: 16, fontWeight: 800, color: "#1e293b", margin: 0 }}>
                 Bayar per Pertemuan
               </h3>
-              <span style={{ background: nextUnpaidSessions.length > 0 ? "#fee2e2" : "#dcfce7", color: nextUnpaidSessions.length > 0 ? "#dc2626" : "#16a34a", fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999 }}>
-                {nextUnpaidSessions.length > 0 ? `${nextUnpaidSessions.length} Belum Dibayar` : "Semua Lunas"}
+              <span style={{ background: nextUnpaidSessions.length > 0 ? (nextUnpaidIsPendingCash ? "#fef3c7" : "#fee2e2") : "#dcfce7", color: nextUnpaidSessions.length > 0 ? (nextUnpaidIsPendingCash ? "#b45309" : "#dc2626") : "#16a34a", fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999 }}>
+                {nextUnpaidSessions.length > 0 ? (nextUnpaidIsPendingCash ? "Menunggu Verifikasi" : `${nextUnpaidSessions.length} Belum Dibayar`) : "Semua Lunas"}
               </span>
             </div>
 
@@ -1207,38 +1408,44 @@ export default function PembayaranPage() {
               <div style={{ height: 1, background: "#e2e8f0", margin: "4px 0" }} />
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>Total Dibayar</span>
-                <span style={{ fontSize: 22, fontWeight: 800, color: nextUnpaidNominal > 0 ? "#dc2626" : "#16a34a" }}>Rp {nextUnpaidNominal.toLocaleString("id-ID")}</span>
+                <span style={{ fontSize: 22, fontWeight: 800, color: nextUnpaidNominal > 0 ? (nextUnpaidIsPendingCash ? "#d97706" : "#dc2626") : "#16a34a" }}>Rp {nextUnpaidNominal.toLocaleString("id-ID")}</span>
               </div>
             </div>
 
             <button
               onClick={() => handleStartPayment("per_pertemuan")}
-              disabled={unpaidPlans.length === 0}
+              disabled={unpaidPlans.length === 0 || nextUnpaidIsPendingCash}
               style={{
                 width: "100%",
                 padding: "12px 16px",
-                background: unpaidPlans.length === 0 ? "#94a3b8" : "#f59e0b",
+                background: unpaidPlans.length === 0 ? "#94a3b8" : nextUnpaidIsPendingCash ? "#d97706" : "#f59e0b",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 10,
                 fontWeight: 700,
                 fontSize: 14,
-                cursor: unpaidPlans.length === 0 ? "not-allowed" : "pointer",
+                cursor: (unpaidPlans.length === 0 || nextUnpaidIsPendingCash) ? "not-allowed" : "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 8,
-                boxShadow: unpaidPlans.length === 0 ? "none" : "0 4px 12px rgba(245,158,11,0.25)",
+                boxShadow: (unpaidPlans.length === 0 || nextUnpaidIsPendingCash) ? "none" : "0 4px 12px rgba(245,158,11,0.25)",
                 transition: "all 0.15s ease",
               }}
-              onMouseEnter={(e) => { if (unpaidPlans.length > 0) e.currentTarget.style.background = "#d97706"; }}
-              onMouseLeave={(e) => { if (unpaidPlans.length > 0) e.currentTarget.style.background = "#f59e0b"; }}
+              onMouseEnter={(e) => { if (unpaidPlans.length > 0 && !nextUnpaidIsPendingCash) e.currentTarget.style.background = "#d97706"; }}
+              onMouseLeave={(e) => { if (unpaidPlans.length > 0 && !nextUnpaidIsPendingCash) e.currentTarget.style.background = "#f59e0b"; }}
             >
               <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                 <rect x="2" y="5" width="20" height="14" rx="2" />
                 <line x1="2" y1="10" x2="22" y2="10" />
               </svg>
-              <span>{unpaidPlans.length === 0 ? "Semua Pertemuan Lunas" : `Bayar Pertemuan (Rp ${(nextUnpaidNominal / 1000)}k)`}</span>
+              <span>
+                {unpaidPlans.length === 0
+                  ? "Semua Pertemuan Lunas"
+                  : nextUnpaidIsPendingCash
+                  ? "⏳ Menunggu Verifikasi Kasir"
+                  : `Bayar Pertemuan (Rp ${(nextUnpaidNominal / 1000)}k)`}
+              </span>
             </button>
           </div>
 
@@ -1349,59 +1556,92 @@ export default function PembayaranPage() {
               </tr>
             </thead>
             <tbody>
-              {formattedHistoryList.map((row, idx) => (
-                <tr key={row.id + idx} style={{ borderBottom: idx < formattedHistoryList.length - 1 ? "1px solid #f1f5f9" : "none" }}>
-                  <td style={{ padding: "16px 20px", fontSize: 13, fontFamily: "monospace", color: "#475569", fontWeight: 600 }}>{row.id}</td>
-                  <td style={{ padding: "16px 20px", fontSize: 13.5, fontWeight: 600, color: "#1e293b" }}>{row.tanggal}</td>
-                  <td style={{ padding: "16px 20px", fontSize: 13.5, fontWeight: 600, color: "#1e293b" }}>{row.keterangan}</td>
-                  <td style={{ padding: "16px 20px", fontSize: 13, color: "#475569" }}>{row.metode}</td>
-                  <td style={{ padding: "16px 20px", fontSize: 14, fontWeight: 800, color: "#1e293b" }}>{row.jumlah}</td>
-                  <td style={{ padding: "16px 20px" }}>
-                    {row.status === "Menunggu Verifikasi" || row.status === "Menunggu Pembayaran" ? (
-                      <span style={{ background: "#fef3c7", color: "#b45309", fontSize: 11.5, fontWeight: 700, padding: "5px 12px", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 6 }}>
-                        <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
-                        </svg>
-                        {row.status}
-                      </span>
-                    ) : row.status === "Kedaluwarsa" || row.status === "Gagal" ? (
-                      <span style={{ background: "#fee2e2", color: "#dc2626", fontSize: 11.5, fontWeight: 700, padding: "5px 12px", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 6 }}>
-                        <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                          <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
-                        </svg>
-                        {row.status}
-                      </span>
-                    ) : (
-                      <span style={{ background: "#dcfce7", color: "#16a34a", fontSize: 11.5, fontWeight: 700, padding: "5px 12px", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 6 }}>
-                        <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                        Selesai
-                      </span>
-                    )}
-                  </td>
-                  <td style={{ padding: "16px 20px" }}>
-                    <button
-                      onClick={() => setDetailItem(row)}
-                      style={{
-                        display: "inline-flex", alignItems: "center", gap: 5,
-                        padding: "6px 12px", borderRadius: 8,
-                        background: "#f0f9ff", border: "1px solid #bae6fd",
-                        color: "#0284c7", fontSize: 12, fontWeight: 700,
-                        cursor: "pointer", transition: "all 0.15s",
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = "#e0f2fe"; e.currentTarget.style.borderColor = "#7dd3fc"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = "#f0f9ff"; e.currentTarget.style.borderColor = "#bae6fd"; }}
-                    >
-                      <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                      Detail
-                    </button>
+              {formattedHistoryList.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: "center", padding: "36px 20px", color: "#64748b", fontSize: 13.5 }}>
+                    Belum ada riwayat transaksi pembayaran untuk siswa ini.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                formattedHistoryList.map((row, idx) => (
+                  <tr key={row.id + idx} style={{ borderBottom: idx < formattedHistoryList.length - 1 ? "1px solid #f1f5f9" : "none" }}>
+                    <td style={{ padding: "16px 20px", fontSize: 13, fontFamily: "monospace", color: "#475569", fontWeight: 600 }}>{row.id}</td>
+                    <td style={{ padding: "16px 20px", fontSize: 13.5, fontWeight: 600, color: "#1e293b" }}>{row.tanggal}</td>
+                    <td style={{ padding: "16px 20px", fontSize: 13.5, fontWeight: 600, color: "#1e293b" }}>{row.keterangan}</td>
+                    <td style={{ padding: "16px 20px", fontSize: 13, color: "#475569" }}>{row.metode}</td>
+                    <td style={{ padding: "16px 20px", fontSize: 14, fontWeight: 800, color: "#1e293b" }}>{row.jumlah}</td>
+                    <td style={{ padding: "16px 20px" }}>
+                      {row.status === "Menunggu Verifikasi" || row.status === "Menunggu Pembayaran" ? (
+                        <span style={{ background: "#fef3c7", color: "#b45309", fontSize: 11.5, fontWeight: 700, padding: "5px 12px", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                          <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
+                          </svg>
+                          {row.status}
+                        </span>
+                      ) : row.status === "Kedaluwarsa" || row.status === "Gagal" ? (
+                        <span style={{ background: "#fee2e2", color: "#dc2626", fontSize: 11.5, fontWeight: 700, padding: "5px 12px", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                          <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
+                          </svg>
+                          {row.status}
+                        </span>
+                      ) : (
+                        <span style={{ background: "#dcfce7", color: "#16a34a", fontSize: 11.5, fontWeight: 700, padding: "5px 12px", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                          <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          Selesai
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding: "16px 20px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <button
+                          onClick={() => setDetailItem(row)}
+                          style={{
+                            display: "inline-flex", alignItems: "center", gap: 5,
+                            padding: "6px 12px", borderRadius: 8,
+                            background: "#f0f9ff", border: "1px solid #bae6fd",
+                            color: "#0284c7", fontSize: 12, fontWeight: 700,
+                            cursor: "pointer", transition: "all 0.15s",
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "#e0f2fe"; e.currentTarget.style.borderColor = "#7dd3fc"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "#f0f9ff"; e.currentTarget.style.borderColor = "#bae6fd"; }}
+                        >
+                          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                          Detail
+                        </button>
+
+                        {row.status === "Selesai" && (
+                          <button
+                            onClick={() => handlePrintReceipt(row)}
+                            title="Cetak Kuitansi / Bukti Pembayaran PDF"
+                            style={{
+                              display: "inline-flex", alignItems: "center", gap: 4,
+                              padding: "6px 10px", borderRadius: 8,
+                              background: "#dcfce7", border: "1px solid #bbf7d0",
+                              color: "#15803d", fontSize: 12, fontWeight: 700,
+                              cursor: "pointer", transition: "all 0.15s",
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = "#bbf7d0"; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = "#dcfce7"; }}
+                          >
+                            <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="6 9 6 2 18 2 18 9" />
+                              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                              <rect x="6" y="14" width="12" height="8" />
+                            </svg>
+                            PDF
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -2014,16 +2254,19 @@ export default function PembayaranPage() {
                         <polyline points="17 8 12 3 7 8" />
                         <line x1="12" y1="3" x2="12" y2="15" />
                       </svg>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#0e7490" }}>
-                        {uploadedFile ? uploadedFile : "Klik untuk memilih file bukti bayar (PNG / JPG / PDF)"}
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#0e7490", textAlign: "center" }}>
+                        {uploadedFile ? uploadedFile : "Klik untuk memilih file bukti bayar (JPEG, PNG, WEBP, HEIC iPhone, PDF)"}
                       </span>
+                      <span style={{ fontSize: 11, color: "#64748b" }}>Mendukung foto kamera HP Android & iPhone (Maks 10 MB)</span>
                       <input
                         type="file"
-                        accept="image/*,.pdf"
+                        accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic,.heif,.pdf,application/pdf"
                         style={{ display: "none" }}
                         onChange={(e) => {
-                          if (e.target.files?.[0]) {
-                            setUploadedFile(e.target.files[0].name);
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setUploadedFile(file.name);
+                            setProofFile(file);
                           }
                         }}
                       />
@@ -2450,20 +2693,41 @@ export default function PembayaranPage() {
 
                   {selectedMethod === "cash" ? (
                     <button
-                      onClick={handleConfirmWaiting}
+                      onClick={handleGeneratePayment}
+                      disabled={isCharging}
                       style={{
                         padding: "12px",
-                        background: "#0e7490",
+                        background: isCharging ? "#94a3b8" : "#0e7490",
                         color: "#ffffff",
                         border: "none",
                         borderRadius: 10,
                         fontWeight: 700,
                         fontSize: 14,
-                        cursor: "pointer",
-                        boxShadow: "0 4px 12px rgba(14,116,144,0.25)",
+                        cursor: isCharging ? "not-allowed" : "pointer",
+                        boxShadow: isCharging ? "none" : "0 4px 12px rgba(14,116,144,0.25)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
                       }}
                     >
-                      Kirim Bukti Pembayaran
+                      {isCharging ? (
+                        <>
+                          <div
+                            style={{
+                              width: 16,
+                              height: 16,
+                              borderRadius: "50%",
+                              border: "2px solid #ffffff",
+                              borderTopColor: "transparent",
+                              animation: "spin 0.8s linear infinite",
+                            }}
+                          />
+                          <span>Mengirim Pengajuan...</span>
+                        </>
+                      ) : (
+                        "Konfirmasi Bayar Tunai"
+                      )}
                     </button>
                   ) : !isGenerated ? (
                     <button
@@ -2760,18 +3024,37 @@ export default function PembayaranPage() {
               <span style={{ fontSize: 22, fontWeight: 800, color: "#0e7490" }}>{detailItem.jumlah}</span>
             </div>
 
-            {/* Close Button */}
-            <button
-              onClick={() => setDetailItem(null)}
-              style={{
-                width: "100%", marginTop: 20, padding: "11px",
-                background: "#ffffff", color: "#64748b",
-                border: "1px solid #cbd5e1", borderRadius: 10,
-                fontWeight: 700, fontSize: 14, cursor: "pointer",
-              }}
-            >
-              Tutup
-            </button>
+            {/* Action Buttons */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 20 }}>
+              <button
+                onClick={() => setDetailItem(null)}
+                style={{
+                  padding: "11px",
+                  background: "#ffffff", color: "#64748b",
+                  border: "1px solid #cbd5e1", borderRadius: 10,
+                  fontWeight: 700, fontSize: 13.5, cursor: "pointer",
+                }}
+              >
+                Tutup
+              </button>
+              <button
+                onClick={() => handlePrintReceipt(detailItem)}
+                style={{
+                  padding: "11px",
+                  background: "#0e7490", color: "#ffffff",
+                  border: "none", borderRadius: 10,
+                  fontWeight: 700, fontSize: 13.5, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                }}
+              >
+                <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 6 2 18 2 18 9" />
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                  <rect x="6" y="14" width="12" height="8" />
+                </svg>
+                <span>Cetak Kuitansi</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

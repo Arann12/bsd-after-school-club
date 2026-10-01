@@ -99,6 +99,7 @@ export async function chargePayment(payload: {
   expired_time?: string;
   type_fee?: "user" | "merchant";
   notes?: string;
+  payment_type?: "per_pertemuan" | "pelunasan";
 }): Promise<any> {
   const { data } = await axiosInstance.post("/payments/charge", payload);
   return data;
@@ -177,6 +178,7 @@ export async function getCashTransaction(id: string): Promise<any> {
 /** POST /cash-transactions/submit — pengajuan pembayaran cash oleh ortu/siswa */
 export async function submitCashTransaction(payload: {
   payment_plan_id: string;
+  payment_type?: "per_pertemuan" | "pelunasan";
   receipt_number?: string;
   notes?: string;
   proof_image?: File | null;
@@ -187,6 +189,7 @@ export async function submitCashTransaction(payload: {
   if (payload.proof_image) {
     const formData = new FormData();
     formData.append("payment_plan_id", payload.payment_plan_id);
+    if (payload.payment_type) formData.append("payment_type", payload.payment_type);
     if (payload.receipt_number) formData.append("receipt_number", payload.receipt_number);
     if (payload.notes) formData.append("notes", payload.notes);
     formData.append("proof_image", payload.proof_image);
@@ -210,9 +213,14 @@ export async function confirmCashTransaction(
 /** POST /cash-transactions/:id/reject — tolak pembayaran cash oleh Admin/Owner */
 export async function rejectCashTransaction(
   id: string,
-  payload: { admin_notes?: string; notes?: string }
+  payload: { rejection_reason?: string; admin_notes?: string; notes?: string }
 ): Promise<any> {
-  const { data } = await axiosInstance.post(`/cash-transactions/${id}/reject`, payload);
+  const body = {
+    rejection_reason: payload.rejection_reason || payload.admin_notes || payload.notes || "Pengajuan tunai ditolak oleh kasir.",
+    admin_notes: payload.admin_notes || payload.rejection_reason || payload.notes,
+    ...payload,
+  };
+  const { data } = await axiosInstance.post(`/cash-transactions/${id}/reject`, body);
   return data;
 }
 

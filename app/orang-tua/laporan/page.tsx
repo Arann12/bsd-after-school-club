@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { getMyParentProfile } from "@/lib/api/parents";
 import { getFinalReports, getAssessments, getCertificates } from "@/lib/api/assessments";
+import { getStudentAttendances } from "@/lib/api/attendances";
 import { SkeletonCard } from "@/components/ui/Skeleton";
 
 export interface StudentReportDisplay {
@@ -38,27 +39,37 @@ export default function OrangTuaLaporanPage() {
   const fetchStudentReports = useCallback(async () => {
     setLoading(true);
     try {
-      const [parentRes, reportsRes, assessRes, certsRes] = await Promise.allSettled([
+      const [parentRes, reportsRes, assessRes, certsRes, attendRes] = await Promise.allSettled([
         getMyParentProfile(),
         getFinalReports({ per_page: 50 }),
         getAssessments({ per_page: 50 }),
         getCertificates({ per_page: 50 }),
+        getStudentAttendances({ per_page: 200 }),
       ]);
 
       const myStudents = parentRes.status === "fulfilled" ? parentRes.value?.students || [] : [];
       const finalReports = reportsRes.status === "fulfilled" && Array.isArray(reportsRes.value?.data) ? reportsRes.value.data : [];
       const assessments = assessRes.status === "fulfilled" && Array.isArray(assessRes.value?.data?.data || assessRes.value?.data) ? (assessRes.value.data.data || assessRes.value.data) : [];
       const certs = certsRes.status === "fulfilled" && Array.isArray(certsRes.value?.data) ? certsRes.value.data : [];
+      const attendances = attendRes.status === "fulfilled" && Array.isArray(attendRes.value?.data) ? attendRes.value.data : [];
 
       const mapped: StudentReportDisplay[] = myStudents.map((st: any) => {
         const studentId = st.id;
         const myCert = certs.find((c: any) => c.student_id === studentId);
         const myFinal = finalReports.find((f: any) => f.student_id === studentId);
         const myAssessments = assessments.filter((a: any) => a.student_id === studentId);
+        const myAttendances = attendances.filter((at: any) => at.studentId === studentId);
 
         const primaryEnrollment = st.enrollments?.[0];
         const programName = primaryEnrollment?.classroom?.program_level?.program?.name || st.program?.name || "Program Reguler";
         const levelName = primaryEnrollment?.classroom?.program_level?.name || "Level 1";
+
+        const countHadir = myAttendances.filter((at: any) => at.status === "present" || at.status === "late").length;
+        const countIzin = myAttendances.filter((at: any) => at.status === "excused").length;
+        const countAlpha = myAttendances.filter((at: any) => at.status === "absent").length;
+        const totalSesiReal = myAttendances.length > 0 ? myAttendances.length : 12;
+        const hadirDisplay = myAttendances.length > 0 ? countHadir : 12;
+        const kehadiranScore = totalSesiReal > 0 ? Math.round((hadirDisplay / totalSesiReal) * 100) : 100;
 
         const avgScore = myAssessments.length > 0
           ? Math.round(myAssessments.reduce((acc: number, a: any) => acc + Number(a.score || 0), 0) / myAssessments.length)
@@ -77,13 +88,13 @@ export default function OrangTuaLaporanPage() {
           nama: st.name || st.full_name || "Siswa",
           program: programName,
           level: levelName,
-          totalSesi: 12,
-          hadir: 11,
-          izin: 1,
-          alpha: 0,
+          totalSesi: totalSesiReal,
+          hadir: hadirDisplay,
+          izin: countIzin,
+          alpha: countAlpha,
           nilai: {
             sikap: Math.min(100, avgScore + 3),
-            kehadiran: 92,
+            kehadiran: Math.min(100, kehadiranScore),
             assessment: avgScore,
             praktik: Math.min(100, avgScore + 2),
             akhir: avgScore,

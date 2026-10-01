@@ -159,8 +159,10 @@ export default function AdminVerifikasiCashPage() {
     if (!selectedCash) return;
     try {
       setSubmitting(true);
+      const note = adminNoteInput.trim() || "Pengajuan tunai ditolak oleh kasir.";
       await rejectCashTransaction(selectedCash.id, {
-        admin_notes: adminNoteInput.trim(),
+        rejection_reason: note,
+        admin_notes: note,
       });
 
       showToast(`Pembayaran cash ${selectedCash.cashCode} berhasil ditolak.`);
@@ -278,7 +280,7 @@ export default function AdminVerifikasiCashPage() {
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
               <thead>
                 <tr style={{ background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}>
-                  {["Kode Cash", "No. Invoice", "Nama Wali / Siswa", "Program", "Nominal Cash", "Tanggal Dibuat", "Status", "Aksi Verifikasi"].map((h) => (
+                  {["Kode Cash", "No. Invoice", "Nama Wali / Siswa", "Program", "Nominal Cash", "Tanggal Dibuat", "Status", "Bukti & Rincian", "Aksi Verifikasi"].map((h) => (
                     <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
@@ -308,6 +310,28 @@ export default function AdminVerifikasiCashPage() {
                       </span>
                     </td>
                     <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => handleOpenDetail(c)}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 5,
+                          fontSize: 12,
+                          fontWeight: 700,
+                          border: "1px solid var(--color-border)",
+                          background: c.proofImage ? "#eff6ff" : "white",
+                          color: c.proofImage ? "#1d4ed8" : "var(--color-text-secondary)",
+                        }}
+                      >
+                        <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        {c.proofImage ? "Lihat Bukti Foto" : "Rincian Transaksi"}
+                      </button>
+                    </td>
+                    <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
                       {c.status === "Menunggu Verifikasi" ? (
                         <div style={{ display: "flex", gap: 6 }}>
                           <button className="btn btn-accent btn-sm" onClick={() => handleOpenConfirm(c)}>
@@ -318,9 +342,7 @@ export default function AdminVerifikasiCashPage() {
                           </button>
                         </div>
                       ) : (
-                        <button className="btn btn-ghost btn-sm" onClick={() => handleOpenDetail(c)}>
-                          Rincian
-                        </button>
+                        <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Selesai</span>
                       )}
                     </td>
                   </tr>
@@ -341,13 +363,37 @@ export default function AdminVerifikasiCashPage() {
       {/* Modal Verifikasi / ACC Cash */}
       {selectedCash && modalMode === "confirm" && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn .2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 500, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn .25s ease-out" }}>
+          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 520, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn .25s ease-out", maxHeight: "90vh", overflowY: "auto" }}>
             <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 12px" }}>Konfirmasi Terima Uang Tunai / Cash</h3>
             <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
-              <div style={{ fontSize: 12.5, color: "#166534", marginBottom: 2 }}>Kode: <strong>{selectedCash.cashCode}</strong></div>
+              <div style={{ fontSize: 12.5, color: "#166534", marginBottom: 2 }}>Kode: <strong>{selectedCash.cashCode}</strong> ({selectedCash.invoiceId})</div>
               <div style={{ fontSize: 14, fontWeight: 800, color: "#14532d" }}>{selectedCash.namaOrtu} (Siswa: {selectedCash.namaSiswa})</div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: "#15803d", marginTop: 6 }}>Rp {selectedCash.jumlah.toLocaleString("id-ID")}</div>
+              <div style={{ fontSize: 12, color: "#15803d", marginTop: 2 }}>Program: {selectedCash.program}</div>
+              <div style={{ fontSize: 20, fontWeight: 900, color: "#15803d", marginTop: 6 }}>Rp {selectedCash.jumlah.toLocaleString("id-ID")}</div>
             </div>
+
+            {selectedCash.catatan && (
+              <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "8px 12px", marginBottom: 14, fontSize: 12 }}>
+                <span style={{ fontWeight: 700, color: "#64748b" }}>Catatan Wali: </span>
+                <span style={{ fontStyle: "italic", color: "#1e293b" }}>&ldquo;{selectedCash.catatan}&rdquo;</span>
+              </div>
+            )}
+
+            {selectedCash.proofImage && (
+              <div style={{ marginBottom: 14, border: "1px solid #e2e8f0", borderRadius: 10, padding: 10, background: "#f8fafc" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", marginBottom: 6 }}>Foto Struk / Kwitansi Fisik:</div>
+                <a href={selectedCash.proofImage} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={selectedCash.proofImage}
+                    alt="Bukti Pembayaran"
+                    style={{ width: "100%", maxHeight: 180, objectFit: "contain", borderRadius: 6, background: "#0f172a" }}
+                  />
+                  <div style={{ fontSize: 11, color: "#0284c7", fontWeight: 700, marginTop: 4, textAlign: "center" }}>
+                    ↗ Buka foto di tab baru
+                  </div>
+                </a>
+              </div>
+            )}
 
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
@@ -409,57 +455,137 @@ export default function AdminVerifikasiCashPage() {
         </div>
       )}
 
-      {/* Modal Detail / Rincian */}
+      {/* Modal Detail & Rincian Bukti Transaksi */}
       {selectedCash && modalMode === "detail" && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn .2s ease-out" }}>
-          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 500, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn .25s ease-out" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Rincian Transaksi Cash</h3>
+          <div style={{ background: "#fff", borderRadius: 18, maxWidth: 580, width: "100%", padding: 28, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", animation: "modalIn .25s ease-out", maxHeight: "92vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, borderBottom: "1px solid var(--color-border-light)", paddingBottom: 12 }}>
+              <div>
+                <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Rincian & Bukti Transaksi Cash</h3>
+                <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>Pemeriksaan fisik dan bukti pembayaran langsung di kasir</div>
+              </div>
               <span style={{
                 background: selectedCash.status === "Disetujui / Terverifikasi" ? "#d1fae5" : selectedCash.status === "Ditolak" ? "#fee2e2" : "#fef3c7",
                 color: selectedCash.status === "Disetujui / Terverifikasi" ? "#059669" : selectedCash.status === "Ditolak" ? "#dc2626" : "#b45309",
-                fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999
+                fontSize: 11, fontWeight: 800, padding: "4px 12px", borderRadius: 999
               }}>
                 {selectedCash.status}
               </span>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 13, marginBottom: 20 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 13, marginBottom: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--color-border-light)" }}>
                 <span style={{ color: "var(--color-text-muted)" }}>Kode Cash</span>
                 <span style={{ fontWeight: 700, fontFamily: "monospace" }}>{selectedCash.cashCode}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--color-border-light)" }}>
-                <span style={{ color: "var(--color-text-muted)" }}>Nama Siswa</span>
-                <span style={{ fontWeight: 700 }}>{selectedCash.namaSiswa}</span>
+                <span style={{ color: "var(--color-text-muted)" }}>No. Invoice Induk</span>
+                <span style={{ fontWeight: 700, fontFamily: "monospace", color: "var(--color-primary)" }}>{selectedCash.invoiceId}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--color-border-light)" }}>
-                <span style={{ color: "var(--color-text-muted)" }}>Wali / Penyetor</span>
+                <span style={{ color: "var(--color-text-muted)" }}>Nama Siswa</span>
+                <span style={{ fontWeight: 800, color: "var(--color-text-primary)" }}>{selectedCash.namaSiswa}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--color-border-light)" }}>
+                <span style={{ color: "var(--color-text-muted)" }}>Wali / Orang Tua</span>
                 <span style={{ fontWeight: 700 }}>{selectedCash.namaOrtu}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--color-border-light)" }}>
-                <span style={{ color: "var(--color-text-muted)" }}>Nominal</span>
-                <span style={{ fontWeight: 900, color: "#059669" }}>Rp {selectedCash.jumlah.toLocaleString("id-ID")}</span>
+                <span style={{ color: "var(--color-text-muted)" }}>Program Kursus</span>
+                <span style={{ fontWeight: 600 }}>{selectedCash.program}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--color-border-light)" }}>
+                <span style={{ color: "var(--color-text-muted)" }}>Nominal Pembayaran</span>
+                <span style={{ fontWeight: 900, fontSize: 16, color: "#059669" }}>Rp {selectedCash.jumlah.toLocaleString("id-ID")}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--color-border-light)" }}>
                 <span style={{ color: "var(--color-text-muted)" }}>Waktu Pengajuan</span>
                 <span>{selectedCash.tglTerima}</span>
               </div>
+              {selectedCash.receiptNumber && (
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--color-border-light)" }}>
+                  <span style={{ color: "var(--color-text-muted)" }}>Nomor Kwitansi / Struk</span>
+                  <span style={{ fontWeight: 700, fontFamily: "monospace" }}>{selectedCash.receiptNumber}</span>
+                </div>
+              )}
               {selectedCash.penerimaKasir !== "–" && (
                 <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--color-border-light)" }}>
                   <span style={{ color: "var(--color-text-muted)" }}>Diverifikasi Oleh</span>
                   <span style={{ fontWeight: 600 }}>{selectedCash.penerimaKasir}</span>
                 </div>
               )}
+              {selectedCash.catatan && (
+                <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: "10px 14px", borderRadius: 8, marginTop: 4 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", marginBottom: 2 }}>Catatan Pengajuan Wali:</div>
+                  <div style={{ fontStyle: "italic", color: "#1e293b" }}>&ldquo;{selectedCash.catatan}&rdquo;</div>
+                </div>
+              )}
               {selectedCash.adminNotes && (
-                <div style={{ background: "var(--color-bg)", padding: "10px 14px", borderRadius: 8, marginTop: 6 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", marginBottom: 2 }}>Catatan Verifikator:</div>
-                  <div>&ldquo;{selectedCash.adminNotes}&rdquo;</div>
+                <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", padding: "10px 14px", borderRadius: 8, marginTop: 4 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#166534", marginBottom: 2 }}>Catatan Petugas Kasir:</div>
+                  <div style={{ color: "#14532d" }}>&ldquo;{selectedCash.adminNotes}&rdquo;</div>
                 </div>
               )}
             </div>
 
-            <button className="btn btn-ghost" style={{ width: "100%" }} onClick={() => setSelectedCash(null)}>Tutup</button>
+            {/* Lampiran Bukti Fisik Foto / Struk */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: "var(--color-text-primary)", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                <span>Foto Bukti Fisik / Kwitansi Pembayaran</span>
+                {selectedCash.proofImage && (
+                  <span style={{ fontSize: 10, background: "#e0f2fe", color: "#0369a1", padding: "2px 8px", borderRadius: 999, fontWeight: 700 }}>
+                    Tersedia
+                  </span>
+                )}
+              </div>
+
+              {selectedCash.proofImage ? (
+                <div style={{ border: "1.5px solid #e2e8f0", borderRadius: 12, overflow: "hidden", background: "#f8fafc", padding: 8 }}>
+                  <a href={selectedCash.proofImage} target="_blank" rel="noopener noreferrer" style={{ display: "block" }}>
+                    <img
+                      src={selectedCash.proofImage}
+                      alt="Bukti Fisik Pembayaran Tunai"
+                      style={{ width: "100%", maxHeight: 260, objectFit: "contain", borderRadius: 8, background: "#0f172a" }}
+                    />
+                    <div style={{ marginTop: 8, fontSize: 12, textAlign: "center", color: "var(--color-primary)", fontWeight: 700 }}>
+                      ↗ Klik untuk memperbesar / membuka foto di tab baru
+                    </div>
+                  </a>
+                </div>
+              ) : (
+                <div style={{ padding: "18px 20px", borderRadius: 10, background: "#f8fafc", border: "1.5px dashed #cbd5e1", textAlign: "center" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#475569" }}>
+                    Pembayaran Tunai Fisik di Meja Kasir
+                  </div>
+                  <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4, maxWidth: 360, margin: "4px auto 0" }}>
+                    Tidak ada lampiran foto digital. Orang tua menyerahkan uang tunai fisik secara langsung ke staf kasir kantor cabang.
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Action buttons inside detail modal */}
+            {selectedCash.status === "Menunggu Verifikasi" ? (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, paddingTop: 12, borderTop: "1px solid var(--color-border-light)" }}>
+                <button
+                  className="btn btn-ghost"
+                  style={{ color: "var(--color-danger)", borderColor: "var(--color-danger)" }}
+                  onClick={() => handleOpenReject(selectedCash)}
+                >
+                  ✕ Tolak Pembayaran
+                </button>
+                <button
+                  className="btn btn-accent"
+                  onClick={() => handleOpenConfirm(selectedCash)}
+                >
+                  ✓ Setujui & ACC Kasir
+                </button>
+              </div>
+            ) : (
+              <button className="btn btn-ghost" style={{ width: "100%" }} onClick={() => setSelectedCash(null)}>
+                Tutup
+              </button>
+            )}
           </div>
         </div>
       )}
