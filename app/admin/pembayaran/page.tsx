@@ -22,8 +22,8 @@ export default function FinancePembayaranPage() {
   const [search, setSearch] = useState("");
   const [filterMetode, setFilterMetode] = useState("Semua");
 
-  const fetchPayments = useCallback(async () => {
-    setLoading(true);
+  const fetchPayments = useCallback(async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
       const res = await getPayments({ per_page: 100 });
       const rawList = Array.isArray(res?.data) ? res.data : Array.isArray(res?.data?.data) ? res.data.data : [];
@@ -46,13 +46,17 @@ export default function FinancePembayaranPage() {
         }
 
         let statusDisplay = "Berhasil";
-        const rawStatus = (p.status || "").toLowerCase();
+        const rawStatus = (p.payment_status || p.status || "").toLowerCase();
         if (rawStatus === "paid" || rawStatus === "settlement" || rawStatus === "success" || rawStatus === "berhasil") {
           statusDisplay = "Berhasil";
-        } else if (rawStatus.includes("menunggu") || rawStatus === "pending") {
+        } else if (rawStatus.includes("menunggu") || (rawStatus === "pending" && p.payment_method === "cash")) {
           statusDisplay = "Menunggu Verifikasi Cash";
+        } else if (rawStatus === "expired" || rawStatus === "kedaluwarsa") {
+          statusDisplay = "Kedaluwarsa";
+        } else if (rawStatus === "failed" || rawStatus === "rejected") {
+          statusDisplay = "Gagal / Ditolak";
         } else {
-          statusDisplay = p.status || "Pending";
+          statusDisplay = rawStatus === "pending" ? "Menunggu Pembayaran" : p.payment_status || p.status || "Pending";
         }
 
         const dateStr = p.paid_at || p.created_at;
@@ -82,12 +86,31 @@ export default function FinancePembayaranPage() {
     } catch (err) {
       console.warn("Gagal memuat daftar pembayaran:", err);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     fetchPayments();
+
+    // Auto-refresh interval 6 detik untuk realtime updates
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchPayments(true);
+      }
+    }, 6000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchPayments(true);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [fetchPayments]);
 
   const filtered = payments.filter((p) => {
@@ -108,10 +131,27 @@ export default function FinancePembayaranPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Header */}
-      <div className="page-header">
+      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
         <div>
           <h1 className="page-title">Riwayat Pembayaran</h1>
           <p className="page-subtitle">Daftar transaksi masuk, metode pembayaran (VA, QRIS, Transfer, Cash), dan kwitansi pembayaran.</p>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 700, color: "#16a34a", background: "#dcfce7", padding: "4px 10px", borderRadius: 999 }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
+            Realtime Live Sync
+          </span>
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={() => fetchPayments(false)}
+            disabled={loading}
+            style={{ display: "flex", alignItems: "center", gap: 6 }}
+          >
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ animation: loading ? "spin 1s linear infinite" : "none" }}>
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+            Segarkan
+          </button>
         </div>
       </div>
 

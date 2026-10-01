@@ -86,11 +86,17 @@ export default function AdminTagihanPage() {
         const latestPayment = Array.isArray(plan.payments) && plan.payments.length > 0 ? plan.payments[0] : null;
 
         const isPaid = Boolean(plan.is_paid || plan.status === "paid" || latestPayment?.payment_status === "paid");
+        const hasPendingCash = Array.isArray(plan.cash_transactions || plan.cashTransactions)
+          ? (plan.cash_transactions || plan.cashTransactions).some(
+              (c: any) => (c.status || "").toLowerCase() === "menunggu_konfirmasi_admin"
+            )
+          : false;
+
         let statusTagihan: TagihanItem["status"] = "Belum Bayar";
 
         if (isPaid) {
           statusTagihan = "Lunas";
-        } else if (plan.status === "menunggu_konfirmasi_admin" || plan.status === "pending") {
+        } else if (plan.status === "menunggu_konfirmasi_admin" || hasPendingCash) {
           statusTagihan = "Menunggu Konfirmasi";
         } else if (plan.due_date && new Date(plan.due_date) < today) {
           statusTagihan = "Overdue";

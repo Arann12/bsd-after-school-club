@@ -68,9 +68,9 @@ export default function AdminVerifikasiCashPage() {
     }
   };
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (isSilent = false) => {
     try {
-      setLoading(true);
+      if (!isSilent) setLoading(true);
       const res = await getCashTransactions({ per_page: 50 });
       const rawList: BackendCashTransaction[] = Array.isArray(res?.data?.data)
         ? res.data.data
@@ -107,14 +107,32 @@ export default function AdminVerifikasiCashPage() {
       setCashList(formatted);
     } catch (err: any) {
       console.error("Gagal memuat transaksi cash:", err);
-      showToast("Gagal memuat data transaksi cash dari server.");
+      if (!isSilent) showToast("Gagal memuat data transaksi cash dari server.");
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   }, [showToast]);
 
   useEffect(() => {
     loadData();
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        loadData(true);
+      }
+    }, 5000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        loadData(true);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [loadData]);
 
   const handleOpenConfirm = (item: CashVerificationItem) => {

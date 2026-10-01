@@ -40,8 +40,8 @@ export default function GuruHonorJamPage() {
   const [koreksiAlasan, setKoreksiAlasan] = useState("");
   const [notifToast, setNotifToast] = useState<string | null>(null);
 
-  const fetchSessionLogs = useCallback(async () => {
-    setLoading(true);
+  const fetchSessionLogs = useCallback(async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
       let teacherId = "";
       try {
@@ -104,12 +104,30 @@ export default function GuruHonorJamPage() {
     } catch (err) {
       console.warn("Gagal memuat rekap sesi mengajar:", err);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     fetchSessionLogs();
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchSessionLogs(true);
+      }
+    }, 6000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchSessionLogs(true);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [fetchSessionLogs]);
 
   const uniquePrograms = Array.from(new Set(logs.map((l) => l.program).filter(Boolean)));
@@ -149,23 +167,33 @@ export default function GuruHonorJamPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Header Halaman */}
-      <div className="page-header">
+      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
         <div>
           <h1 className="page-title">Rekap Jam Mengajar Saya</h1>
           <p className="page-subtitle">
             Rincian akumulasi durasi jam mengajar yang tercatat dari seluruh sesi kelas dan logbook harian.
           </p>
         </div>
-        <div className="page-header-actions">
-          <button className="btn btn-outline" onClick={() => window.print()}>
-            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <div className="page-header-actions" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 700, color: "#16a34a", background: "#dcfce7", padding: "4px 10px", borderRadius: 999 }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
+            Realtime
+          </span>
+          <button className="btn btn-outline btn-sm" onClick={() => fetchSessionLogs(false)} disabled={loading}>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ animation: loading ? "spin 1s linear infinite" : "none" }}>
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+            Segarkan
+          </button>
+          <button className="btn btn-outline btn-sm" onClick={() => window.print()}>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <polyline points="6 9 6 2 18 2 18 9" />
               <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
               <rect x="6" y="14" width="12" height="8" />
             </svg>
             Cetak Rekap Jam
           </button>
-          <button className="btn btn-accent" onClick={() => setShowKoreksiModal(true)}>
+          <button className="btn btn-accent btn-sm" onClick={() => setShowKoreksiModal(true)}>
             + Ajukan Koreksi Jam
           </button>
         </div>

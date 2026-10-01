@@ -43,8 +43,8 @@ export default function PembayaranPage() {
   const [isLoadingFinance, setIsLoadingFinance] = useState<boolean>(false);
   const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
 
-  const loadFinanceData = async (studentId?: string) => {
-    setIsLoadingFinance(true);
+  const loadFinanceData = async (studentId?: string, isSilent: boolean = false) => {
+    if (!isSilent) setIsLoadingFinance(true);
     try {
       const activeStudent = studentId !== undefined ? studentId : selectedStudentId;
       const [plansRes, paymentsRes] = await Promise.allSettled([
@@ -63,9 +63,32 @@ export default function PembayaranPage() {
     } catch (err) {
       console.warn("Gagal memuat data finance:", err);
     } finally {
-      setIsLoadingFinance(false);
+      if (!isSilent) setIsLoadingFinance(false);
     }
   };
+
+  // Realtime periodic background sync (setiap 6 detik jika tab aktif)
+  useEffect(() => {
+    if (!selectedStudentId) return;
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        loadFinanceData(selectedStudentId, true);
+      }
+    }, 6000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        loadFinanceData(selectedStudentId, true);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [selectedStudentId]);
 
   // Fetch Students list on mount (load cepat & non-blocking)
   useEffect(() => {
@@ -557,7 +580,7 @@ export default function PembayaranPage() {
         payment_type: paymentType,
         payment_method: method,
         payment_channel: channel,
-        expired_time: "2h",
+        expired_time: "30m",
       });
 
       if (res && res.data) {
@@ -991,74 +1014,104 @@ export default function PembayaranPage() {
       {/* ── 1. TOP HEADER & CHILD SELECTOR ───────────────────────────────── */}
       <div className="pembayaran-header-wrap" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#1e293b", margin: 0, letterSpacing: "-0.02em" }}>
-            Pembayaran Siswa
-          </h1>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <h1 style={{ fontSize: 24, fontWeight: 800, color: "#1e293b", margin: 0, letterSpacing: "-0.02em" }}>
+              Pembayaran Siswa
+            </h1>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "#16a34a", background: "#dcfce7", padding: "3px 8px", borderRadius: 999 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
+              Live Sync
+            </span>
+          </div>
           <p style={{ fontSize: 13, color: "#64748b", margin: "4px 0 0 0" }}>
             Siswa: <strong>{childName}</strong> • {programName} ({levelName})
           </p>
         </div>
 
-        {/* Child Selector Dropdown */}
-        {students.length > 0 && (
-          <div className="pembayaran-student-select" style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <label htmlFor="student-selector" style={{ fontSize: 13, fontWeight: 600, color: "#475569", flexShrink: 0 }}>
-              Pilih Siswa:
-            </label>
-            <div style={{ position: "relative", width: "100%", minWidth: 220 }}>
-              <select
-                id="student-selector"
-                value={selectedStudentId}
-                onChange={(e) => handleSelectStudent(e.target.value)}
-                style={{
-                  width: "100%",
-                  appearance: "none",
-                  WebkitAppearance: "none",
-                  MozAppearance: "none",
-                  background: "#ffffff",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: 10,
-                  padding: "9px 38px 9px 14px",
-                  fontSize: 13.5,
-                  fontWeight: 600,
-                  color: "#1e293b",
-                  cursor: "pointer",
-                  outline: "none",
-                  transition: "all 0.15s ease",
-                  boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
-                }}
-                onFocus={(e) => (e.target.style.borderColor = "#0e7490")}
-                onBlur={(e) => (e.target.style.borderColor = "#cbd5e1")}
-              >
-                {students.map((s) => {
-                  const studentLabel = s.name || s.full_name || "Siswa";
-                  const extraInfo = s.studentCode ? ` (${s.studentCode})` : s.relation ? ` (${s.relation})` : "";
-                  return (
-                    <option key={s.id} value={s.id}>
-                      {studentLabel}{extraInfo}
-                    </option>
-                  );
-                })}
-              </select>
-              <div
-                style={{
-                  position: "absolute",
-                  right: 12,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  pointerEvents: "none",
-                  color: "#64748b",
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
+        {/* Child Selector Dropdown & Refresh */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <button
+            onClick={() => loadFinanceData(selectedStudentId, false)}
+            disabled={isLoadingFinance}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              background: "#ffffff",
+              border: "1px solid #cbd5e1",
+              borderRadius: 10,
+              padding: "8px 12px",
+              fontSize: 12.5,
+              fontWeight: 700,
+              color: "#334155",
+              cursor: "pointer",
+            }}
+          >
+            <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ animation: isLoadingFinance ? "spin 1s linear infinite" : "none" }}>
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+            Segarkan
+          </button>
+          {students.length > 0 && (
+            <div className="pembayaran-student-select" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <label htmlFor="student-selector" style={{ fontSize: 13, fontWeight: 600, color: "#475569", flexShrink: 0 }}>
+                Pilih Siswa:
+              </label>
+              <div style={{ position: "relative", width: "100%", minWidth: 200 }}>
+                <select
+                  id="student-selector"
+                  value={selectedStudentId}
+                  onChange={(e) => handleSelectStudent(e.target.value)}
+                  style={{
+                    width: "100%",
+                    appearance: "none",
+                    WebkitAppearance: "none",
+                    MozAppearance: "none",
+                    background: "#ffffff",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 10,
+                    padding: "9px 38px 9px 14px",
+                    fontSize: 13.5,
+                    fontWeight: 600,
+                    color: "#1e293b",
+                    cursor: "pointer",
+                    outline: "none",
+                    transition: "all 0.15s ease",
+                    boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = "#0e7490")}
+                  onBlur={(e) => (e.target.style.borderColor = "#cbd5e1")}
+                >
+                  {students.map((s) => {
+                    const studentLabel = s.name || s.full_name || "Siswa";
+                    const extraInfo = s.studentCode ? ` (${s.studentCode})` : s.relation ? ` (${s.relation})` : "";
+                    return (
+                      <option key={s.id} value={s.id}>
+                        {studentLabel}{extraInfo}
+                      </option>
+                    );
+                  })}
+                </select>
+                <div
+                  style={{
+                    position: "absolute",
+                    right: 12,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    pointerEvents: "none",
+                    color: "#64748b",
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Loading Indicator saat ganti siswa */}

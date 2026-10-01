@@ -6,8 +6,16 @@ import StatCard from "@/components/ui/StatCard";
 import PageHeader from "@/components/ui/PageHeader";
 import { SkeletonStatGrid } from "@/components/ui/Skeleton";
 import Link from "next/link";
-import { getFinanceSummary, getPaymentPlans, getPayments } from "@/lib/api/finance";
+import { getFinanceDashboard, getPaymentPlans, getPayments } from "@/lib/api/finance";
 import { getPrograms } from "@/lib/api/academic";
+
+function extractList(resVal: any): any[] {
+  if (!resVal) return [];
+  if (Array.isArray(resVal)) return resVal;
+  if (Array.isArray(resVal.data)) return resVal.data;
+  if (Array.isArray(resVal.data?.data)) return resVal.data.data;
+  return [];
+}
 
 export default function OwnerPembayaranPage() {
   const [loading, setLoading] = useState(true);
@@ -24,26 +32,19 @@ export default function OwnerPembayaranPage() {
   });
   const [programStats, setProgramStats] = useState<{ name: string; amount: number; pct: number }[]>([]);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
+  const fetchData = useCallback(async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
-      const [sumRes, plansRes, paymentsRes, programsRes] = await Promise.allSettled([
-        getFinanceSummary(),
-        getPaymentPlans({ per_page: 100 }),
-        getPayments({ per_page: 100 }),
+      const [dashRes, plansRes, paymentsRes, programsRes] = await Promise.allSettled([
+        getFinanceDashboard(),
+        getPaymentPlans({ per_page: 200 }),
+        getPayments({ per_page: 200 }),
         getPrograms({ per_page: 100 }),
       ]);
 
-      let totalIncome = 0;
-      let honorPaid = 0;
-
-      if (sumRes.status === "fulfilled" && sumRes.value) {
-        totalIncome = Number(sumRes.value.total_income || sumRes.value.income || 0);
-        honorPaid = Number(sumRes.value.total_honor || sumRes.value.honor_paid || 0);
-      }
-
-      const plans = plansRes.status === "fulfilled" && Array.isArray(plansRes.value?.data) ? plansRes.value.data : [];
-      const payments = paymentsRes.status === "fulfilled" && Array.isArray(paymentsRes.value?.data) ? paymentsRes.value.data : [];
+      const dashData = dashRes.status === "fulfilled" ? dashRes.value : {};
+      const plans = plansRes.status === "fulfilled" ? extractList(plansRes.value) : [];
+      const payments = paymentsRes.status === "fulfilled" ? extractList(paymentsRes.value) : [];
 
       let paidCount = 0;
       let unpaidCount = 0;
@@ -54,10 +55,17 @@ export default function OwnerPembayaranPage() {
 
       plans.forEach((p: any) => {
         const amt = Number(p.amount || 0);
-        if (p.is_paid || (p.status || "").toLowerCase() === "paid") {
+        const st = (p.status || "").toLowerCase();
+        const hasPendingCash = Array.isArray(p.cash_transactions || p.cashTransactions)
+          ? (p.cash_transactions || p.cashTransactions).some(
+              (c: any) => (c.status || "").toLowerCase() === "menunggu_konfirmasi_admin"
+            )
+          : false;
+
+        if (p.is_paid || st === "paid") {
           paidCount++;
           totalPaid += amt;
-        } else if ((p.status || "").toLowerCase().includes("pending")) {
+        } else if (st === "menunggu_konfirmasi_admin" || hasPendingCash) {
           pendingCount++;
           totalPending += amt;
         } else {
@@ -66,24 +74,39 @@ export default function OwnerPembayaranPage() {
         }
       });
 
+      const summaryObj = dashData?.summary || dashData?.data?.summary || dashData?.data || dashData || {};
+      let totalIncome = Number(summaryObj.total_income || summaryObj.total_monthly_income || 0);
+
       if (totalIncome === 0 && totalPaid > 0) {
         totalIncome = totalPaid;
       }
+      if (totalIncome === 0 && payments.length > 0) {
+        totalIncome = payments
+          .filter((pay: any) => {
+            const st = (pay.payment_status || pay.status || "").toLowerCase();
+            return st === "paid" || st === "settlement" || st === "success" || st === "berhasil";
+          })
+          .reduce((acc: number, cur: any) => acc + Number(cur.total_amount || cur.amount || 0), 0);
+      }
 
+      const honorPaid = Number(summaryObj.total_payroll || summaryObj.total_payroll_expense || 0);
       const netProfit = totalIncome - honorPaid;
 
       // Program Breakdown
-      const programs = programsRes.status === "fulfilled" && Array.isArray(programsRes.value?.data) ? programsRes.value.data : [];
       const pMap: Record<string, number> = {};
 
       plans.forEach((p: any) => {
-        const progName = p.enrollment?.classroom?.program_level?.program?.name || p.enrollment?.program?.name || "Program Reguler";
+        const progName =
+          p.enrollment?.classroom?.program_level?.program?.name ||
+          p.enrollment?.program?.name ||
+          p.enrollment?.programLevel?.program?.name ||
+          "Program Reguler";
         const amt = Number(p.amount || 0);
         pMap[progName] = (pMap[progName] || 0) + amt;
       });
 
       const progList = Object.entries(pMap).map(([name, amount]) => {
-        const pct = totalIncome > 0 ? Math.round((amount / totalIncome) * 100) : 0;
+        const pct = totalPaid > 0 ? Math.round((amount / totalPaid) * 100) : 0;
         return { name, amount, pct };
       });
 
@@ -103,12 +126,31 @@ export default function OwnerPembayaranPage() {
     } catch (err) {
       console.warn("Gagal memuat ringkasan pembayaran owner:", err);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     fetchData();
+
+    // Auto sync tiap 6 detik jika tab aktif
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchData(true);
+      }
+    }, 6000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchData(true);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [fetchData]);
 
   if (loading) return <SkeletonStatGrid />;
@@ -120,7 +162,26 @@ export default function OwnerPembayaranPage() {
       <PageHeader
         title="Ringkasan Pembayaran & Keuangan"
         subtitle="Ringkasan pemasukan, laba bersih, dan status pembayaran tagihan siswa secara realtime."
-        actions={<Link href="/owner/tagihan" className="btn btn-outline">Lihat Daftar Tagihan →</Link>}
+        actions={
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 700, color: "#16a34a", background: "#dcfce7", padding: "4px 10px", borderRadius: 999 }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
+              Live Sync Realtime
+            </span>
+            <button
+              className="btn btn-outline btn-sm"
+              onClick={() => fetchData(false)}
+              disabled={loading}
+              style={{ display: "flex", alignItems: "center", gap: 6 }}
+            >
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ animation: loading ? "spin 1s linear infinite" : "none" }}>
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+              </svg>
+              Segarkan
+            </button>
+            <Link href="/owner/tagihan" className="btn btn-primary btn-sm">Lihat Daftar Tagihan →</Link>
+          </div>
+        }
       />
 
       {/* Revenue Summary Banner */}

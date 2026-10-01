@@ -13,7 +13,7 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import { getStudents } from "@/lib/api/students";
 import { getTeachers } from "@/lib/api/teachers";
 import { getPrograms, getClassrooms, getClassSessions } from "@/lib/api/academic";
-import { getInvoices, getCashVerifications, getFinanceSummary } from "@/lib/api/finance";
+import { getPaymentPlans, getCashTransactions, getFinanceDashboard } from "@/lib/api/finance";
 import { getAnnouncements, getInventory } from "@/lib/api/operational";
 
 // ---- Types ----
@@ -90,7 +90,7 @@ export default function OwnerDashboardPage() {
         programsRes,
         classroomsRes,
         sessionsRes,
-        invoicesRes,
+        plansRes,
         cashRes,
         announcementsRes,
         inventoryRes,
@@ -101,31 +101,35 @@ export default function OwnerDashboardPage() {
         getPrograms({ per_page: 100 }),
         getClassrooms({ per_page: 100 }),
         getClassSessions({ per_page: 100 }),
-        getInvoices({ per_page: 100 }),
-        getCashVerifications({ status: "pending" }),
+        getPaymentPlans({ per_page: 100 }),
+        getCashTransactions({ status: "menunggu_konfirmasi_admin" }),
         getAnnouncements({ per_page: 10 }),
         getInventory({ per_page: 200 }),
-        getFinanceSummary(),
+        getFinanceDashboard(),
       ]);
 
       const students = studentsRes.status === "fulfilled" ? (studentsRes.value.data ?? []) : [];
       const teachers = teachersRes.status === "fulfilled" ? (teachersRes.value.data ?? []) : [];
       const programs = programsRes.status === "fulfilled" ? (programsRes.value.data ?? []) : [];
       const classrooms = classroomsRes.status === "fulfilled" ? (classroomsRes.value.data ?? []) : [];
-      // getClassSessions returns ClassSession[] directly (not paginated)
       const sessions = sessionsRes.status === "fulfilled" ? (Array.isArray(sessionsRes.value) ? sessionsRes.value : []) : [];
-      const invoices: any[] = invoicesRes.status === "fulfilled" ? (Array.isArray(invoicesRes.value.data?.data) ? invoicesRes.value.data.data : Array.isArray(invoicesRes.value.data) ? invoicesRes.value.data : []) : [];
-      const cashItems: any[] = cashRes.status === "fulfilled" ? (Array.isArray(cashRes.value.data?.data) ? cashRes.value.data.data : Array.isArray(cashRes.value.data) ? cashRes.value.data : []) : [];
+      const rawPlans: any[] = plansRes.status === "fulfilled" ? (Array.isArray(plansRes.value?.data?.data) ? plansRes.value.data.data : Array.isArray(plansRes.value?.data) ? plansRes.value.data : Array.isArray(plansRes.value) ? plansRes.value : []) : [];
+      const rawCash: any[] = cashRes.status === "fulfilled" ? (Array.isArray(cashRes.value?.data?.data) ? cashRes.value.data.data : Array.isArray(cashRes.value?.data) ? cashRes.value.data : Array.isArray(cashRes.value) ? cashRes.value : []) : [];
       const announcements: any[] = announcementsRes.status === "fulfilled" ? (Array.isArray(announcementsRes.value.data?.data) ? announcementsRes.value.data.data : Array.isArray(announcementsRes.value.data) ? announcementsRes.value.data : []) : [];
       const inventoryItems: any[] = inventoryRes.status === "fulfilled" ? (Array.isArray(inventoryRes.value.data?.data) ? inventoryRes.value.data.data : Array.isArray(inventoryRes.value.data) ? inventoryRes.value.data : []) : [];
       const finance = financeRes.status === "fulfilled" ? financeRes.value : null;
 
-      const overdueInvoices = invoices.filter((inv: any) =>
-        inv.status === "overdue" || inv.status === "Overdue"
+      const overdueInvoices = rawPlans.filter((p: any) =>
+        !p.is_paid && (p.status === "overdue" || (p.due_date && new Date(p.due_date) < new Date()))
       );
-      const pendingCash = cashItems.filter((c: any) =>
-        c.status === "pending" || c.status === "Menunggu Konfirmasi"
+      const pendingCash = rawCash.filter((c: any) =>
+        (c.status || "").toLowerCase() === "menunggu_konfirmasi_admin"
       );
+
+      const financeSummary = finance?.summary || finance?.data?.summary || finance || {};
+      const totalRevenue = Number(financeSummary.total_income || financeSummary.total_monthly_income || 0);
+      const honorPaid = Number(financeSummary.total_payroll || financeSummary.total_payroll_expense || 0);
+      const netProfit = totalRevenue - honorPaid;
 
       setData({
         totalStudents: students.length,
@@ -135,12 +139,12 @@ export default function OwnerDashboardPage() {
         totalPrograms: programs.length,
         totalClasses: classrooms.length,
         activeClasses: classrooms.filter((c: any) => c.status === "active" || c.status === "Aktif").length,
-        pendingEnrollments: 0, // belum ada endpoint pendaftaran count
+        pendingEnrollments: 0,
         overdueCount: overdueInvoices.length,
         pendingCashCount: pendingCash.length,
-        totalRevenue: finance?.totalRevenue ?? 0,
-        honorPaid: finance?.totalHonor ?? 0,
-        netProfit: finance ? (finance.totalRevenue - finance.totalHonor) : 0,
+        totalRevenue: totalRevenue || rawPlans.filter((p: any) => p.is_paid).reduce((acc: number, cur: any) => acc + Number(cur.amount || 0), 0),
+        honorPaid: honorPaid,
+        netProfit: netProfit,
         totalInventory: inventoryItems.length,
         goodInventory: inventoryItems.filter((i: any) => i.condition === "Good" || i.condition === "good").length,
         underRepairInventory: inventoryItems.filter((i: any) => i.condition === "Under Repair" || i.condition === "under_repair").length,
@@ -152,11 +156,11 @@ export default function OwnerDashboardPage() {
           .slice(0, 3)
           .map((a: any) => ({ id: a.id, title: a.title, status: a.status })),
         pendingCashItems: pendingCash.slice(0, 3).map((c: any) => ({
-          parentName: c.parentName || c.parent_name || c.user?.name || "—",
-          amount: c.amount || 0,
+          parentName: c.submitter?.name || c.enrollment?.student?.full_name || c.parentName || "Orang Tua",
+          amount: Number(c.amount) || 0,
         })),
         overdueInvoices: overdueInvoices.slice(0, 4).map((inv: any) => ({
-          studentName: inv.siswa || inv.student_name || inv.student?.name || "—",
+          studentName: inv.enrollment?.student?.full_name || inv.siswa || "Siswa",
           amount: inv.jumlah || inv.amount || inv.total_amount || 0,
           program: inv.program || "—",
         })),
