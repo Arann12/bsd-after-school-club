@@ -1,4 +1,4 @@
-﻿import axiosInstance from "./axiosInstance";
+import axiosInstance from "./axiosInstance";
 import type { ApiResponse } from "./types";
 
 export interface PayrollRaw {
@@ -70,4 +70,18 @@ export async function generatePayroll(params: { teacher_id: string; period_start
 export async function deletePayroll(id: string) {
   const res = await axiosInstance.delete<ApiResponse<any>>(`/teacher-payrolls/${id}`);
   return res.data;
+}
+
+export async function updatePayrollStatus(id: string, status: "pending" | "paid" | "partial") {
+  const res = await axiosInstance.put<ApiResponse<PayrollRaw>>(`/teacher-payrolls/${id}`, { status });
+  return mapPayroll(res.data.data);
+}
+
+export async function updatePayroll(id: string, data: Partial<{
+  status: string;
+  bonus_amount: number;
+  notes: string;
+}>) {
+  const res = await axiosInstance.put<ApiResponse<PayrollRaw>>(`/teacher-payrolls/${id}`, data);
+  return mapPayroll(res.data.data);
 }
