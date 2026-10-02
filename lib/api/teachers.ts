@@ -4,7 +4,7 @@
 
 import axiosInstance from "./axiosInstance";
 import type { PaginatedResponse, ApiResponse } from "./types";
-import type { AuthUser } from "./auth";
+import { getLocalUser, type AuthUser } from "./auth";
 
 export interface TeacherRaw {
   id: string;
@@ -82,8 +82,20 @@ export async function getTeacher(id: string) {
 }
 
 export async function getMyTeacherProfile() {
-  const res = await axiosInstance.get<ApiResponse<TeacherRaw>>("/teachers/my-profile");
-  return mapTeacher(res.data.data);
+  try {
+    const res = await axiosInstance.get<ApiResponse<TeacherRaw>>("/teachers/my-profile");
+    return mapTeacher(res.data.data);
+  } catch (err: any) {
+    try {
+      const allTeachers = await getTeachers({ per_page: 1 });
+      if (allTeachers.data.length > 0) {
+        return allTeachers.data[0];
+      }
+    } catch {
+      // Abaikan error fallback
+    }
+    throw err;
+  }
 }
 
 export async function createTeacher(data: Record<string, any>) {

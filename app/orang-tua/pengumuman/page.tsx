@@ -97,6 +97,25 @@ export default function OrangTuaPengumumanPage() {
     loadData();
   }, [loadData]);
 
+  // Otomatis buka modal detail pengumuman bila dibuka dari notifikasi (?id=...)
+  useEffect(() => {
+    if (typeof window !== "undefined" && daftar.length > 0) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const queryId = urlParams.get("id");
+      if (queryId) {
+        const found = daftar.find((d) => d.id === queryId);
+        if (found) {
+          setSelected(found);
+          try {
+            window.history.replaceState({}, "", window.location.pathname);
+          } catch {
+            // ignore
+          }
+        }
+      }
+    }
+  }, [daftar]);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Header */}

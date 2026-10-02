@@ -1,8 +1,10 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { SkeletonTable } from "@/components/ui/Skeleton";
 import { getMyParentProfile } from "@/lib/api/parents";
 import { getStudentAttendances } from "@/lib/api/attendances";
+import { getLocalUser } from "@/lib/api/auth";
 import axiosInstance from "@/lib/api/axiosInstance";
 
 // ── Types ─────────────────────────────────────────────────────
@@ -162,15 +164,37 @@ export default function OrangTuaProgressPage() {
   if (loading) return <SkeletonTable rows={4} cols={3} />;
 
   if (error && children.length === 0) {
+    const user = getLocalUser();
     return (
-      <div className="card" style={{ padding: "40px 24px", textAlign: "center" }}>
+      <div className="card" style={{ padding: "40px 24px", textAlign: "center", maxWidth: 520, margin: "20px auto" }}>
         <div style={{ width: 44, height: 44, borderRadius: "50%", background: "var(--color-danger-bg)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", color: "var(--color-danger)" }}>
           <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
         </div>
-        <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-danger)", marginBottom: 8 }}>{error}</div>
-        <button className="btn btn-primary" onClick={() => window.location.reload()}>Coba Lagi</button>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-danger)", marginBottom: 8 }}>Gagal Memuat Progress Belajar Anak</div>
+        <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 20 }}>{error}</div>
+        <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+          <button className="btn btn-primary" onClick={() => window.location.reload()}>Coba Lagi</button>
+          {user && (
+            <Link href={user.role === "admin" ? "/admin/dashboard" : user.role === "teacher" ? "/guru/dashboard" : "/owner/dashboard"} className="btn btn-outline" style={{ textDecoration: "none" }}>
+              Kembali ke Dashboard
+            </Link>
+          )}
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                localStorage.removeItem("auth_token");
+                localStorage.removeItem("auth_user");
+                window.location.href = "/";
+              }
+            }}
+          >
+            Keluar & Ganti Akun
+          </button>
+        </div>
       </div>
     );
   }

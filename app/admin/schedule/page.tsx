@@ -54,14 +54,19 @@ export default function SchedulePage() {
     setLoading(true);
     setError(null);
     try {
-      const [schedRes, clsRes, tchrRes] = await Promise.all([
-        getClassSchedules(),
-        getClassrooms({ per_page: 100 }),
-        getTeachers({ per_page: 100 })
-      ]);
+      const schedRes = await getClassSchedules();
       setSchedules(schedRes);
-      setClassrooms(clsRes.data);
-      setTeachers(tchrRes.data);
+
+      try {
+        const [clsRes, tchrRes] = await Promise.allSettled([
+          getClassrooms({ per_page: 100 }),
+          getTeachers({ per_page: 100 })
+        ]);
+        if (clsRes.status === "fulfilled") setClassrooms(clsRes.value.data);
+        if (tchrRes.status === "fulfilled") setTeachers(tchrRes.value.data);
+      } catch (subErr) {
+        console.warn("Gagal memuat opsi kelas/guru:", subErr);
+      }
     } catch (err: any) {
       console.error(err);
       setError("Gagal memuat data jadwal rutin.");

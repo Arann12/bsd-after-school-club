@@ -149,6 +149,26 @@ export default function PengumumanPage({ peran = "admin" }: Props) {
     loadData();
   }, [loadData]);
 
+  // Otomatis buka detail pengumuman bila dibuka dari link notifikasi (?id=...)
+  useEffect(() => {
+    if (typeof window !== "undefined" && daftar.length > 0) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const queryId = urlParams.get("id");
+      if (queryId) {
+        const found = daftar.find((d) => d.id === queryId);
+        if (found) {
+          setDipilih(found);
+          tandaiDibaca(found.id);
+          try {
+            window.history.replaceState({}, "", window.location.pathname);
+          } catch {
+            // ignore
+          }
+        }
+      }
+    }
+  }, [daftar]);
+
   const terfilter = daftar.filter((p) => {
     if (filterStatus === "Semua") return true;
     return p.status === filterStatus;

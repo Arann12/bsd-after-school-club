@@ -118,21 +118,25 @@ export default function PendaftaranPage() {
 
   const loadMasterData = async () => {
     try {
-      const [resStudents, resClasses]: [any, any] = await Promise.all([
+      const [resStudents, resClasses] = await Promise.allSettled([
         getStudents({ per_page: 100 }),
         getClassrooms({ per_page: 50 }),
       ]);
 
-      const stList = Array.isArray(resStudents?.data?.data)
-        ? resStudents.data.data
-        : Array.isArray(resStudents?.data)
-        ? resStudents.data
+      const stList = resStudents.status === "fulfilled"
+        ? (Array.isArray((resStudents.value as any)?.data?.data)
+            ? (resStudents.value as any).data.data
+            : Array.isArray((resStudents.value as any)?.data)
+            ? (resStudents.value as any).data
+            : [])
         : [];
 
-      const clsList = Array.isArray(resClasses?.data?.data)
-        ? resClasses.data.data
-        : Array.isArray(resClasses?.data)
-        ? resClasses.data
+      const clsList = resClasses.status === "fulfilled"
+        ? (Array.isArray((resClasses.value as any)?.data?.data)
+            ? (resClasses.value as any).data.data
+            : Array.isArray((resClasses.value as any)?.data)
+            ? (resClasses.value as any).data
+            : [])
         : [];
 
       setStudentsList(stList);

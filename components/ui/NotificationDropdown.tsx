@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 import { getCashTransactions, getPaymentPlans } from "@/lib/api/finance";
 import { getClassSessions } from "@/lib/api/academic";
 import { getAnnouncements } from "@/lib/api/operational";
@@ -16,7 +16,7 @@ export interface NotificationItem {
   href: string;
 }
 
-type NotificationRole = "owner" | "admin" | "guru" | "orangTua";
+export type NotificationRole = "owner" | "admin" | "guru" | "orangTua";
 
 function formatRelativeTime(dateStr: string): string {
   if (!dateStr) return "";
@@ -38,13 +38,36 @@ function formatRelativeTime(dateStr: string): string {
   }
 }
 
-export default function NotificationDropdown({ role = "owner" }: { role?: NotificationRole }) {
+export default function NotificationDropdown({ role }: { role?: NotificationRole }) {
+  const router = useRouter();
+  const pathname = usePathname() || "";
+
+  // Tentukan role aktif secara akurat dari prop maupun URL pathname
+  const resolvedRole: NotificationRole =
+    role ||
+    (pathname.startsWith("/admin")
+      ? "admin"
+      : pathname.startsWith("/guru")
+      ? "guru"
+      : pathname.startsWith("/orang-tua")
+      ? "orangTua"
+      : "owner");
+
+  const rolePrefix =
+    resolvedRole === "orangTua"
+      ? "orang-tua"
+      : resolvedRole === "guru"
+      ? "guru"
+      : resolvedRole === "admin"
+      ? "admin"
+      : "owner";
+
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadNotifications = useCallback(async () => {
-    const storageKey = `bsd_read_notifications_${role}`;
+    const storageKey = `bsd_read_notifications_${resolvedRole}`;
     let readSet = new Set<string>();
     try {
       const stored = localStorage.getItem(storageKey);
@@ -59,7 +82,7 @@ export default function NotificationDropdown({ role = "owner" }: { role?: Notifi
 
     try {
       // 1. Verifikasi Cash Pending (Owner & Admin)
-      if (role === "owner" || role === "admin") {
+      if (resolvedRole === "owner" || resolvedRole === "admin") {
         try {
           const cashRes = await getCashTransactions({ status: "menunggu_konfirmasi_admin", per_page: 10 });
           const cashList = Array.isArray(cashRes?.data?.data)
@@ -76,7 +99,7 @@ export default function NotificationDropdown({ role = "owner" }: { role?: Notifi
               type: "warning",
               read: readSet.has(id),
               createdAt: new Date().toISOString(),
-              href: role === "owner" ? "/owner/verifikasi-cash" : "/admin/verifikasi-cash",
+              href: rolePrefix === "admin" ? "/admin/verifikasi-cash" : "/owner/verifikasi-cash",
             });
           }
         } catch {
@@ -85,7 +108,7 @@ export default function NotificationDropdown({ role = "owner" }: { role?: Notifi
       }
 
       // 2. Jadwal Sesi Mengajar Hari Ini (Guru)
-      if (role === "guru") {
+      if (resolvedRole === "guru") {
         try {
           const today = new Date().toISOString().split("T")[0];
           const sessionsRes = await getClassSessions({ date: today });
@@ -107,7 +130,7 @@ export default function NotificationDropdown({ role = "owner" }: { role?: Notifi
       }
 
       // 3. Tagihan Belum Lunas (Orang Tua)
-      if (role === "orangTua") {
+      if (resolvedRole === "orangTua") {
         try {
           const plansRes = await getPaymentPlans({ is_paid: false, per_page: 5 });
           const plansList = Array.isArray(plansRes?.data?.data)
@@ -146,14 +169,7 @@ export default function NotificationDropdown({ role = "owner" }: { role?: Notifi
         annList.forEach((a: any) => {
           if (a.title && (a.status === "published" || a.status === "Published" || !a.status)) {
             const id = `live-ann-${a.id}`;
-            const targetHref =
-              role === "orangTua"
-                ? "/orang-tua/pengumuman"
-                : role === "guru"
-                ? "/guru/pengumuman"
-                : role === "admin"
-                ? "/admin/pengumuman"
-                : "/owner/pengumuman";
+            const targetHref = `/${rolePrefix}/pengumuman?id=${a.id}`;
 
             const snippet = a.description
               ? a.description.length > 70
@@ -188,7 +204,7 @@ export default function NotificationDropdown({ role = "owner" }: { role?: Notifi
 
     setNotifications(deduplicated);
     setLoading(false);
-  }, [role]);
+  }, [resolvedRole, rolePrefix]);
 
   useEffect(() => {
     loadNotifications();
@@ -196,12 +212,13 @@ export default function NotificationDropdown({ role = "owner" }: { role?: Notifi
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const handleItemClick = (item: NotificationItem) => {
+  const handleItemClick = (e: React.MouseEvent, item: NotificationItem) => {
+    e.preventDefault();
     if (!item.read) {
       const updated = notifications.map((n) => (n.id === item.id ? { ...n, read: true } : n));
       setNotifications(updated);
       try {
-        const storageKey = `bsd_read_notifications_${role}`;
+        const storageKey = `bsd_read_notifications_${resolvedRole}`;
         const readIds = updated.filter((n) => n.read).map((n) => n.id);
         localStorage.setItem(storageKey, JSON.stringify(readIds));
       } catch {
@@ -209,6 +226,9 @@ export default function NotificationDropdown({ role = "owner" }: { role?: Notifi
       }
     }
     setOpen(false);
+    if (item.href && item.href !== "#") {
+      router.push(item.href);
+    }
   };
 
   const handleMarkAllAsRead = (e: React.MouseEvent) => {
@@ -216,7 +236,7 @@ export default function NotificationDropdown({ role = "owner" }: { role?: Notifi
     const updated = notifications.map((n) => ({ ...n, read: true }));
     setNotifications(updated);
     try {
-      const storageKey = `bsd_read_notifications_${role}`;
+      const storageKey = `bsd_read_notifications_${resolvedRole}`;
       const readIds = updated.map((n) => n.id);
       localStorage.setItem(storageKey, JSON.stringify(readIds));
     } catch {
@@ -340,10 +360,10 @@ export default function NotificationDropdown({ role = "owner" }: { role?: Notifi
                   const style = getTypeStyle(n.type);
                   const isUnread = !n.read;
                   return (
-                    <Link
+                    <a
                       key={n.id}
                       href={n.href || "#"}
-                      onClick={() => handleItemClick(n)}
+                      onClick={(e) => handleItemClick(e, n)}
                       style={{
                         display: "flex",
                         gap: 12,
@@ -352,6 +372,7 @@ export default function NotificationDropdown({ role = "owner" }: { role?: Notifi
                         borderBottom: "1px solid var(--color-border-light)",
                         background: isUnread ? "rgba(26, 92, 138, 0.04)" : "#ffffff",
                         transition: "background 0.15s ease",
+                        cursor: "pointer",
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.background = isUnread ? "rgba(26, 92, 138, 0.08)" : "#f8fafc";
@@ -414,7 +435,7 @@ export default function NotificationDropdown({ role = "owner" }: { role?: Notifi
                           {n.message}
                         </div>
                       </div>
-                    </Link>
+                    </a>
                   );
                 })
               )}

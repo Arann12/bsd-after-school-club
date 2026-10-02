@@ -39,12 +39,15 @@ export default function AdminOrangTuaPage() {
     setLoading(true);
     setError(null);
     try {
-      const [parentsRes, studentsRes] = await Promise.all([
-        getParents({ per_page: 50 }),
-        getStudents({ per_page: 100 })
-      ]);
+      const parentsRes = await getParents({ per_page: 50 });
       setParents(parentsRes.data);
-      setAllStudents(studentsRes.data);
+
+      try {
+        const studentsRes = await getStudents({ per_page: 100 });
+        setAllStudents(studentsRes.data);
+      } catch (studentErr) {
+        console.warn("Gagal memuat opsi siswa:", studentErr);
+      }
     } catch (err: any) {
       console.error(err);
       setError("Gagal memuat data orang tua.");

@@ -33,15 +33,18 @@ export default function AdminSiswaPage() {
     setLoading(true);
     setError(null);
     try {
-      const [studentsRes, parentsRes] = await Promise.all([
-        getStudents({ per_page: 50 }),
-        getParents({ per_page: 100 })
-      ]);
+      const studentsRes = await getStudents({ per_page: 50 });
       setStudents(studentsRes.data);
-      setParents(parentsRes.data);
+
+      try {
+        const parentsRes = await getParents({ per_page: 100 });
+        setParents(parentsRes.data);
+      } catch (parentErr) {
+        console.warn("Gagal memuat opsi orang tua:", parentErr);
+      }
     } catch (err: any) {
       console.error(err);
-      setError("Gagal memuat data siswa/orang tua.");
+      setError("Gagal memuat data siswa.");
     } finally {
       setLoading(false);
     }
@@ -120,12 +123,15 @@ export default function AdminSiswaPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Yakin ingin menghapus / menonaktifkan siswa ini?")) return;
+    if (!confirm("Yakin ingin menghapus siswa ini?")) return;
     try {
-      await deleteStudent(id);
+      const res = await deleteStudent(id);
+      if (res?.message) {
+        alert(res.message);
+      }
       fetchData();
     } catch (err: any) {
-      alert("Gagal menonaktifkan: " + err.message);
+      alert("Gagal menghapus siswa: " + (err.response?.data?.message || err.message));
     }
   };
 
@@ -135,7 +141,21 @@ export default function AdminSiswaPage() {
   };
 
   if (loading) return <SkeletonTable rows={5} cols={5} />;
-  if (error) return <div className="p-6 text-center text-red-500 font-bold">{error}</div>;
+
+  if (error) {
+    return (
+      <div className="card" style={{ padding: "40px 24px", textAlign: "center" }}>
+        <div style={{ width: 44, height: 44, borderRadius: "50%", background: "var(--color-danger-bg)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", color: "var(--color-danger)" }}>
+          <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+        </div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-danger)", marginBottom: 8 }}>Gagal Memuat Data Siswa</div>
+        <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 20 }}>{error}</div>
+        <button className="btn btn-primary" onClick={fetchData}>Coba Lagi</button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>

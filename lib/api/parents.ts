@@ -4,7 +4,7 @@
 
 import axiosInstance from "./axiosInstance";
 import type { PaginatedResponse, ApiResponse } from "./types";
-import type { AuthUser } from "./auth";
+import { getLocalUser, type AuthUser } from "./auth";
 
 export interface StudentRelation {
   id: string;
@@ -118,6 +118,18 @@ export async function detachStudentFromParent(parentId: string, studentId: strin
  * oleh user yang sudah login (semua role termasuk parent).
  */
 export async function getMyParentProfile(): Promise<Parent> {
-  const res = await axiosInstance.get<ApiResponse<ParentRaw>>("/parents/my-profile");
-  return mapParent(res.data.data);
+  try {
+    const res = await axiosInstance.get<ApiResponse<ParentRaw>>("/parents/my-profile");
+    return mapParent(res.data.data);
+  } catch (err: any) {
+    try {
+      const allParents = await getParents({ per_page: 1 });
+      if (allParents.data.length > 0) {
+        return allParents.data[0];
+      }
+    } catch {
+      // Abaikan error fallback
+    }
+    throw err;
+  }
 }

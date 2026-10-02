@@ -3,13 +3,18 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { SkeletonDashboard } from "@/components/ui/Skeleton";
 import { getMyParentProfile, type Parent } from "@/lib/api/parents";
+import { getLocalUser, type AuthUser } from "@/lib/api/auth";
 
 export default function OrangTuaDashboardPage() {
   const [parent, setParent] = useState<Parent | null>(null);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    const user = getLocalUser();
+    setCurrentUser(user);
+
     getMyParentProfile()
       .then(setParent)
       .catch((e) => setError(e?.response?.data?.message || e.message || "Gagal memuat data."))
@@ -18,17 +23,78 @@ export default function OrangTuaDashboardPage() {
 
   if (loading) return <SkeletonDashboard />;
 
+  const isManagementPreview =
+    currentUser && (currentUser.role === "owner" || currentUser.role === "admin");
+
   if (error) {
+    const isRoleMismatch =
+      error.toLowerCase().includes("profil orang tua tidak ditemukan") ||
+      (currentUser && currentUser.role !== "parent");
+
     return (
-      <div className="card" style={{ padding: "40px 24px", textAlign: "center" }}>
-        <div style={{ width: 44, height: 44, borderRadius: "50%", background: "var(--color-danger-bg)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", color: "var(--color-danger)" }}>
-          <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+      <div className="card" style={{ padding: "40px 24px", textAlign: "center", maxWidth: 540, margin: "20px auto" }}>
+        <div style={{ width: 48, height: 48, borderRadius: "50%", background: isRoleMismatch ? "#eff6ff" : "var(--color-danger-bg)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px", color: isRoleMismatch ? "#1d4ed8" : "var(--color-danger)" }}>
+          <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            {isRoleMismatch ? (
+              <>
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </>
+            ) : (
+              <>
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </>
+            )}
           </svg>
         </div>
-        <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-danger)", marginBottom: 8 }}>Gagal Memuat Data</div>
-        <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 20 }}>{error}</div>
-        <button className="btn btn-primary" onClick={() => window.location.reload()}>Coba Lagi</button>
+        <div style={{ fontSize: 16, fontWeight: 800, color: "var(--color-text-primary)", marginBottom: 8 }}>
+          {isRoleMismatch ? "Akses Panel Orang Tua" : "Gagal Memuat Data"}
+        </div>
+        <div style={{ fontSize: 13, color: "var(--color-text-secondary)", marginBottom: 20, lineHeight: 1.6 }}>
+          {isRoleMismatch ? (
+            <>
+              Anda saat ini sedang login dengan akun <strong>{currentUser?.name || "Pengguna"}</strong> (Peran:{" "}
+              <strong>{currentUser?.role?.toUpperCase() || "MANAJEMEN"}</strong>). Halaman ini dikhususkan untuk akun orang tua murid.
+              <br />
+              <span style={{ fontSize: 12, color: "var(--color-text-muted)", display: "block", marginTop: 6 }}>
+                Gunakan kredensial <strong>ortu@bsd.test</strong> (password: <strong>password</strong>) untuk masuk sebagai orang tua.
+              </span>
+            </>
+          ) : (
+            error
+          )}
+        </div>
+        <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+          {isRoleMismatch && currentUser ? (
+            <Link
+              href={currentUser.role === "admin" ? "/admin/dashboard" : currentUser.role === "teacher" ? "/guru/dashboard" : "/owner/dashboard"}
+              className="btn btn-primary"
+              style={{ textDecoration: "none" }}
+            >
+              Kembali ke Dashboard {currentUser.role === "admin" ? "Admin" : currentUser.role === "teacher" ? "Guru" : "Owner"}
+            </Link>
+          ) : (
+            <button className="btn btn-primary" onClick={() => window.location.reload()}>
+              Coba Lagi
+            </button>
+          )}
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                localStorage.removeItem("auth_token");
+                localStorage.removeItem("auth_user");
+                window.location.href = "/";
+              }
+            }}
+          >
+            Keluar & Ganti Akun
+          </button>
+        </div>
       </div>
     );
   }
@@ -38,6 +104,25 @@ export default function OrangTuaDashboardPage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {/* Banner Mode Pratinjau Jika Diakses Owner/Admin */}
+      {isManagementPreview && (
+        <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: "12px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ background: "#1d4ed8", color: "#fff", fontSize: 10.5, fontWeight: 800, padding: "2px 8px", borderRadius: 999, textTransform: "uppercase" }}>
+              Mode Pratinjau {currentUser?.role?.toUpperCase()}
+            </span>
+            <span style={{ fontSize: 12.5, color: "#1e40af" }}>
+              Menampilkan simulasi profil orang tua: <strong>{parent?.name}</strong>.
+            </span>
+          </div>
+          <Link
+            href={currentUser?.role === "admin" ? "/admin/dashboard" : "/owner/dashboard"}
+            style={{ fontSize: 12, fontWeight: 700, color: "#1d4ed8", textDecoration: "none" }}
+          >
+            Kembali ke Dashboard Utama →
+          </Link>
+        </div>
+      )}
 
       {/* Header */}
       <div className="page-header">

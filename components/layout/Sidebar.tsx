@@ -428,7 +428,6 @@ export function OrangTuaSidebar() {
     <SidebarBase
       nav={orangTuaNav}
       roleName="Panel Orang Tua"
-      brandName="KlubAnak"
     />
   );
 }

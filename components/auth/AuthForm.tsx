@@ -40,7 +40,11 @@ export default function AuthForm({
       else if (userRole === "teacher") targetDashboard = "/guru/dashboard";
       else if (userRole === "parent") targetDashboard = "/orang-tua/dashboard";
 
-      router.push(targetDashboard);
+      if (typeof window !== "undefined") {
+        window.location.href = targetDashboard;
+      } else {
+        router.push(targetDashboard);
+      }
     } catch (err: any) {
       console.error("Login gagal:", err);
       const msg =

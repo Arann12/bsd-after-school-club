@@ -5,8 +5,8 @@
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
 // ---- Base URL dari environment variable ----
-// Di .env.local tambahkan: NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+// Di .env.local tambahkan: NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api/v1
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000/api/v1";
 
 // ---- Create axios instance ----
 const axiosInstance = axios.create({
@@ -38,11 +38,21 @@ axiosInstance.interceptors.request.use(
 
 /* -------------------------------------------------------
    RESPONSE INTERCEPTOR
-   — Tangani error global (401 → redirect ke login)
+   — Tangani error global (401 → redirect ke login, transient network drop retry)
 ------------------------------------------------------- */
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => response,
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
+    const config = error.config as (InternalAxiosRequestConfig & { _retryCount?: number }) | undefined;
+
+    // Tangani transient network drop (koneksi dev server single-threaded terputus mendadak atau socket reset)
+    // Retry otomatis 1 kali dengan jeda 250ms sebelum melempar error ke komponen UI
+    if (!error.response && config && (config._retryCount || 0) < 1) {
+      config._retryCount = (config._retryCount || 0) + 1;
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      return axiosInstance(config);
+    }
+
     if (error.response?.status === 401) {
       // Token expired atau tidak valid → hapus token & redirect ke login
       if (typeof window !== "undefined") {

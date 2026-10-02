@@ -167,10 +167,5 @@ export function isAuthenticated(): boolean {
  * Gunakan setelah logout atau ketika token expired
  */
 export function getLoginRoute(role?: AuthUser["role"]): string {
-  switch (role) {
-    case "admin":   return "/admin/login";
-    case "teacher": return "/guru/login";
-    case "parent":  return "/orang-tua/login";
-    default:        return "/";  // owner & fallback → root
-  }
+  return "/";
 }

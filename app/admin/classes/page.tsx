@@ -46,14 +46,19 @@ export default function ClassesPage() {
     setLoading(true);
     setError(null);
     try {
-      const [clsRes, progRes, tchrRes] = await Promise.all([
-        getClassrooms({ per_page: 50 }),
-        getPrograms({ per_page: 100 }), // need all for dropdown
-        getTeachers({ per_page: 100 })  // need all for dropdown
-      ]);
+      const clsRes = await getClassrooms({ per_page: 50 });
       setClassrooms(clsRes.data);
-      setPrograms(progRes.data);
-      setTeachers(tchrRes.data);
+
+      try {
+        const [progRes, tchrRes] = await Promise.allSettled([
+          getPrograms({ per_page: 100 }),
+          getTeachers({ per_page: 100 })
+        ]);
+        if (progRes.status === "fulfilled") setPrograms(progRes.value.data);
+        if (tchrRes.status === "fulfilled") setTeachers(tchrRes.value.data);
+      } catch (subErr) {
+        console.warn("Gagal memuat opsi program/guru:", subErr);
+      }
 
       // Refresh activeClassroom if modal is open
       if (activeClassroom) {

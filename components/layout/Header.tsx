@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import NotificationDropdown from "@/components/ui/NotificationDropdown";
-import { getLocalUser, getMe } from "@/lib/api/auth";
+import { getLocalUser, getMe, logout } from "@/lib/api/auth";
 
 interface HeaderProps {
   userName?: string;
@@ -135,6 +135,21 @@ export default function Header({
   const finalName = displayName || propUserName || "Pengguna";
   const finalEmail = displayEmail || propUserEmail || "";
   const finalRole = displayRole || propUserRole;
+
+  const handleLogout = async () => {
+    setUserMenuOpen(false);
+    try {
+      await logout();
+    } catch {
+      // Abaikan error jaringan saat logout
+    } finally {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("auth_user");
+        window.location.href = "/";
+      }
+    }
+  };
 
   return (
     <header className="header" style={{ justifyContent: "space-between", position: "relative" }}>
@@ -420,10 +435,11 @@ export default function Header({
 
                 <div style={{ height: 1, background: "var(--color-border-light)", margin: "4px 0" }} />
 
-                <Link
-                  href="/"
-                  onClick={() => setUserMenuOpen(false)}
+                <button
+                  type="button"
+                  onClick={handleLogout}
                   style={{
+                    width: "100%",
                     display: "flex",
                     alignItems: "center",
                     gap: 10,
@@ -432,7 +448,10 @@ export default function Header({
                     fontSize: 13,
                     fontWeight: 600,
                     color: "var(--color-danger)",
-                    textDecoration: "none",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    textAlign: "left",
                     transition: "background 0.15s",
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.background = "#fee2e2")}
@@ -444,7 +463,7 @@ export default function Header({
                     <line x1="21" y1="12" x2="9" y2="12" />
                   </svg>
                   <span>Keluar</span>
-                </Link>
+                </button>
               </div>
             </div>
           )}
