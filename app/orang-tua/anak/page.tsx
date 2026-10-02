@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { SkeletonTable } from "@/components/ui/Skeleton";
@@ -44,6 +44,9 @@ export default function OrangTuaAnakPage() {
               if (typeof window !== "undefined") {
                 localStorage.removeItem("auth_token");
                 localStorage.removeItem("auth_user");
+                const exp = "; path=/; SameSite=Strict; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+                document.cookie = "auth_token=" + exp;
+                document.cookie = "auth_user=" + exp;
                 window.location.href = "/";
               }
             }}

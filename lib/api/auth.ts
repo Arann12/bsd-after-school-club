@@ -71,10 +71,12 @@ export async function login(credentials: LoginCredentials): Promise<LoginResult>
     message: data.message,
   };
 
-  // Simpan token & user ke localStorage
+  // Simpan token & user ke localStorage DAN cookie
+  // (Cookie dibutuhkan oleh middleware.ts untuk route protection)
   if (typeof window !== "undefined") {
     localStorage.setItem("auth_token", result.token);
     localStorage.setItem("auth_user", JSON.stringify(result.user));
+    setAuthCookies(result.token, result.user);
   }
 
   return result;
@@ -88,10 +90,11 @@ export async function logout(): Promise<void> {
   try {
     await axiosInstance.post("/auth/logout");
   } finally {
-    // Hapus localStorage meskipun request gagal
+    // Hapus localStorage DAN cookie meskipun request gagal
     if (typeof window !== "undefined") {
       localStorage.removeItem("auth_token");
       localStorage.removeItem("auth_user");
+      clearAuthCookies();
     }
   }
 }
@@ -164,8 +167,35 @@ export function isAuthenticated(): boolean {
 
 /**
  * Helper: redirect ke halaman login sesuai role
- * Gunakan setelah logout atau ketika token expired
  */
 export function getLoginRoute(role?: AuthUser["role"]): string {
   return "/";
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  COOKIE HELPERS — dibutuhkan oleh middleware.ts
+//  Middleware Next.js berjalan di Edge dan hanya bisa baca Cookie,
+//  bukan localStorage. Fungsi di bawah menyinkronkan keduanya.
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/**
+ * Tulis auth_token dan auth_user ke cookie browser.
+ * Cookie ini TIDAK httpOnly (masih JS-accessible) agar bisa
+ * dibersihkan dari client. Upgrade ke httpOnly dilakukan di sisi
+ * backend setelah backend siap set-cookie.
+ */
+export function setAuthCookies(token: string, user: AuthUser): void {
+  if (typeof document === "undefined") return;
+  // Session cookie (hilang saat browser ditutup), SameSite=Strict
+  const base = "; path=/; SameSite=Strict";
+  document.cookie = `auth_token=${encodeURIComponent(token)}${base}`;
+  document.cookie = `auth_user=${encodeURIComponent(JSON.stringify(user))}${base}`;
+}
+
+/** Hapus cookie auth_token dan auth_user */
+export function clearAuthCookies(): void {
+  if (typeof document === "undefined") return;
+  const expired = "; path=/; SameSite=Strict; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  document.cookie = `auth_token=${expired}`;
+  document.cookie = `auth_user=${expired}`;
 }

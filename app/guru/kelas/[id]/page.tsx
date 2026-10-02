@@ -42,9 +42,6 @@ export default function GuruKelasPage({ params }: { params: Promise<{ id: string
         // Use local date to avoid UTC timezone shift
         const now = new Date();
         const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-        
-        console.log("[GuruKelas] classId:", classId, "today:", today, "total sessions:", allSessions.length);
-        console.log("[GuruKelas] sessions for this class:", allSessions.filter((s: ClassSession) => s.classroomId === classId));
 
         // Cari sesi untuk kelas ini pada hari ini
         let todaySession = allSessions.find((s: ClassSession) => 

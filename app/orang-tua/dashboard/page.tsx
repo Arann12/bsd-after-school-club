@@ -88,6 +88,9 @@ export default function OrangTuaDashboardPage() {
               if (typeof window !== "undefined") {
                 localStorage.removeItem("auth_token");
                 localStorage.removeItem("auth_user");
+                const exp = "; path=/; SameSite=Strict; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+                document.cookie = "auth_token=" + exp;
+                document.cookie = "auth_user=" + exp;
                 window.location.href = "/";
               }
             }}
