@@ -1,6 +1,7 @@
-﻿/**
+/**
  * ============================================================
- * BSD After School Club — Next.js Edge Middleware
+ * BSD After School Club — Next.js Proxy (route guard)
+ * File: proxy.ts  (Next.js 16+ — menggantikan middleware.ts)
  * ============================================================
  * Berjalan SEBELUM setiap request diproses.
  * Tidak bisa mengakses localStorage (server-side / Edge).
@@ -41,8 +42,8 @@ function getRoleFromCookie(request: NextRequest): string | null {
   }
 }
 
-// ─── Middleware ────────────────────────────────────────────────
-export function middleware(request: NextRequest) {
+// ─── Proxy Function (Next.js 16+ convention) ──────────────────
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 1. Blokir /test-api di production
