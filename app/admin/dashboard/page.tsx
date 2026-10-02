@@ -5,9 +5,7 @@ import StatCard from "@/components/ui/StatCard";
 import PageHeader from "@/components/ui/PageHeader";
 import { SkeletonDashboard } from "@/components/ui/Skeleton";
 
-import { getStudents } from "@/lib/api/students";
-import { getTeachers } from "@/lib/api/teachers";
-import { getClassrooms, getClassSchedules } from "@/lib/api/academic";
+import { getAcademicDashboard } from "@/lib/api/academic";
 
 /* ---- Shortcut grid renderer ---- */
 function ShortcutGrid({ items }: { items: { label: string; sub: string; href: string; color: string; bg: string }[] }) {
@@ -40,21 +38,12 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        const [studentsRes, teachersRes, classesRes, schedulesRes] = await Promise.all([
-          getStudents({ status: "active", per_page: 1 }),
-          getTeachers({ per_page: 1 }),
-          getClassrooms({ status: "active", per_page: 1 }),
-          getClassSchedules()
-        ]);
-
-        const today = new Date().toLocaleDateString("en-US", { weekday: "long" }); // "Monday", "Tuesday", etc.
-        const todaySchedulesCount = schedulesRes.filter(s => s.dayOfWeek === today).length;
-
+        const academicData = await getAcademicDashboard();
         setStats({
-          activeStudents: (studentsRes as any).total || 0,
-          activeTeachers: (teachersRes as any).total || 0,
-          activeClasses: (classesRes as any).total || 0,
-          todaySchedules: todaySchedulesCount,
+          activeStudents: academicData.summary?.active_students ?? 0,
+          activeTeachers: academicData.summary?.active_teachers ?? 0,
+          activeClasses: academicData.summary?.active_classrooms ?? 0,
+          todaySchedules: academicData.summary?.today_sessions || academicData.summary?.today_schedules || 0,
           parents: 0,
         });
       } catch (err) {

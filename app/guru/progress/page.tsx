@@ -127,7 +127,7 @@ export default function GuruProgressPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Progress & Penilaian Belajar Siswa</h1>
-          <p className="page-subtitle">Pencatatan perkembangan belajar siswa per program & level secara realtime.</p>
+          <p className="page-subtitle">Pencatatan perkembangan belajar siswa per program & level.</p>
         </div>
         <button className="btn btn-accent" onClick={() => setShowInputModal(true)}>
           + Input Progress Belajar Siswa
@@ -177,8 +177,11 @@ export default function GuruProgressPage() {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {p.indikatorCapai.map((ind, idx) => (
-                    <div key={idx} style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "6px 10px", fontSize: 12.5, color: "#166534", fontWeight: 600 }}>
-                      ✓ {ind}
+                    <div key={idx} style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "6px 10px", fontSize: 12.5, color: "#166534", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                      <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      <span>{ind}</span>
                     </div>
                   ))}
                 </div>

@@ -236,7 +236,6 @@ export default function GuruKalenderLogbookPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
         @keyframes toastIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(5,150,105,0.15); } 50% { box-shadow: 0 0 0 6px rgba(5,150,105,0); } }
         @keyframes slideUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 
         .cal-cell {
@@ -275,7 +274,6 @@ export default function GuruKalenderLogbookPage() {
         .cal-cell.is-today {
           border-color: var(--color-primary);
           border-width: 2.5px;
-          animation: pulseGlow 2s ease-in-out infinite;
         }
         .cal-cell.has-multi::after {
           content: '';
@@ -344,7 +342,10 @@ export default function GuruKalenderLogbookPage() {
           boxShadow: "0 10px 30px rgba(0,0,0,0.3)", zIndex: 200, display: "flex", alignItems: "center", gap: 10,
           animation: "toastIn 0.25s ease-out",
         }}>
-          <span style={{ color: "#10b981", fontWeight: 800 }}>✓</span> {toastMsg}
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          <span>{toastMsg}</span>
         </div>
       )}
 
@@ -486,7 +487,7 @@ export default function GuruKalenderLogbookPage() {
                             animationDelay: `${idx * 0.05}s`,
                           }}
                         >
-                          <span style={{ fontSize: 9, flexShrink: 0 }}>{completed ? "✓" : "○"}</span>
+                          <span style={{ width: 5, height: 5, borderRadius: "50%", background: completed ? "#059669" : "#b45309", display: "inline-block", flexShrink: 0 }} />
                           {sess.kelas}
                           <span style={{ opacity: 0.7 }}>·</span>
                           <span style={{ opacity: 0.8 }}>{sess.jam.split(" - ")[0]}</span>
@@ -537,7 +538,10 @@ export default function GuruKalenderLogbookPage() {
               background: "#d1fae5", padding: "6px 14px",
               borderRadius: 999, fontSize: 13, fontWeight: 800, color: "#059669",
             }}>
-              ✓ {selectedDaySessions.sessions.filter(isLogbookCompleted).length} Selesai
+              <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              {selectedDaySessions.sessions.filter(isLogbookCompleted).length} Selesai
             </div>
             {selectedDaySessions.sessions.filter(s => !isLogbookCompleted(s)).length > 0 && (
               <div style={{
@@ -611,8 +615,12 @@ export default function GuruKalenderLogbookPage() {
                           marginTop: 8, paddingLeft: 40,
                           fontSize: 12, color: "#166534", fontWeight: 600,
                           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                          display: "flex", alignItems: "center", gap: 6,
                         }}>
-                          📖 {session.materi}
+                          <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                          </svg>
+                          <span>{session.materi}</span>
                         </div>
                       )}
                     </div>

@@ -161,13 +161,9 @@ export default function OwnerPembayaranPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <PageHeader
         title="Ringkasan Pembayaran & Keuangan"
-        subtitle="Ringkasan pemasukan, laba bersih, dan status pembayaran tagihan siswa secara realtime."
+        subtitle="Ringkasan pemasukan, laba bersih, dan status pembayaran tagihan siswa."
         actions={
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 700, color: "#16a34a", background: "#dcfce7", padding: "4px 10px", borderRadius: 999 }}>
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
-              Live Sync Realtime
-            </span>
             <button
               className="btn btn-outline btn-sm"
               onClick={() => fetchData(false)}

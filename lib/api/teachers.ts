@@ -15,6 +15,12 @@ export interface TeacherRaw {
   is_active: boolean;
   user_id: string;
   user?: AuthUser;
+  hourly_rates?: Array<{
+    id?: string;
+    hourly_rate: number | string;
+    effective_from: string;
+    effective_until?: string | null;
+  }>;
   created_at?: string;
   updated_at?: string;
 }
@@ -29,9 +35,14 @@ export interface Teacher {
   bankAccountName: string | null;
   bankAccountNumber: string | null;
   isActive: boolean;
+  hourlyRate: number;
 }
 
 export function mapTeacher(raw: TeacherRaw): Teacher {
+  const latestRate = Array.isArray(raw.hourly_rates) && raw.hourly_rates.length > 0
+    ? Number(raw.hourly_rates[raw.hourly_rates.length - 1].hourly_rate) || 0
+    : 0;
+
   return {
     id: raw.id,
     teacherCode: raw.teacher_code,
@@ -42,6 +53,7 @@ export function mapTeacher(raw: TeacherRaw): Teacher {
     bankAccountName: raw.bank_account_name,
     bankAccountNumber: raw.bank_account_number,
     isActive: raw.is_active,
+    hourlyRate: latestRate,
   };
 }
 

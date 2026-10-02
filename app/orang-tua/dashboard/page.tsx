@@ -21,7 +21,12 @@ export default function OrangTuaDashboardPage() {
   if (error) {
     return (
       <div className="card" style={{ padding: "40px 24px", textAlign: "center" }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-danger)", marginBottom: 8 }}>⚠ Gagal Memuat Data</div>
+        <div style={{ width: 44, height: 44, borderRadius: "50%", background: "var(--color-danger-bg)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", color: "var(--color-danger)" }}>
+          <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+        </div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-danger)", marginBottom: 8 }}>Gagal Memuat Data</div>
         <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 20 }}>{error}</div>
         <button className="btn btn-primary" onClick={() => window.location.reload()}>Coba Lagi</button>
       </div>
@@ -46,8 +51,7 @@ export default function OrangTuaDashboardPage() {
       {primaryChild ? (
         <div style={{ background: "linear-gradient(135deg, var(--color-primary) 0%, #0f3c5d 100%)", borderRadius: "var(--radius-lg)", padding: "24px 28px", color: "white", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 20 }}>
           <div>
-            <span style={{ background: "rgba(255,255,255,0.2)", fontSize: 11.5, fontWeight: 700, padding: "4px 12px", borderRadius: 999 }}>Anak Terhubung</span>
-            <h2 style={{ fontSize: 24, fontWeight: 900, margin: "8px 0 4px" }}>{primaryChild.name}</h2>
+            <h2 style={{ fontSize: 24, fontWeight: 900, margin: "0 0 4px" }}>{primaryChild.name}</h2>
             <div style={{ fontSize: 13, opacity: 0.85 }}>Hubungan: {primaryChild.relation}</div>
             {children.length > 1 && (
               <div style={{ fontSize: 12.5, opacity: 0.75, marginTop: 4 }}>+{children.length - 1} anak lainnya terhubung</div>

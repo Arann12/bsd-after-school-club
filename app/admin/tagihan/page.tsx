@@ -213,7 +213,7 @@ export default function AdminTagihanPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Tagihan & Pembayaran Siswa</h1>
-          <p className="page-subtitle">Monitoring data tagihan paket per sesi dan status pembayaran real-time.</p>
+          <p className="page-subtitle">Monitoring data tagihan paket per sesi dan status pembayaran siswa.</p>
         </div>
         <div className="page-header-actions" style={{ display: "flex", gap: 10 }}>
           <button className="btn btn-outline" onClick={loadData} disabled={loading} suppressHydrationWarning>
@@ -396,7 +396,7 @@ export default function AdminTagihanPage() {
               </select>
             ) : (
               <div style={{ fontSize: 12, color: "var(--color-text-muted)", padding: "10px 0" }}>
-                ✅ Tidak ada tagihan belum lunas saat ini.
+                Tidak ada tagihan belum lunas saat ini.
               </div>
             )}
           </div>

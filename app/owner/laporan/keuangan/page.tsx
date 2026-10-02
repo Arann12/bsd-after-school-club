@@ -63,8 +63,11 @@ export default function OwnerLaporanKeuanganPage() {
           </p>
         </div>
         <div className="page-header-actions">
-          <button className="btn btn-outline" onClick={() => window.print()}>
-            🖨 Cetak Laporan
+          <button className="btn btn-outline" onClick={() => window.print()} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+            </svg>
+            <span>Cetak Laporan</span>
           </button>
         </div>
       </div>
@@ -156,7 +159,7 @@ export default function OwnerLaporanKeuanganPage() {
       <div className="card" style={{ overflow: "hidden" }}>
         <div style={{ padding: "18px 22px", borderBottom: "1px solid var(--color-border)", background: "#fafafa" }}>
           <h2 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>
-            Transaksi Pembayaran Masuk Realtime
+            Riwayat Transaksi Pembayaran
           </h2>
         </div>
 

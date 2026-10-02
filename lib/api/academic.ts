@@ -450,6 +450,36 @@ export async function getHolidays(params?: { per_page?: number }) {
 }
 
 // ============================================================================
+// Academic Dashboard (Hari 7)
+// ============================================================================
+export interface AcademicDashboardData {
+  summary: {
+    total_students: number;
+    active_students: number;
+    total_teachers: number;
+    active_teachers: number;
+    total_classrooms: number;
+    active_classrooms: number;
+    total_programs: number;
+    today_sessions: number;
+    today_schedules: number;
+  };
+  attendance_today: {
+    present: number;
+    late: number;
+    excused: number;
+    absent: number;
+    total_recorded: number;
+  };
+  today_sessions: any[];
+}
+
+export async function getAcademicDashboard(): Promise<AcademicDashboardData> {
+  const res = await axiosInstance.get<ApiResponse<AcademicDashboardData>>("/academic/dashboard");
+  return res.data.data;
+}
+
+// ============================================================================
 // Backward Compatibility Aliases
 // ============================================================================
 export const getClasses = getClassrooms;

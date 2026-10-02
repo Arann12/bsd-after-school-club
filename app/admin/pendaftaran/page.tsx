@@ -227,7 +227,7 @@ export default function PendaftaranPage() {
   const kelasDipilih = classesList.find((c) => c.id === selectedClassroomId);
   const siswaDipilih = studentsList.find((s) => s.id === selectedStudentId);
 
-  // Validasi real-time status enrollment siswa yang dipilih
+  // Validasi status enrollment siswa yang dipilih
   const isAlreadyInSelectedClass = !!(
     selectedStudentId &&
     selectedClassroomId &&
@@ -504,14 +504,20 @@ export default function PendaftaranPage() {
 
           {/* Peringatan Validasi Bisnis (Jika Duplikat Kelas atau Sudah 2 Program) */}
           {isAlreadyInSelectedClass && (
-            <div style={{ background: "#fef2f2", border: "1.5px solid #fecaca", borderRadius: 10, padding: "10px 14px", fontSize: 12.5, color: "#dc2626", fontWeight: 600 }}>
-              ⚠️ Siswa <strong>{siswaDipilih?.name}</strong> sudah terdaftar di kelas <strong>{kelasDipilih?.name}</strong>. Silakan pilih kelas lain atau pilih siswa lain.
+            <div style={{ background: "#fef2f2", border: "1.5px solid #fecaca", borderRadius: 10, padding: "10px 14px", fontSize: 12.5, color: "#dc2626", fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
+              <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span>Siswa <strong>{siswaDipilih?.name}</strong> sudah terdaftar di kelas <strong>{kelasDipilih?.name}</strong>. Silakan pilih kelas lain atau pilih siswa lain.</span>
             </div>
           )}
 
           {isStudentMaxPrograms && !isAlreadyInSelectedClass && (
-            <div style={{ background: "#fffbeb", border: "1.5px solid #fde68a", borderRadius: 10, padding: "10px 14px", fontSize: 12.5, color: "#b45309", fontWeight: 600 }}>
-              ⚠️ Siswa <strong>{siswaDipilih?.name}</strong> sudah terdaftar di 2 program aktif ({activeProgramsForStudent.join(", ")}). Sesuai aturan akademik, 1 siswa maksimal terdaftar di 2 program aktif secara bersamaan.
+            <div style={{ background: "#fffbeb", border: "1.5px solid #fde68a", borderRadius: 10, padding: "10px 14px", fontSize: 12.5, color: "#b45309", fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
+              <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span>Siswa <strong>{siswaDipilih?.name}</strong> sudah terdaftar di 2 program aktif ({activeProgramsForStudent.join(", ")}). Sesuai aturan akademik, 1 siswa maksimal terdaftar di 2 program aktif secara bersamaan.</span>
             </div>
           )}
 
@@ -589,14 +595,18 @@ export default function PendaftaranPage() {
             </div>
           </div>
 
-          {/* Banner Informasi Tagihan & Sesi Otomatis */}
-          <div style={{ background: "#f0f9ff", border: "1.5px solid #bae6fd", borderRadius: 10, padding: "12px 14px", fontSize: 12, color: "#0369a1" }}>
-            <div style={{ fontWeight: 700, marginBottom: 3, display: "flex", alignItems: "center", gap: 6 }}>
-              <span>💡</span>
-              <span>Otomasi Terpadu Tagihan & Kalender Sesi ({totalSessions} Pertemuan):</span>
+          {/* Informasi Tagihan & Sesi */}
+          <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "12px 14px", fontSize: 12, color: "#334155" }}>
+            <div style={{ fontWeight: 600, marginBottom: 4, display: "flex", alignItems: "center", gap: 6, color: "#0f172a" }}>
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+              <span>Ketentuan Tagihan & Jadwal Sesi ({totalSessions} Pertemuan)</span>
             </div>
-            <div>
-              Setelah pendaftaran disimpan, sistem backend akan langsung menerbitkan <strong>Rencana Tagihan (Payment Plans)</strong> serta otomatis membuat <strong>{totalSessions} Sesi Kelas & Absensi</strong> di kalender kelas sesuai jadwal rutin yang aktif.
+            <div style={{ lineHeight: 1.5, color: "#475569" }}>
+              Pendaftaran ini akan otomatis menerbitkan rencana tagihan dan menjadwalkan {totalSessions} sesi pertemuan kelas pada kalender akademik sesuai jadwal rutin aktif.
             </div>
           </div>
 

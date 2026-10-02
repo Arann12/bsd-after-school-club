@@ -1,7 +1,32 @@
 "use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { getAcademicDashboard } from "@/lib/api/academic";
 
 export default function OwnerLaporanPage() {
+  const [stats, setStats] = useState({
+    activeStudents: 0,
+    activeTeachers: 0,
+    activeClasses: 0,
+  });
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const res = await getAcademicDashboard();
+        setStats({
+          activeStudents: res.summary?.active_students ?? 0,
+          activeTeachers: res.summary?.active_teachers ?? 0,
+          activeClasses: res.summary?.active_classrooms ?? 0,
+        });
+      } catch (e) {
+        console.warn("Gagal memuat metrik akademik laporan:", e);
+      }
+    }
+    loadStats();
+  }, []);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Hero Banner */}
@@ -12,9 +37,9 @@ export default function OwnerLaporanPage() {
         </p>
         <div style={{ display: "flex", gap: 32, marginTop: 20 }}>
           {[
-            { label: "Siswa Aktif", val: "84" },
-            { label: "Guru Aktif", val: "4" },
-            { label: "Kelas Berjalan", val: "5" },
+            { label: "Siswa Aktif", val: stats.activeStudents },
+            { label: "Guru Aktif", val: stats.activeTeachers },
+            { label: "Kelas Berjalan", val: stats.activeClasses },
           ].map(s => (
             <div key={s.label}>
               <div style={{ fontSize: 11, opacity: 0.7, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>{s.label}</div>
@@ -86,9 +111,9 @@ export default function OwnerLaporanPage() {
                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
               </svg>
             </div>
-            <h3 style={{ fontSize: 17, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 8px" }}>Laporan Inventaris</h3>
+            <h3 style={{ fontSize: 17, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 8px" }}>Laporan Inventaris &amp; Aset</h3>
             <p style={{ fontSize: 13, color: "var(--color-text-secondary)", margin: 0, lineHeight: 1.6, flex: 1 }}>
-              Kondisi aset, fasilitas, alat peraga, dan nilai inventaris bulanan.
+              Kondisi aset, nilai perolehan, barang rusak/perlu perbaikan, dan pengadaan baru.
             </p>
             <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 6, fontSize: 13.5, fontWeight: 700, color: "var(--color-primary)" }}>
               Buka Laporan

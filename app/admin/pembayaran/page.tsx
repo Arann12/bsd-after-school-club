@@ -137,10 +137,6 @@ export default function FinancePembayaranPage() {
           <p className="page-subtitle">Daftar transaksi masuk, metode pembayaran (VA, QRIS, Transfer, Cash), dan kwitansi pembayaran.</p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 700, color: "#16a34a", background: "#dcfce7", padding: "4px 10px", borderRadius: 999 }}>
-            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
-            Realtime Live Sync
-          </span>
           <button
             className="btn btn-outline btn-sm"
             onClick={() => fetchPayments(false)}

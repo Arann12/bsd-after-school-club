@@ -242,7 +242,7 @@ export default function OwnerDashboardPage() {
       {/* ACADEMIC SHORTCUTS */}
       <div className="card" style={{ padding: 22 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>📚 Akademik</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Akademik</h3>
           <Link href="/owner/pendaftaran" style={{ fontSize: 12.5, fontWeight: 700, color: "var(--color-primary)", textDecoration: "none" }}>Lihat Semua →</Link>
         </div>
         <ShortcutGrid items={[
@@ -260,7 +260,7 @@ export default function OwnerDashboardPage() {
       {/* FINANCE SHORTCUTS */}
       <div className="card" style={{ padding: 22 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>💰 Keuangan</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Keuangan</h3>
           <Link href="/owner/pembayaran" style={{ fontSize: 12.5, fontWeight: 700, color: "var(--color-primary)", textDecoration: "none" }}>Lihat Semua →</Link>
         </div>
         <ShortcutGrid items={[
@@ -276,12 +276,12 @@ export default function OwnerDashboardPage() {
         {/* TAGIHAN OVERDUE */}
         <div className="card" style={{ padding: 22 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-danger)", margin: 0 }}>⚠️ Tagihan Overdue</h3>
+            <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-danger)", margin: 0 }}>Tagihan Overdue</h3>
             <Link href="/owner/tagihan" style={{ fontSize: 12, fontWeight: 700, color: "var(--color-primary)", textDecoration: "none" }}>Ke Halaman Tagihan →</Link>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {data.overdueInvoices.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "24px 16px", color: "var(--color-text-muted)", fontSize: 13 }}>✅ Tidak ada tagihan overdue</div>
+              <div style={{ textAlign: "center", padding: "24px 16px", color: "var(--color-text-muted)", fontSize: 13 }}>Tidak ada tagihan overdue</div>
             ) : data.overdueInvoices.map((inv, i) => (
               <div key={i} style={{ background: "#fff5f5", border: "1.5px solid #fecaca", borderRadius: 10, padding: "12px 14px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -299,7 +299,7 @@ export default function OwnerDashboardPage() {
         {/* INVENTARIS OVERVIEW */}
         <div className="card" style={{ padding: 22 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>📦 Inventaris</h3>
+            <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Inventaris</h3>
             <Link href="/owner/inventaris" style={{ fontSize: 12, fontWeight: 700, color: "var(--color-primary)", textDecoration: "none" }}>Kelola →</Link>
           </div>
           <div style={{ display: "flex", gap: 20, marginBottom: 16 }}>
@@ -314,7 +314,7 @@ export default function OwnerDashboardPage() {
       {/* PENGUMUMAN TERBARU */}
       <div className="card" style={{ padding: 22 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>📢 Pengumuman Terbaru</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Pengumuman Terbaru</h3>
           <Link href="/owner/pengumuman" style={{ fontSize: 12.5, fontWeight: 700, color: "var(--color-primary)", textDecoration: "none" }}>Kelola Pengumuman →</Link>
         </div>
         {data.recentAnnouncements.length === 0 ? (
@@ -334,7 +334,7 @@ export default function OwnerDashboardPage() {
       {/* LAPORAN + KELOLA AKUN + PENGATURAN */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
         <div className="card" style={{ padding: 22 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 14px" }}>📊 Laporan</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 14px" }}>Laporan</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {[{ label: "Laporan Keuangan", sub: "Bulanan & Detail", href: "/owner/laporan/keuangan", color: "#1d4ed8", bg: "var(--color-info-bg)" },
               { label: "Laporan Kehadiran", sub: "Siswa & Guru", href: "/owner/laporan/kehadiran", color: "#059669", bg: "var(--color-success-bg)" },
@@ -353,7 +353,7 @@ export default function OwnerDashboardPage() {
         </div>
 
         <div className="card" style={{ padding: 22 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 14px" }}>🔐 Kelola Akun</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 14px" }}>Kelola Akun</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <Link href="/owner/kelola-akun/admin" style={{ textDecoration: "none" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "var(--color-success-bg)", borderRadius: 8, border: "1.5px solid #05996918" }}>
@@ -367,7 +367,7 @@ export default function OwnerDashboardPage() {
         </div>
 
         <div className="card" style={{ padding: 22 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 14px" }}>⚙️ Pengaturan</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 14px" }}>Pengaturan</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <Link href="/owner/tarif" style={{ textDecoration: "none" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "#ede9fe", borderRadius: 8, border: "1.5px solid #7c3aed18" }}>

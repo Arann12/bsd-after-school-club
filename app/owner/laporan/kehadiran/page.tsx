@@ -75,11 +75,14 @@ export default function LaporanKehadiranPage() {
             <span style={{ fontSize: 13, color: "var(--color-text-muted)", fontWeight: 600 }}>Kehadiran</span>
           </div>
           <h1 className="page-title">Laporan Kehadiran & Partisipasi</h1>
-          <p className="page-subtitle">Rekap kehadiran siswa, kelas aktif, dan performa jam mengajar guru secara realtime.</p>
+          <p className="page-subtitle">Rekap kehadiran siswa, kelas aktif, dan performa jam mengajar guru.</p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button className="btn btn-outline" onClick={() => window.print()}>
-            🖨 Cetak PDF
+          <button className="btn btn-outline" onClick={() => window.print()} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+            </svg>
+            <span>Cetak PDF</span>
           </button>
         </div>
       </div>

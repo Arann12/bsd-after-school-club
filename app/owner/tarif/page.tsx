@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { getTeachers, Teacher } from "@/lib/api/teachers";
+import { getTeachers, updateTeacher, Teacher } from "@/lib/api/teachers";
 import { SkeletonTable } from "@/components/ui/Skeleton";
 
 interface GuruTarif {
@@ -19,7 +19,7 @@ function mapToGuruTarif(t: Teacher): GuruTarif {
     nama: t.name,
     kode: t.teacherCode,
     isActive: t.isActive,
-    tarifPerJam: 0,
+    tarifPerJam: t.hourlyRate || 0,
     tarifLembur: 0,
     bonusSesi: 0,
   };
@@ -30,6 +30,7 @@ export default function OwnerTarifPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
 
   const fetchGuru = useCallback(async () => {
@@ -51,11 +52,23 @@ export default function OwnerTarifPage() {
     setGuruList(prev => prev.map(g => g.id === id ? { ...g, [field]: val } : g));
   };
 
-  const handleSave = (id: string) => {
-    // TODO: kirim ke PUT /teachers/:id atau endpoint tarif khusus saat backend siap
-    setEditingId(null);
-    setSavedId(id);
-    setTimeout(() => setSavedId(null), 2500);
+  const handleSave = async (id: string) => {
+    const targetGuru = guruList.find(g => g.id === id);
+    if (!targetGuru) return;
+
+    setSavingId(id);
+    try {
+      await updateTeacher(id, {
+        hourly_rate: targetGuru.tarifPerJam,
+      });
+      setEditingId(null);
+      setSavedId(id);
+      setTimeout(() => setSavedId(null), 2500);
+    } catch (err: any) {
+      alert("Gagal menyimpan tarif guru: " + (err?.response?.data?.message || err.message));
+    } finally {
+      setSavingId(null);
+    }
   };
 
   if (loading) return <SkeletonTable />;
@@ -89,7 +102,9 @@ export default function OwnerTarifPage() {
       {/* Error state */}
       {error && (
         <div style={{ background: "var(--color-danger-bg)", border: "1px solid #fecaca", borderRadius: "var(--radius-lg)", padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 18 }}>⚠️</span>
+          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--color-danger)" }}>{error}</div>
             <button className="btn btn-sm btn-outline" style={{ marginTop: 8 }} onClick={fetchGuru}>Coba Lagi</button>
@@ -100,9 +115,14 @@ export default function OwnerTarifPage() {
       {/* Empty state */}
       {!error && guruList.length === 0 && (
         <div className="card" style={{ padding: 40, textAlign: "center" }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>👨‍🏫</div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)" }}>Belum ada guru aktif</div>
-          <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 4 }}>Tambahkan guru terlebih dahulu di halaman Guru & Staff.</div>
+          <div style={{ width: 48, height: 48, borderRadius: "50%", background: "var(--color-bg)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", color: "var(--color-text-muted)" }}>
+            <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)" }}>Belum ada data guru aktif</div>
+          <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 4 }}>Tambahkan data guru pada menu Guru & Staff untuk mengonfigurasi tarif honor.</div>
         </div>
       )}
 
@@ -139,8 +159,10 @@ export default function OwnerTarifPage() {
                 )}
                 {editingId === g.id ? (
                   <>
-                    <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(null)}>Batal</button>
-                    <button className="btn btn-accent btn-sm" onClick={() => handleSave(g.id)}>Simpan Tarif</button>
+                    <button className="btn btn-ghost btn-sm" disabled={savingId === g.id} onClick={() => setEditingId(null)}>Batal</button>
+                    <button className="btn btn-accent btn-sm" disabled={savingId === g.id} onClick={() => handleSave(g.id)}>
+                      {savingId === g.id ? "Menyimpan..." : "Simpan Tarif"}
+                    </button>
                   </>
                 ) : (
                   <button className="btn btn-outline btn-sm" onClick={() => setEditingId(g.id)}>Edit Tarif</button>

@@ -34,8 +34,8 @@ export function useCountUp(target: number, duration = 800) {
 }
 
 /**
- * Simulates a loading delay (for dummy data pages).
- * Returns `true` while "loading".
+ * Utility hook untuk transisi state loading lokal.
+ * Returns `true` while loading.
  */
 export function useLoadingState(ms = 500) {
   const [loading, setLoading] = useState(true);

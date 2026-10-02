@@ -179,7 +179,12 @@ export default function OrangTuaJadwalPage() {
   if (error && children.length === 0) {
     return (
       <div className="card" style={{ padding: "40px 24px", textAlign: "center" }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-danger)", marginBottom: 8 }}>⚠ {error}</div>
+        <div style={{ width: 44, height: 44, borderRadius: "50%", background: "var(--color-danger-bg)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", color: "var(--color-danger)" }}>
+          <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+        </div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-danger)", marginBottom: 8 }}>{error}</div>
         <button className="btn btn-primary" onClick={() => window.location.reload()}>Coba Lagi</button>
       </div>
     );
@@ -188,7 +193,6 @@ export default function OrangTuaJadwalPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
         .sesi-card { transition: all .2s ease; }
         .sesi-card:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,.07); }
       `}</style>
@@ -199,7 +203,7 @@ export default function OrangTuaJadwalPage() {
           <h1 className="page-title">Jadwal Kelas Anak</h1>
           <p className="page-subtitle">Jadwal sesi kelas yang diikuti anak Anda berdasarkan pendaftaran.</p>
         </div>
-        <button className="btn btn-outline" onClick={() => selectedChild && loadSessions(selectedChild)}>↻ Refresh</button>
+        <button className="btn btn-outline" onClick={() => selectedChild && loadSessions(selectedChild)}>Segarkan</button>
       </div>
 
       {/* Child Selector */}
@@ -252,7 +256,6 @@ export default function OrangTuaJadwalPage() {
           {hariIni.length > 0 && (
             <div style={{ background: "linear-gradient(135deg, #059669, #047857)", borderRadius: 16, padding: "20px 24px", color: "#fff", boxShadow: "0 8px 24px rgba(5,150,105,0.25)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-                <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#bbf7d0", animation: "pulse 2s ease-in-out infinite" }} />
                 <span style={{ fontSize: 16, fontWeight: 900 }}>Kelas Hari Ini</span>
                 <span style={{ fontSize: 13, opacity: 0.85 }}>
                   {new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long" })}

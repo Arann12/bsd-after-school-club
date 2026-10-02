@@ -1,3 +1,7 @@
 "use client";
-import KelolaAkunOrangTua from "@/components/kelola-akun/KelolaAkunOrangTua";
-export default function AdminKelolaAkunOrangTuaPage() { return <KelolaAkunOrangTua />; }
+
+import AdminOrangTuaPage from "@/app/admin/orang-tua/page";
+
+export default function AdminKelolaAkunOrangTuaPage() {
+  return <AdminOrangTuaPage />;
+}

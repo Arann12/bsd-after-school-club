@@ -7,8 +7,9 @@
 // Axios instance (kalau perlu akses langsung)
 export { default as axiosInstance } from "./axiosInstance";
 
-// Auth
+// Auth & Users
 export * from "./auth";
+export * from "./users";
 
 // Students, Parents, Enrollment
 export * from "./students";

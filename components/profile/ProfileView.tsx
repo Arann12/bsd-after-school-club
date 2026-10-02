@@ -335,7 +335,7 @@ export default function ProfileView({
             Pengaturan Akun & Profil
           </h1>
           <p style={{ fontSize: 13.5, color: "var(--color-text-muted)", margin: "4px 0 0" }}>
-            Kelola data diri, kontak, dan keamanan akun Anda secara realtime.
+            Kelola data diri, kontak, dan keamanan akun Anda.
           </p>
         </div>
 

@@ -535,7 +535,7 @@ export default function PembayaranPage() {
 
             <div class="stamp-row">
               <div>
-                <div class="stamp-box">${isPaid ? "✓ TERVERIFIKASI LUNAS" : item.status}</div>
+                <div class="stamp-box">${isPaid ? "TERVERIFIKASI LUNAS" : item.status}</div>
                 <div style="font-size: 10px; color: #94a3b8; margin-top: 6px;">Sistem Payment Digital BSD After School Club</div>
               </div>
               <div class="signature-box">
@@ -1018,10 +1018,6 @@ export default function PembayaranPage() {
             <h1 style={{ fontSize: 24, fontWeight: 800, color: "#1e293b", margin: 0, letterSpacing: "-0.02em" }}>
               Pembayaran Siswa
             </h1>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "#16a34a", background: "#dcfce7", padding: "3px 8px", borderRadius: 999 }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
-              Live Sync
-            </span>
           </div>
           <p style={{ fontSize: 13, color: "#64748b", margin: "4px 0 0 0" }}>
             Siswa: <strong>{childName}</strong> • {programName} ({levelName})

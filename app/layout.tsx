@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -11,6 +11,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "BSD After School Club",
   description: "Calistung – Phonics – English – Mathematics | Sistem Manajemen BSD After School Club",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

@@ -17,6 +17,7 @@ interface HeaderProps {
   showChildSelector?: boolean;
   selectedChild?: string;
   selectedChildLevel?: string;
+  childrenList?: { name: string; level: string; id: string }[];
 }
 
 export default function Header({
@@ -28,8 +29,9 @@ export default function Header({
   greetingText,
   showSearch = true,
   showChildSelector = false,
-  selectedChild = "Budi",
-  selectedChildLevel = "Phonics L2",
+  selectedChild = "",
+  selectedChildLevel = "",
+  childrenList = [],
 }: HeaderProps) {
   const pathname = usePathname() || "";
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -90,6 +92,12 @@ export default function Header({
     };
   }, [syncUserInfo]);
 
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setSidebarOpen(false);
+    document.querySelector(".sidebar")?.classList.remove("open");
+  }, [pathname]);
+
   // Compute initials
   const computeInitial = () => {
     if (propUserInitial) return propUserInitial;
@@ -123,11 +131,6 @@ export default function Header({
   if (pathname.startsWith("/admin")) profileLink = "/admin/profil";
   else if (pathname.startsWith("/guru")) profileLink = "/guru/profil";
   else if (pathname.startsWith("/orang-tua")) profileLink = "/orang-tua/profil";
-
-  const childrenList = [
-    { name: "Budi", level: "Phonics L2", id: "STD-88921" },
-    { name: "Annisa", level: "Calistung L1", id: "STD-88925" },
-  ];
 
   const finalName = displayName || propUserName || "Pengguna";
   const finalEmail = displayEmail || propUserEmail || "";
@@ -233,37 +236,43 @@ export default function Header({
                   <div style={{ padding: "6px 12px", fontSize: 11, fontWeight: 600, color: "var(--color-text-muted)", borderBottom: "1px solid var(--color-border-light)" }}>
                     Pilih Anak
                   </div>
-                  {childrenList.map((ch) => (
-                    <div
-                      key={ch.name}
-                      onClick={() => {
-                        setCurrentChild(ch.name);
-                        setCurrentLevel(ch.level);
-                        setDropdownOpen(false);
-                      }}
-                      style={{
-                        padding: "8px 12px",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        background: currentChild === ch.name ? "var(--color-primary-bg)" : "#ffffff",
-                      }}
-                    >
-                      <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                      </svg>
-                      <div>
-                        <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--color-text-primary)" }}>
-                          {ch.name}
-                        </div>
-                        <div style={{ fontSize: 10.5, color: "var(--color-text-muted)" }}>
-                          {ch.level}
+                  {childrenList.length === 0 ? (
+                    <div style={{ padding: "10px 12px", fontSize: 12, color: "var(--color-text-muted)" }}>
+                      Belum ada data anak
+                    </div>
+                  ) : (
+                    childrenList.map((ch) => (
+                      <div
+                        key={ch.name}
+                        onClick={() => {
+                          setCurrentChild(ch.name);
+                          setCurrentLevel(ch.level);
+                          setDropdownOpen(false);
+                        }}
+                        style={{
+                          padding: "8px 12px",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          background: currentChild === ch.name ? "var(--color-primary-bg)" : "#ffffff",
+                        }}
+                      >
+                        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                          <circle cx="12" cy="7" r="4" />
+                        </svg>
+                        <div>
+                          <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--color-text-primary)" }}>
+                            {ch.name}
+                          </div>
+                          <div style={{ fontSize: 10.5, color: "var(--color-text-muted)" }}>
+                            {ch.level}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               )}
             </div>
@@ -331,7 +340,7 @@ export default function Header({
             <div className="header-user-info" style={{ textAlign: "left" }}>
               <span className="header-user-name">{finalName}</span>
               {finalRole ? (
-                <span className="badge badge-info" style={{ fontSize: 10, padding: "1px 6px", alignSelf: "flex-start", marginTop: 2 }}>
+                <span style={{ fontSize: 11.5, color: "var(--color-text-muted)", display: "block", marginTop: 1 }}>
                   {finalRole}
                 </span>
               ) : finalEmail ? (

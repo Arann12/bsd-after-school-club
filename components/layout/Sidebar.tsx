@@ -390,14 +390,15 @@ function SidebarBase({
               }
 
               return (
-                <a
+                <Link
                   key={item.href + item.label}
                   href={item.href}
                   className={`sidebar-nav-item${isActive ? " active" : ""}`}
+                  onClick={() => document.querySelector(".sidebar")?.classList.remove("open")}
                 >
                   <IconComp />
                   {item.label}
-                </a>
+                </Link>
               );
             })}
           </div>

@@ -353,7 +353,7 @@ export default function AdminVerifikasiCashPage() {
                       {c.status === "Menunggu Verifikasi" ? (
                         <div style={{ display: "flex", gap: 6 }}>
                           <button className="btn btn-accent btn-sm" onClick={() => handleOpenConfirm(c)}>
-                            ✓ ACC Kasir
+                            ACC Kasir
                           </button>
                           <button className="btn btn-ghost btn-sm" style={{ color: "var(--color-danger)" }} onClick={() => handleOpenReject(c)}>
                             Tolak
@@ -434,7 +434,7 @@ export default function AdminVerifikasiCashPage() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 6 }}>
                 <button className="btn btn-ghost" onClick={() => setSelectedCash(null)} disabled={submitting}>Batal</button>
                 <button className="btn btn-accent" onClick={handleConfirmSubmit} disabled={submitting}>
-                  {submitting ? "Memproses..." : "✓ ACC & Tandai Lunas"}
+                  {submitting ? "Memproses..." : "ACC & Tandai Lunas"}
                 </button>
               </div>
             </div>
@@ -590,13 +590,13 @@ export default function AdminVerifikasiCashPage() {
                   style={{ color: "var(--color-danger)", borderColor: "var(--color-danger)" }}
                   onClick={() => handleOpenReject(selectedCash)}
                 >
-                  ✕ Tolak Pembayaran
+                  Tolak Pembayaran
                 </button>
                 <button
                   className="btn btn-accent"
                   onClick={() => handleOpenConfirm(selectedCash)}
                 >
-                  ✓ Setujui & ACC Kasir
+                  Setujui & ACC Kasir
                 </button>
               </div>
             ) : (

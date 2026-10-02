@@ -39,7 +39,7 @@ const ICON: Record<TestStatus, string> = {
 // ── Grup test ────────────────────────────────────────────────
 const GROUPS = [
   {
-    title: "🔐 Auth",
+    title: "Auth",
     color: "#818cf8",
     tests: [
       { key: "auth_login",  label: "POST /auth/login",  method: "POST" },
@@ -48,7 +48,7 @@ const GROUPS = [
     ],
   },
   {
-    title: "👨‍🎓 Siswa",
+    title: "Siswa",
     color: "#34d399",
     tests: [
       { key: "students_get",    label: "GET    /students",    method: "GET"    },
@@ -58,7 +58,7 @@ const GROUPS = [
     ],
   },
   {
-    title: "👩‍🏫 Guru",
+    title: "Guru",
     color: "#fb923c",
     tests: [
       { key: "teachers_get",  label: "GET  /teachers", method: "GET"  },
@@ -66,7 +66,7 @@ const GROUPS = [
     ],
   },
   {
-    title: "🏫 Kelas & Sesi",
+    title: "Kelas & Sesi",
     color: "#f472b6",
     tests: [
       { key: "classrooms_get",  label: "GET  /classrooms",   method: "GET"  },
@@ -76,7 +76,7 @@ const GROUPS = [
     ],
   },
   {
-    title: "📚 Program",
+    title: "Program",
     color: "#38bdf8",
     tests: [
       { key: "programs_get",  label: "GET  /programs", method: "GET"  },
@@ -84,7 +84,7 @@ const GROUPS = [
     ],
   },
   {
-    title: "💰 Honor Guru",
+    title: "Honor Guru",
     color: "#facc15",
     tests: [
       { key: "payrolls_get",      label: "GET  /teacher-payrolls",          method: "GET"  },
@@ -92,7 +92,7 @@ const GROUPS = [
     ],
   },
   {
-    title: "📢 Pengumuman",
+    title: "Pengumuman",
     color: "#a855f7",
     tests: [
       { key: "announcements_get",    label: "GET    /announcements",    method: "GET"    },
@@ -223,7 +223,7 @@ export default function TestApiPage() {
         case "classrooms_post": {
           // Field sesuai ClassroomController::store()
           // required: program_level_id (UUID), name | optional: capacity
-          // ⚠️ Butuh program_level_id yang valid dari DB
+          // Catatan: Butuh program_level_id yang valid dari DB
           // Ambil dulu dari GET /programs lalu cek level-nya
           const programsRes = await getPrograms();
           const firstLevel = (programsRes as unknown as { data?: { levels?: { id?: string }[] }[] })
@@ -368,7 +368,7 @@ export default function TestApiPage() {
 
   return (
     <div style={{ fontFamily: "monospace", padding: "2rem", maxWidth: "960px", margin: "0 auto", background: "#0f172a", minHeight: "100vh", color: "#e2e8f0" }}>
-      <h1 style={{ color: "#38bdf8", margin: "0 0 0.25rem", fontSize: "1.5rem" }}>🔌 API Test — BSD After School Club</h1>
+      <h1 style={{ color: "#38bdf8", margin: "0 0 0.25rem", fontSize: "1.5rem" }}>API Test — BSD After School Club</h1>
       <p style={{ color: "#64748b", margin: "0 0 1.5rem", fontSize: "0.8rem" }}>
         Base URL: <code style={{ color: "#38bdf8" }}>{process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1"}</code>
       </p>
@@ -387,14 +387,14 @@ export default function TestApiPage() {
         </div>
         <button onClick={runAll}
           style={{ padding: "6px 20px", background: "#0ea5e9", border: "none", borderRadius: "6px", color: "#fff", fontWeight: "bold", cursor: "pointer", whiteSpace: "nowrap" }}>
-          ▶ Run All
+          Run All
         </button>
       </div>
 
       {/* Context state */}
       {(createdStudentId || firstSessionId || firstTeacherId) && (
         <div style={{ background: "#1e293b", padding: "0.75rem 1rem", borderRadius: "8px", marginBottom: "1.25rem", fontSize: "0.75rem", color: "#94a3b8" }}>
-          📌 <strong>Context tersimpan</strong>&nbsp;—&nbsp;
+          <strong>Context tersimpan</strong>&nbsp;—&nbsp;
           {createdStudentId && <>Student ID: <code style={{ color: "#4ade80" }}>{createdStudentId}</code>&nbsp;&nbsp;</>}
           {firstSessionId && <>Session ID: <code style={{ color: "#f472b6" }}>{firstSessionId}</code>&nbsp;&nbsp;</>}
           {firstTeacherId && <>Teacher ID: <code style={{ color: "#fb923c" }}>{firstTeacherId}</code>&nbsp;&nbsp;</>}
@@ -437,7 +437,7 @@ export default function TestApiPage() {
                   {r && (st === "success" || st === "error") && (
                     <div style={{ borderTop: "1px solid #0f172a", padding: "0.6rem 1rem", background: "#060d1a" }}>
                       {r.error
-                        ? <p style={{ margin: 0, color: "#ef4444", fontSize: "0.8rem" }}>❌ {r.error}</p>
+                        ? <p style={{ margin: 0, color: "#ef4444", fontSize: "0.8rem" }}>{r.error}</p>
                         : <pre style={{ margin: 0, color: "#4ade80", fontSize: "0.72rem", overflow: "auto", maxHeight: "180px" }}>
                             {JSON.stringify(r.response, null, 2)}
                           </pre>
@@ -452,7 +452,7 @@ export default function TestApiPage() {
       ))}
 
       <p style={{ color: "#334155", fontSize: "0.7rem", textAlign: "center", marginTop: "2rem" }}>
-        ⚠️ Halaman ini hanya untuk development — hapus sebelum production
+        Halaman ini hanya untuk development — hapus sebelum production
       </p>
     </div>
   );

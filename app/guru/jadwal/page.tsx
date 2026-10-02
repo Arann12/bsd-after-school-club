@@ -183,10 +183,8 @@ export default function GuruJadwalPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <style>{`
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .6; } }
         .sesi-card { transition: all 0.2s ease; }
         .sesi-card:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
-        .today-badge { animation: pulse 2s ease-in-out infinite; }
       `}</style>
 
       {/* Header */}
@@ -195,13 +193,15 @@ export default function GuruJadwalPage() {
           <h1 className="page-title">Jadwal Mengajar</h1>
           <p className="page-subtitle">Jadwal sesi mengajar berdasarkan database. Klik kelas untuk mulai absensi.</p>
         </div>
-        <button className="btn btn-outline" onClick={fetchData}>↻ Refresh</button>
+        <button className="btn btn-outline" onClick={fetchData}>Segarkan</button>
       </div>
 
       {/* Error */}
       {error && (
         <div style={{ background: "var(--color-danger-bg)", border: "1px solid #fecaca", borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
-          <span>⚠️</span>
+          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--color-danger)" }}>{error}</div>
             <button className="btn btn-sm btn-outline" style={{ marginTop: 8 }} onClick={fetchData}>Coba Lagi</button>
@@ -214,7 +214,6 @@ export default function GuruJadwalPage() {
         <div style={{ background: "linear-gradient(135deg, #059669 0%, #047857 100%)", borderRadius: 16, padding: "22px 26px", color: "#fff", boxShadow: "0 8px 24px rgba(5,150,105,0.25)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div className="today-badge" style={{ width: 10, height: 10, borderRadius: "50%", background: "#bbf7d0", flexShrink: 0 }} />
               <span style={{ fontSize: 17, fontWeight: 900 }}>Jadwal Hari Ini</span>
               <span style={{ fontSize: 13, opacity: 0.85, fontWeight: 600 }}>
                 {new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
@@ -268,7 +267,11 @@ export default function GuruJadwalPage() {
       {/* Empty */}
       {sessions.length === 0 && !error && (
         <div className="card" style={{ padding: "48px 24px", textAlign: "center" }}>
-          <div style={{ fontSize: 36, marginBottom: 12 }}>📅</div>
+          <div style={{ width: 48, height: 48, borderRadius: "50%", background: "var(--color-bg)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", color: "var(--color-text-muted)" }}>
+            <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          </div>
           <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)", marginBottom: 6 }}>Belum ada jadwal</div>
           <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
             Tidak ada sesi mengajar yang terdaftar untuk akun ini saat ini.

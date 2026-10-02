@@ -134,7 +134,9 @@ export default function OrangTuaSertifikatPage() {
                     }}
                   >
                     {c.isGenerated ? (
-                      "✓"
+                      <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
                     ) : (
                       <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -212,8 +214,11 @@ export default function OrangTuaSertifikatPage() {
               <button className="btn btn-ghost" onClick={() => setSelectedCert(null)}>
                 Tutup
               </button>
-              <button className="btn btn-primary" onClick={() => window.print()}>
-                🖨 Cetak
+              <button className="btn btn-primary" onClick={() => window.print()} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+                </svg>
+                <span>Cetak</span>
               </button>
             </div>
           </div>

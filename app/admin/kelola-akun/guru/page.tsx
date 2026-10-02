@@ -1,3 +1,7 @@
 "use client";
-import KelolaAkunGuru from "@/components/kelola-akun/KelolaAkunGuru";
-export default function AdminKelolaAkunGuruPage() { return <KelolaAkunGuru />; }
+
+import AdminGuruPage from "@/app/admin/guru/page";
+
+export default function AdminKelolaAkunGuruPage() {
+  return <AdminGuruPage />;
+}

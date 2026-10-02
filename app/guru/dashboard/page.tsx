@@ -6,7 +6,7 @@ import StatCard from "@/components/ui/StatCard";
 import PageHeader from "@/components/ui/PageHeader";
 import { SkeletonDashboard } from "@/components/ui/Skeleton";
 import { getLocalUser, type AuthUser } from "@/lib/api/auth";
-import { getTeachers } from "@/lib/api/teachers";
+import { getMyTeacherProfile } from "@/lib/api/teachers";
 import { getClassrooms } from "@/lib/api/academic";
 import { getClassSessions } from "@/lib/api/academic";
 import { getAnnouncements } from "@/lib/api/operational";
@@ -32,20 +32,17 @@ export default function GuruDashboardPage() {
     try {
       const today = new Date().toISOString().split("T")[0];
 
-      const [sessionsRes, classroomsRes, announcementsRes, teachersRes] = await Promise.allSettled([
+      const [sessionsRes, classroomsRes, announcementsRes, profileRes] = await Promise.allSettled([
         getClassSessions({ date: today }),
         getClassrooms({ per_page: 100 }),
         getAnnouncements({ per_page: 5 }),
-        getTeachers({ per_page: 100 }),
+        getMyTeacherProfile(),
       ]);
 
-      // Cari teacher record yang sesuai dengan user yang login
+      // Ambil profile guru langsung dari endpoint terotentikasi
       let teacherId: string | null = null;
-      if (teachersRes.status === "fulfilled") {
-        const myTeacher = teachersRes.value.data.find(
-          (t) => t.name === currentUser.name || t.email === currentUser.email
-        );
-        teacherId = myTeacher?.id ?? null;
+      if (profileRes.status === "fulfilled" && profileRes.value?.id) {
+        teacherId = profileRes.value.id;
       }
 
       // Filter sessions hari ini yang milik guru ini
@@ -141,7 +138,7 @@ export default function GuruDashboardPage() {
       {/* Shortcut Menu */}
       <div className="card" style={{ padding: 22 }}>
         <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 14px" }}>
-          📖 Menu Utama
+          Menu Utama
         </h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10 }}>
           {[
@@ -169,7 +166,7 @@ export default function GuruDashboardPage() {
         {/* Info Akun */}
         <div className="card" style={{ padding: 22 }}>
           <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 14px" }}>
-            👤 Informasi Akun
+            Informasi Akun
           </h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {[
@@ -191,7 +188,7 @@ export default function GuruDashboardPage() {
         {/* Pengumuman */}
         <div className="card" style={{ padding: 22 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>🔔 Pengumuman</h3>
+            <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Pengumuman</h3>
             <Link href="/guru/pengumuman" style={{ fontSize: 12, fontWeight: 700, color: "var(--color-primary)", textDecoration: "none" }}>Semua →</Link>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
