@@ -83,17 +83,19 @@ export default function Header({
     window.addEventListener("user_profile_updated", handleUpdate);
     window.addEventListener("storage", handleUpdate);
 
-    // Also fetch fresh from server
-    getMe()
-      .then((user) => {
-        if (user) {
-          if (user.name) setDisplayName(user.name);
-          if (user.email) setDisplayEmail(user.email);
-        }
-      })
-      .catch(() => {
-        // use local / fallback
-      });
+    // Ambil data user dari server hanya jika belum ada di localStorage
+    if (!existingUser) {
+      getMe()
+        .then((user) => {
+          if (user) {
+            if (user.name) setDisplayName(user.name);
+            if (user.email) setDisplayEmail(user.email);
+          }
+        })
+        .catch(() => {
+          // use local / fallback
+        });
+    }
 
     return () => {
       window.removeEventListener("user_profile_updated", handleUpdate);

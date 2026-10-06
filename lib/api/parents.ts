@@ -37,14 +37,15 @@ export interface Parent {
   relationship: string | null;
   address: string | null;
   isActive: boolean;
-  students: { id: string; name: string; relation: string; isPrimary: boolean }[];
+  students: { id: string; name: string; relation: string; isPrimary: boolean; studentCode?: string }[];
 }
 
 export function mapParent(raw: ParentRaw): Parent {
   const students = raw.students?.map(s => ({
     id: s.id,
     name: s.full_name,
-    relation: s.pivot?.relationship || raw.relationship || "Orang Tua",
+    studentCode: s.student_code,
+    relation: s.pivot?.relationship || raw.relationship || "Anak",
     isPrimary: s.pivot?.is_primary || false,
   })) || [];
 

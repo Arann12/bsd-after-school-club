@@ -105,6 +105,7 @@ export default function PembayaranPage() {
             id: s.id,
             name: s.name,
             full_name: s.name,
+            studentCode: s.studentCode,
             relation: s.relation,
           }));
         } else if (studentsRes.status === "fulfilled" && studentsRes.value) {
@@ -1080,10 +1081,9 @@ export default function PembayaranPage() {
                 >
                   {students.map((s) => {
                     const studentLabel = s.name || s.full_name || "Siswa";
-                    const extraInfo = s.studentCode ? ` (${s.studentCode})` : s.relation ? ` (${s.relation})` : "";
                     return (
                       <option key={s.id} value={s.id}>
-                        {studentLabel}{extraInfo}
+                        {studentLabel}
                       </option>
                     );
                   })}

@@ -23,6 +23,7 @@ export default function AdminOrangTuaPage() {
     relationship: "Orang Tua",
     address: "",
     student_id: "",
+    is_active: true,
   });
 
   const [saving, setSaving] = useState(false);
@@ -69,6 +70,7 @@ export default function AdminOrangTuaPage() {
         relationship: parent.relationship || "Orang Tua",
         address: parent.address || "",
         student_id: "",
+        is_active: parent.isActive,
       });
     } else {
       setEditingParent(null);
@@ -80,6 +82,7 @@ export default function AdminOrangTuaPage() {
         relationship: "Orang Tua",
         address: "",
         student_id: "",
+        is_active: true,
       });
     }
     setShowModal(true);
@@ -96,13 +99,14 @@ export default function AdminOrangTuaPage() {
     }
     setSaving(true);
     try {
-      const payload = {
+      const payload: any = {
         name: formData.name,
         email: formData.email,
         phone: formData.phone || null,
         password: formData.password || undefined,
         relationship: formData.relationship || null,
         address: formData.address || null,
+        is_active: formData.is_active,
       };
 
       let parentId = editingParent?.id;
@@ -112,7 +116,7 @@ export default function AdminOrangTuaPage() {
         const newParent = await createParent(payload);
         parentId = newParent.id;
       }
-      
+
       if (formData.student_id && parentId) {
         try {
           await attachStudentToParent(parentId, formData.student_id, formData.relationship || "Orang Tua", true);
@@ -130,13 +134,25 @@ export default function AdminOrangTuaPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Yakin ingin menonaktifkan akun orang tua ini?")) return;
+  const handleToggleActive = async (parent: Parent, activate: boolean) => {
+    const actionLabel = activate ? "mengaktifkan kembali" : "menonaktifkan";
+    if (!confirm(`Yakin ingin ${actionLabel} akun orang tua "${parent.name}"?`)) return;
     try {
-      await deleteParent(id);
+      if (activate) {
+        await updateParent(parent.id, { is_active: true });
+      } else {
+        await deleteParent(parent.id);
+      }
       fetchData();
     } catch (err: any) {
-      alert("Gagal menonaktifkan: " + err.message);
+      alert(`Gagal ${actionLabel}: ` + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    const parent = parents.find(p => p.id === id);
+    if (parent) {
+      handleToggleActive(parent, false);
     }
   };
 
@@ -240,7 +256,15 @@ export default function AdminOrangTuaPage() {
                       <div style={{ display: "flex", gap: 6 }}>
                         <button className="btn btn-ghost btn-sm" onClick={() => handleDetail(p)}>Detail</button>
                         <button className="btn btn-ghost btn-sm" onClick={() => handleOpenModal(p)}>Edit</button>
-                        <button className="btn btn-ghost btn-sm" style={{ color: "var(--color-danger)" }} onClick={() => handleDelete(p.id)}>Nonaktifkan</button>
+                        {p.isActive ? (
+                          <button className="btn btn-ghost btn-sm" style={{ color: "var(--color-danger)" }} onClick={() => handleToggleActive(p, false)}>
+                            Nonaktifkan
+                          </button>
+                        ) : (
+                          <button className="btn btn-ghost btn-sm" style={{ color: "#059669", fontWeight: 700 }} onClick={() => handleToggleActive(p, true)}>
+                            Aktifkan
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -285,6 +309,20 @@ export default function AdminOrangTuaPage() {
             <label className="form-label">Alamat Domisili</label>
             <textarea className="form-input" rows={2} value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder="Masukkan alamat lengkap..." />
           </div>
+
+          {editingParent && (
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Status Keaktifan Akun</label>
+              <select
+                className="form-input"
+                value={formData.is_active ? "1" : "0"}
+                onChange={e => setFormData({ ...formData, is_active: e.target.value === "1" })}
+              >
+                <option value="1">Aktif</option>
+                <option value="0">Nonaktif</option>
+              </select>
+            </div>
+          )}
 
           <div className="form-group" style={{ marginBottom: 0, padding: 12, background: "#f8fafc", borderRadius: 8, border: "1px dashed #cbd5e1" }}>
             <label className="form-label">{editingParent ? "Kaitkan dengan Anak Tambahan (Opsional)" : "Pilih Anak / Siswa (Opsional)"}</label>

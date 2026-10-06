@@ -110,13 +110,25 @@ export default function AdminGuruPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Yakin ingin menonaktifkan akun guru ini?")) return;
+  const handleToggleActive = async (teacher: Teacher, activate: boolean) => {
+    const actionLabel = activate ? "mengaktifkan kembali" : "menonaktifkan";
+    if (!confirm(`Yakin ingin ${actionLabel} akun guru "${teacher.name}"?`)) return;
     try {
-      await deleteTeacher(id);
+      if (activate) {
+        await updateTeacher(teacher.id, { is_active: true });
+      } else {
+        await deleteTeacher(teacher.id);
+      }
       fetchData();
     } catch (err: any) {
-      alert("Gagal menonaktifkan: " + err.message);
+      alert(`Gagal ${actionLabel}: ` + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    const teacher = teachers.find(t => t.id === id);
+    if (teacher) {
+      handleToggleActive(teacher, false);
     }
   };
 
@@ -184,7 +196,15 @@ export default function AdminGuruPage() {
                       <div style={{ display: "flex", gap: 6 }}>
                         <button className="btn btn-ghost btn-sm" onClick={() => handleDetail(t)}>Detail</button>
                         <button className="btn btn-ghost btn-sm" onClick={() => handleOpenModal(t)}>Edit</button>
-                        <button className="btn btn-ghost btn-sm" style={{ color: "var(--color-danger)" }} onClick={() => handleDelete(t.id)}>Nonaktifkan</button>
+                        {t.isActive ? (
+                          <button className="btn btn-ghost btn-sm" style={{ color: "var(--color-danger)" }} onClick={() => handleToggleActive(t, false)}>
+                            Nonaktifkan
+                          </button>
+                        ) : (
+                          <button className="btn btn-ghost btn-sm" style={{ color: "#059669", fontWeight: 700 }} onClick={() => handleToggleActive(t, true)}>
+                            Aktifkan
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -234,6 +254,20 @@ export default function AdminGuruPage() {
             <label className="form-label">Password {editingTeacher && "(Kosongkan jika tidak diubah)"}</label>
             <input type="password" className="form-input" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder="Minimal 8 karakter" />
           </div>
+
+          {editingTeacher && (
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Status Keaktifan Akun</label>
+              <select
+                className="form-input"
+                value={formData.is_active ? "1" : "0"}
+                onChange={e => setFormData({ ...formData, is_active: e.target.value === "1" })}
+              >
+                <option value="1">Aktif</option>
+                <option value="0">Nonaktif</option>
+              </select>
+            </div>
+          )}
 
           <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
             <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setShowModal(false)} disabled={saving}>Batal</button>

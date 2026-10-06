@@ -170,13 +170,15 @@ export default function SchedulePage() {
   if (error) return <div style={{ padding: 24, color: "var(--color-danger)" }}>{error}</div>;
 
   return (
-    <div style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+    <div style={{ padding: "16px 20px", maxWidth: 1100, margin: "0 auto" }}>
+      <div className="page-header" style={{ marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Jadwal Rutin Mingguan</h1>
-          <p style={{ color: "var(--color-text-secondary)", margin: "4px 0 0 0", fontSize: 14 }}>Kelola master jadwal kelas mingguan. Sesi absensi akan otomatis dibuat saat siswa didaftarkan.</p>
+          <h1 className="page-title">Jadwal Rutin Mingguan</h1>
+          <p className="page-subtitle">Kelola master jadwal kelas mingguan. Sesi absensi dan pertemuan otomatis dibuat saat siswa didaftarkan.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => handleOpenModal()}>+ Tambah Jadwal</button>
+        <div className="page-header-actions">
+          <button className="btn btn-primary" onClick={() => handleOpenModal()}>+ Tambah Jadwal</button>
+        </div>
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>

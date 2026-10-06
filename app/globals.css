@@ -1659,6 +1659,32 @@ html, body {
   .header-search { max-width: 260px; }
 }
 
+/* ============================================================
+   RESPONSIVE TYPOGRAPHY & SYSTEM TEXT STYLING
+   ============================================================ */
+h1, h2, h3, h4, .page-title, .card-title {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  letter-spacing: -0.01em;
+}
+
+p, .page-subtitle, .card-desc {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.5;
+}
+
+/* Ensure table containers on cards scroll gracefully on mobile */
+.card:has(.data-table),
+.card:has(table) {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.card table {
+  min-width: 580px;
+}
+
 @media (max-width: 768px) {
   :root { --sidebar-width: 0px; }
   .sidebar {
@@ -1697,10 +1723,10 @@ html, body {
     padding: var(--space-4);
   }
 
-  /* Wrap tables automatically */
-  .card:has(.data-table) {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+  /* Two-column form grids stack vertically on mobile */
+  div[style*="gridTemplateColumns: \"1fr 1fr\""],
+  div[style*="gridTemplateColumns: '1fr 1fr'"] {
+    grid-template-columns: 1fr !important;
   }
 }
 

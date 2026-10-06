@@ -38,6 +38,9 @@ function formatRelativeTime(dateStr: string): string {
   }
 }
 
+// In-memory cache per role (30 detik) agar tidak membebani network saat berpindah halaman
+const notifCache: Record<string, { items: NotificationItem[]; timestamp: number }> = {};
+
 export default function NotificationDropdown({ role }: { role?: NotificationRole }) {
   const router = useRouter();
   const pathname = usePathname() || "";
@@ -66,7 +69,14 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadNotifications = useCallback(async () => {
+  const loadNotifications = useCallback(async (force = false) => {
+    // Gunakan cache jika masih berlaku (< 30 detik)
+    if (!force && notifCache[resolvedRole] && Date.now() - notifCache[resolvedRole].timestamp < 30_000) {
+      setNotifications(notifCache[resolvedRole].items);
+      setLoading(false);
+      return;
+    }
+
     const storageKey = `bsd_read_notifications_${resolvedRole}`;
     let readSet = new Set<string>();
     try {
@@ -81,14 +91,42 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
     const liveItems: NotificationItem[] = [];
 
     try {
-      // 1. Verifikasi Cash Pending (Owner & Admin)
-      if (resolvedRole === "owner" || resolvedRole === "admin") {
-        try {
-          const cashRes = await getCashTransactions({ status: "menunggu_konfirmasi_admin", per_page: 10 });
-          const cashList = Array.isArray(cashRes?.data?.data)
-            ? cashRes.data.data
-            : Array.isArray(cashRes?.data)
-            ? cashRes.data
+      // Jalankan request secara paralel agar tidak blocking
+      const [roleTaskRes, annRes] = await Promise.allSettled([
+        (async () => {
+          if (resolvedRole === "owner" || resolvedRole === "admin") {
+            return {
+              type: "cash",
+              res: await getCashTransactions({ status: "menunggu_konfirmasi_admin", per_page: 10 }),
+            };
+          }
+          if (resolvedRole === "guru") {
+            const today = new Date().toISOString().split("T")[0];
+            return {
+              type: "guru",
+              res: await getClassSessions({ date: today }),
+              today,
+            };
+          }
+          if (resolvedRole === "orangTua") {
+            return {
+              type: "orangTua",
+              res: await getPaymentPlans({ is_paid: false, per_page: 5 }),
+            };
+          }
+          return null;
+        })(),
+        getAnnouncements({ per_page: 5 }),
+      ]);
+
+      // 1. Proses Notifikasi Tugas Role
+      if (roleTaskRes.status === "fulfilled" && roleTaskRes.value) {
+        const val = roleTaskRes.value;
+        if (val.type === "cash") {
+          const cashList = Array.isArray(val.res?.data?.data)
+            ? val.res.data.data
+            : Array.isArray(val.res?.data)
+            ? val.res.data
             : [];
           if (cashList.length > 0) {
             const id = `live-cash-pending-${cashList.length}`;
@@ -102,18 +140,10 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
               href: rolePrefix === "admin" ? "/admin/verifikasi-cash" : "/owner/verifikasi-cash",
             });
           }
-        } catch {
-          // ignore
-        }
-      }
-
-      // 2. Jadwal Sesi Mengajar Hari Ini (Guru)
-      if (resolvedRole === "guru") {
-        try {
-          const today = new Date().toISOString().split("T")[0];
-          const sessionsRes = await getClassSessions({ date: today });
+        } else if (val.type === "guru") {
+          const sessionsRes = val.res;
           if (Array.isArray(sessionsRes) && sessionsRes.length > 0) {
-            const id = `live-guru-sessions-${today}-${sessionsRes.length}`;
+            const id = `live-guru-sessions-${val.today}-${sessionsRes.length}`;
             liveItems.push({
               id,
               title: "Jadwal Mengajar Hari Ini",
@@ -124,19 +154,11 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
               href: "/guru/jadwal",
             });
           }
-        } catch {
-          // ignore
-        }
-      }
-
-      // 3. Tagihan Belum Lunas (Orang Tua)
-      if (resolvedRole === "orangTua") {
-        try {
-          const plansRes = await getPaymentPlans({ is_paid: false, per_page: 5 });
-          const plansList = Array.isArray(plansRes?.data?.data)
-            ? plansRes.data.data
-            : Array.isArray(plansRes?.data)
-            ? plansRes.data
+        } else if (val.type === "orangTua") {
+          const plansList = Array.isArray(val.res?.data?.data)
+            ? val.res.data.data
+            : Array.isArray(val.res?.data)
+            ? val.res.data
             : [];
           if (plansList.length > 0) {
             const id = `live-unpaid-plan-${plansList.length}`;
@@ -150,20 +172,18 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
               href: "/orang-tua/pembayaran",
             });
           }
-        } catch {
-          // ignore
         }
       }
 
-      // 4. Pengumuman Aktif Terbaru (Semua Role)
-      try {
-        const annRes = await getAnnouncements({ per_page: 5 });
-        const annList = Array.isArray(annRes?.data?.data)
-          ? annRes.data.data
-          : Array.isArray(annRes?.data)
-          ? annRes.data
-          : Array.isArray(annRes)
-          ? annRes
+      // 2. Proses Pengumuman
+      if (annRes.status === "fulfilled" && annRes.value) {
+        const rawAnn = annRes.value;
+        const annList = Array.isArray(rawAnn?.data?.data)
+          ? rawAnn.data.data
+          : Array.isArray(rawAnn?.data)
+          ? rawAnn.data
+          : Array.isArray(rawAnn)
+          ? rawAnn
           : [];
 
         annList.forEach((a: any) => {
@@ -188,8 +208,6 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
             });
           }
         });
-      } catch {
-        // ignore
       }
     } catch (e) {
       console.warn("Gagal memuat notifikasi langsung:", e);
@@ -203,6 +221,7 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
     });
 
     setNotifications(deduplicated);
+    notifCache[resolvedRole] = { items: deduplicated, timestamp: Date.now() };
     setLoading(false);
   }, [resolvedRole, rolePrefix]);
 
@@ -217,6 +236,9 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
     if (!item.read) {
       const updated = notifications.map((n) => (n.id === item.id ? { ...n, read: true } : n));
       setNotifications(updated);
+      if (notifCache[resolvedRole]) {
+        notifCache[resolvedRole].items = updated;
+      }
       try {
         const storageKey = `bsd_read_notifications_${resolvedRole}`;
         const readIds = updated.filter((n) => n.read).map((n) => n.id);
@@ -235,6 +257,9 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
     e.stopPropagation();
     const updated = notifications.map((n) => ({ ...n, read: true }));
     setNotifications(updated);
+    if (notifCache[resolvedRole]) {
+      notifCache[resolvedRole].items = updated;
+    }
     try {
       const storageKey = `bsd_read_notifications_${resolvedRole}`;
       const readIds = updated.map((n) => n.id);
