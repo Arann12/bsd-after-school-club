@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import NotificationDropdown from "@/components/ui/NotificationDropdown";
-import { getLocalUser, getMe, logout } from "@/lib/api/auth";
+import { getLocalUser, getLocalToken, getMe, logout, setAuthCookies } from "@/lib/api/auth";
 
 interface HeaderProps {
   userName?: string;
@@ -68,6 +68,15 @@ export default function Header({
 
   useEffect(() => {
     syncUserInfo();
+
+    // ── Bootstrap cookie dari localStorage ──────────────────────────
+    // Pengguna yang sudah login sebelum middleware ditambahkan belum
+    // punya cookie. Backfill di sini agar tidak dipaksa login ulang.
+    const existingToken = getLocalToken();
+    const existingUser  = getLocalUser();
+    if (existingToken && existingUser) {
+      setAuthCookies(existingToken, existingUser);
+    }
 
     // Re-sync on custom update event & storage event
     const handleUpdate = () => syncUserInfo();

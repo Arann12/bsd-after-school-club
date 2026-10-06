@@ -1,5 +1,5 @@
-/* ============================================================
-   BSD After School Club — Axios Instance
+﻿/* ============================================================
+   BSD After School Club â€” Axios Instance
    ============================================================ */
 
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
@@ -20,7 +20,7 @@ const axiosInstance = axios.create({
 
 /* -------------------------------------------------------
    REQUEST INTERCEPTOR
-   — Otomatis sisipkan Bearer token dari localStorage
+   â€” Otomatis sisipkan Bearer token dari localStorage
 ------------------------------------------------------- */
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
@@ -38,7 +38,7 @@ axiosInstance.interceptors.request.use(
 
 /* -------------------------------------------------------
    RESPONSE INTERCEPTOR
-   — Tangani error global (401 → redirect ke login, transient network drop retry)
+   â€” Tangani error global (401 â†’ redirect ke login, transient network drop retry)
 ------------------------------------------------------- */
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => response,
@@ -54,7 +54,7 @@ axiosInstance.interceptors.response.use(
     }
 
     if (error.response?.status === 401) {
-      // Token expired atau tidak valid → hapus token & redirect ke login
+      // Token expired atau tidak valid â†’ hapus token & redirect ke login
       if (typeof window !== "undefined") {
         localStorage.removeItem("auth_token");
         localStorage.removeItem("auth_user");
@@ -68,3 +68,4 @@ axiosInstance.interceptors.response.use(
 );
 
 export default axiosInstance;
+
