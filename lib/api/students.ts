@@ -24,6 +24,14 @@ export interface StudentRaw {
   address: string | null;
   status: string;
   parents?: ParentRelation[];
+  nis?: string;
+  program?: { id?: string; name?: string; [key: string]: any };
+  enrollments?: Array<{
+    id: string;
+    program_level_id?: string;
+    classroom?: any;
+    [key: string]: any;
+  }>;
   created_at?: string;
   updated_at?: string;
 }
@@ -38,6 +46,14 @@ export interface Student {
   address: string | null;
   status: string;
   parents: { id: string; name: string; relationship: string; phone: string }[];
+  nis?: string;
+  program?: { id?: string; name?: string; [key: string]: any };
+  enrollments?: Array<{
+    id: string;
+    program_level_id?: string;
+    classroom?: any;
+    [key: string]: any;
+  }>;
 }
 
 export function mapStudent(raw: StudentRaw): Student {
@@ -58,6 +74,9 @@ export function mapStudent(raw: StudentRaw): Student {
     address: raw.address,
     status: raw.status,
     parents,
+    nis: raw.nis || raw.student_code,
+    program: raw.program,
+    enrollments: raw.enrollments,
   };
 }
 

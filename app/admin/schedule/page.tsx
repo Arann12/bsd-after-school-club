@@ -283,7 +283,7 @@ export default function SchedulePage() {
               <line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
             <div>
-              Hari Rutin: <strong style={{ fontSize: 14 }}>{DAYS[formData.day_of_week] || formData.day_of_week}</strong>
+              Hari Rutin: <strong style={{ fontSize: 14 }}>{(DAYS as Record<string, string>)[formData.day_of_week] || formData.day_of_week}</strong>
               <span style={{ fontSize: 11.5, opacity: 0.85, display: "block", marginTop: 2 }}>
                 Otomatis ditentukan berdasarkan Tanggal Efektif Mulai ({formData.effective_from || "belum dipilih"})
               </span>
