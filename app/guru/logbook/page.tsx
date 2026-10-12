@@ -38,17 +38,19 @@ export interface LogbookEntry {
   classroomId: string;
 }
 
-const listBulan = [
-  { key: "2026-08", label: "Agustus 2026", days: 31, offsetStart: 5 },
-  { key: "2026-09", label: "September 2026", days: 30, offsetStart: 1 },
-  { key: "2026-10", label: "Oktober 2026", days: 31, offsetStart: 3 },
-  { key: "2026-11", label: "November 2026", days: 30, offsetStart: 6 },
-  { key: "2026-12", label: "Desember 2026", days: 31, offsetStart: 1 },
-];
+// Helper date
+function getMonthMeta(year: number, month: number) {
+  const d = new Date(year, month - 1, 1);
+  const days = new Date(year, month, 0).getDate();
+  let offsetStart = d.getDay() - 1;
+  if (offsetStart < 0) offsetStart = 6;
+  const key = `${year}-${String(month).padStart(2, "0")}`;
+  const label = d.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+  return { year, month, key, label, days, offsetStart };
+}
 
 const HARI = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Ming"];
 
-// Helper date
 function getStatusSesi(sessionDate: string): "Hari Ini" | "Mendatang" | "Selesai" {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const d = new Date(sessionDate); d.setHours(0, 0, 0, 0);
@@ -70,30 +72,16 @@ function statusBadgeStyle(status: string): { bg: string; color: string } {
 }
 
 function isLogbookCompleted(entry: LogbookEntry) {
-  return entry.materi !== "Belum diisi" && (entry.totalSiswa ?? 0) > 0;
+  return Boolean(entry.materi && entry.materi !== "Belum diisi" && entry.materi.trim() !== "");
 }
 
 export default function GuruKalenderLogbookPage() {
-  const currentMonthKey = new Date().toISOString().substring(0, 7);
+  const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
+  const [viewMonth, setViewMonth] = useState(() => new Date().getMonth() + 1);
 
-  // Create current month list item dynamically if not in the list yet
-  const dynamicBulanList = [...listBulan];
-  if (!dynamicBulanList.find((b) => b.key === currentMonthKey)) {
-      const d = new Date();
-      d.setDate(1);
-      const days = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-      let offset = d.getDay() - 1;
-      if (offset < 0) offset = 6;
-      dynamicBulanList.push({
-          key: currentMonthKey,
-          label: d.toLocaleDateString("id-ID", { month: "long", year: "numeric" }),
-          days,
-          offsetStart: offset,
-      });
-      dynamicBulanList.sort((a, b) => a.key.localeCompare(b.key));
-  }
+  const currentBulan = getMonthMeta(viewYear, viewMonth);
+  const selectedBulanKey = currentBulan.key;
 
-  const [selectedBulanKey, setSelectedBulanKey] = useState(currentMonthKey);
   const [logbookList, setLogbookList] = useState<LogbookEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLogbook, setSelectedLogbook] = useState<LogbookEntry | null>(null);
@@ -104,16 +92,25 @@ export default function GuruKalenderLogbookPage() {
   const fetchLogbooks = useCallback(async () => {
     setLoading(true);
     try {
-      const sessionsRes = await getClassSessions({ per_page: 200 });
+      const sessionsRes = await getClassSessions({ per_page: 500 });
       const sessions: ClassSession[] = Array.isArray(sessionsRes) ? sessionsRes : ((sessionsRes as any)?.data || []);
-      
+
+      // Calculate total sessions per classroom from real database records
+      const sessionCountsByClass: Record<string, number> = {};
+      sessions.forEach((s) => {
+        const cid = s.classroomId || s.classroom?.id;
+        if (cid) {
+          sessionCountsByClass[cid] = (sessionCountsByClass[cid] || 0) + 1;
+        }
+      });
+
       const entries: LogbookEntry[] = sessions.map((s) => {
         const dateKey = s.sessionDate?.split("T")[0] ?? "";
         const bulanKey = dateKey.substring(0, 7);
         const dayNum = parseInt(dateKey.substring(8, 10), 10);
         const tglDisplay = new Date(dateKey).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
         const status = getStatusSesi(dateKey);
-        
+
         const attendances = s.studentAttendances || [];
         const hadir = attendances.filter((a: any) => a.attendance_status === "present").length;
         const izin = attendances.filter((a: any) => a.attendance_status === "excused").length;
@@ -125,13 +122,16 @@ export default function GuruKalenderLogbookPage() {
            if (a.attendance_status === "present") sts = "Hadir";
            else if (a.attendance_status === "excused") sts = "Izin";
            else if (a.attendance_status === "absent") sts = (a.notes || "").toLowerCase().includes("sakit") ? "Sakit" : "Alpha";
-           
+
            return {
              nama: a.student?.full_name || a.student?.name || "Unknown Student",
              status: sts,
              catatan: a.notes || undefined,
            };
         });
+
+        const cid = s.classroomId || s.classroom?.id || "";
+        const totalPertemuan = cid ? (sessionCountsByClass[cid] || 0) : 0;
 
         return {
           id: s.id,
@@ -144,7 +144,7 @@ export default function GuruKalenderLogbookPage() {
           jam: `${s.startTime?.substring(0,5) || "--"} - ${s.endTime?.substring(0,5) || "--"}`,
           ruang: "Ruang Kelas",
           pertemuan: s.sessionNumber || 0,
-          totalPertemuan: 0, 
+          totalPertemuan,
           materi: s.teacherLogbook?.material || "Belum diisi",
           catatanGuru: s.teacherLogbook?.notes || "Tidak ada catatan.",
           hadir,
@@ -156,11 +156,28 @@ export default function GuruKalenderLogbookPage() {
           warna: warnaStatus(status),
           siswaAbsensi,
           isLibur: s.isHoliday,
-          classroomId: s.classroomId,
+          classroomId: cid,
         };
       });
 
       setLogbookList(entries);
+
+      // Auto-align calendar to active month if current month has 0 sessions
+      if (entries.length > 0) {
+        const now = new Date();
+        const thisMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+        const hasInThisMonth = entries.some(e => e.bulanKey === thisMonthKey);
+        if (!hasInThisMonth) {
+          const target = entries.find(e => e.status === "Hari Ini" || e.status === "Mendatang") || entries[entries.length - 1];
+          if (target?.bulanKey) {
+            const [y, m] = target.bulanKey.split("-").map(Number);
+            if (y && m) {
+              setViewYear(y);
+              setViewMonth(m);
+            }
+          }
+        }
+      }
     } catch (e) {
       console.error("Failed to load logbooks", e);
     } finally {
@@ -172,22 +189,37 @@ export default function GuruKalenderLogbookPage() {
     fetchLogbooks();
   }, [fetchLogbooks]);
 
-  const currentBulan = dynamicBulanList.find((b) => b.key === selectedBulanKey) || dynamicBulanList[1];
-
-  const showToast = (msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(null), 3000);
-  };
-
   const handlePrevBulan = () => {
-    const idx = dynamicBulanList.findIndex((b) => b.key === selectedBulanKey);
-    if (idx > 0) setSelectedBulanKey(dynamicBulanList[idx - 1].key);
+    if (viewMonth === 1) {
+      setViewYear((y) => y - 1);
+      setViewMonth(12);
+    } else {
+      setViewMonth((m) => m - 1);
+    }
   };
 
   const handleNextBulan = () => {
-    const idx = dynamicBulanList.findIndex((b) => b.key === selectedBulanKey);
-    if (idx < dynamicBulanList.length - 1) setSelectedBulanKey(dynamicBulanList[idx + 1].key);
+    if (viewMonth === 12) {
+      setViewYear((y) => y + 1);
+      setViewMonth(1);
+    } else {
+      setViewMonth((m) => m + 1);
+    }
   };
+
+  const handleJumpToToday = () => {
+    const now = new Date();
+    setViewYear(now.getFullYear());
+    setViewMonth(now.getMonth() + 1);
+  };
+
+  const sessionsInCurrentMonth = logbookList.filter((l) => l.bulanKey === selectedBulanKey);
+  const completedSessionsInMonth = sessionsInCurrentMonth.filter(isLogbookCompleted);
+  const pendingSessionsInMonth = sessionsInCurrentMonth.filter((s) => !isLogbookCompleted(s));
+  const totalPresentInMonth = sessionsInCurrentMonth.reduce((acc, s) => acc + s.hadir, 0);
+  const percentCompleted = sessionsInCurrentMonth.length > 0
+    ? Math.round((completedSessionsInMonth.length / sessionsInCurrentMonth.length) * 100)
+    : 0;
 
   const handleDayClick = (dayNum: number) => {
     const dateStr = `${selectedBulanKey}-${dayNum.toString().padStart(2, "0")}`;
@@ -353,24 +385,37 @@ export default function GuruKalenderLogbookPage() {
       <div className="card" style={{ padding: "20px 24px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 14 }}>
           {/* Left: Month Navigation */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <button className="btn btn-ghost btn-sm" onClick={handlePrevBulan}
-              disabled={dynamicBulanList.findIndex((b) => b.key === selectedBulanKey) === 0}
-              style={{ padding: "6px 10px", fontSize: 16, lineHeight: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button
+              className="btn btn-outline btn-sm"
+              onClick={handlePrevBulan}
+              title="Bulan sebelumnya"
+              style={{ padding: "6px 12px", fontSize: 16, lineHeight: 1, fontWeight: 800 }}
+            >
               ‹
             </button>
-            <h2 style={{ fontSize: 18, fontWeight: 900, color: "var(--color-text-primary)", margin: 0, minWidth: 240, textAlign: "center" }}>
-              Kalender Presensi & Logbook — {currentBulan.label}
+            <h2 style={{ fontSize: 18, fontWeight: 900, color: "var(--color-text-primary)", margin: 0, minWidth: 200, textAlign: "center" }}>
+              {currentBulan.label}
             </h2>
-            <button className="btn btn-ghost btn-sm" onClick={handleNextBulan}
-              disabled={dynamicBulanList.findIndex((b) => b.key === selectedBulanKey) === dynamicBulanList.length - 1}
-              style={{ padding: "6px 10px", fontSize: 16, lineHeight: 1 }}>
+            <button
+              className="btn btn-outline btn-sm"
+              onClick={handleNextBulan}
+              title="Bulan berikutnya"
+              style={{ padding: "6px 12px", fontSize: 16, lineHeight: 1, fontWeight: 800 }}
+            >
               ›
+            </button>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={handleJumpToToday}
+              style={{ fontSize: 12, fontWeight: 700, color: "var(--color-primary)", marginLeft: 4 }}
+            >
+              Hari Ini
             </button>
           </div>
 
           {/* Right: Legend */}
-          <div style={{ display: "flex", alignItems: "center", gap: 20, fontSize: 12.5, fontWeight: 600 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 20, fontSize: 12.5, fontWeight: 600, flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#059669", flexShrink: 0 }} />
               <span style={{ color: "#059669" }}>Hadir & Logbook Terisi</span>
@@ -387,6 +432,46 @@ export default function GuruKalenderLogbookPage() {
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--color-primary)", flexShrink: 0 }} />
               <span style={{ color: "var(--color-primary)" }}>Multi-Sesi</span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Ringkasan Bulan Ini */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+        <div className="stat-card">
+          <span className="stat-card-label">Total Sesi Bulan Ini</span>
+          <div className="stat-card-value" style={{ fontSize: 26, color: "#1d4ed8" }}>
+            {sessionsInCurrentMonth.length} Sesi
+          </div>
+          <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+            Periode {currentBulan.label}
+          </div>
+        </div>
+        <div className="stat-card">
+          <span className="stat-card-label">Logbook Terisi</span>
+          <div className="stat-card-value" style={{ fontSize: 26, color: "#059669" }}>
+            {completedSessionsInMonth.length} Sesi
+          </div>
+          <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+            {percentCompleted}% dari total sesi bulan ini
+          </div>
+        </div>
+        <div className="stat-card">
+          <span className="stat-card-label">Menunggu Pengisian</span>
+          <div className="stat-card-value" style={{ fontSize: 26, color: pendingSessionsInMonth.length > 0 ? "#ea580c" : "#64748b" }}>
+            {pendingSessionsInMonth.length} Sesi
+          </div>
+          <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+            {pendingSessionsInMonth.length === 0 ? "Semua logbook telah diisi" : "Perlu diisi absensi/logbook"}
+          </div>
+        </div>
+        <div className="stat-card">
+          <span className="stat-card-label">Kehadiran Siswa</span>
+          <div className="stat-card-value" style={{ fontSize: 26, color: "#7c3aed" }}>
+            {totalPresentInMonth} Hadir
+          </div>
+          <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+            Akumulasi kehadiran bulan ini
           </div>
         </div>
       </div>
@@ -605,7 +690,7 @@ export default function GuruKalenderLogbookPage() {
                           {session.hadir}/{session.totalSiswa} Siswa
                         </span>
                         {session.pertemuan > 0 && (
-                          <span>Pertemuan {session.pertemuan}</span>
+                          <span>Pertemuan {session.pertemuan}{session.totalPertemuan > 0 ? `/${session.totalPertemuan}` : ""}</span>
                         )}
                       </div>
 
@@ -686,17 +771,23 @@ export default function GuruKalenderLogbookPage() {
         })()}
 
         <div style={{ marginBottom: 18 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
             <span style={{ background: selectedLogbook?.warna, color: "#fff", fontSize: 12, fontWeight: 800, padding: "3px 10px", borderRadius: 999 }}>
               {selectedLogbook?.kelas}
             </span>
-            <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "monospace" }}>{selectedLogbook?.id}</span>
+            <span style={{
+              background: isLogbookCompleted(selectedLogbook) ? "#d1fae5" : "#fef3c7",
+              color: isLogbookCompleted(selectedLogbook) ? "#059669" : "#d97706",
+              fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999
+            }}>
+              {isLogbookCompleted(selectedLogbook) ? "Logbook Tersimpan" : "Belum Diisi"}
+            </span>
           </div>
           <h2 style={{ fontSize: 18, fontWeight: 900, color: "#1a202c", margin: 0 }}>
             {selectedLogbook?.tglDisplay}
           </h2>
-          <div style={{ fontSize: 12.5, color: "#64748b", marginTop: 2 }}>
-            {selectedLogbook?.program} · Pertemuan {selectedLogbook?.pertemuan} · {selectedLogbook?.jam} · {selectedLogbook?.ruang}
+          <div style={{ fontSize: 12.5, color: "#64748b", marginTop: 4 }}>
+            {selectedLogbook?.program} · Pertemuan {selectedLogbook?.pertemuan}{selectedLogbook?.totalPertemuan ? ` dari ${selectedLogbook.totalPertemuan} Sesi` : ""} · {selectedLogbook?.jam} · {selectedLogbook?.ruang}
           </div>
         </div>
 
@@ -755,16 +846,35 @@ export default function GuruKalenderLogbookPage() {
         </div>
 
         {/* Actions */}
-        <div style={{ display: "flex", gap: 10 }}>
-          <button className="btn btn-ghost" onClick={() => { setSelectedLogbook(null); showToast("Logbook berhasil diunduh sebagai PDF!"); }} style={{ flex: 1, justifyContent: "center" }}>Unduh PDF</button>
-          
-          {selectedLogbook?.materi === "Belum diisi" ? (
-             <Link href={`/guru/kelas/${selectedLogbook.classroomId || selectedLogbook.id}`} className="btn btn-primary" style={{ flex: 1, textDecoration: "none", textAlign: "center" }}>
-               Isi Logbook Sekarang
-             </Link>
-          ) : (
-            <button className="btn btn-accent" onClick={() => { setSelectedLogbook(null); showToast("Logbook berhasil dikirim ke Orang Tua!"); }} style={{ flex: 1, justifyContent: "center" }}>Kirim ke Ortu</button>
-          )}
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button
+            className="btn btn-outline"
+            onClick={() => window.print()}
+            style={{ flex: 1, minWidth: 140, justifyContent: "center", display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 6 2 18 2 18 9"/>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+              <rect x="6" y="14" width="12" height="8"/>
+            </svg>
+            Cetak Logbook
+          </button>
+
+          <Link
+            href={`/guru/kelas/${selectedLogbook?.classroomId || selectedLogbook?.id}`}
+            className="btn btn-primary"
+            style={{ flex: 1, minWidth: 160, textDecoration: "none", textAlign: "center", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+          >
+            {selectedLogbook?.materi === "Belum diisi" ? "Isi Absensi & Logbook" : "Perbarui Absensi"}
+          </Link>
+
+          <button
+            className="btn btn-ghost"
+            onClick={() => setSelectedLogbook(null)}
+            style={{ padding: "8px 16px" }}
+          >
+            Tutup
+          </button>
         </div>
       </Modal>
       )}
@@ -772,7 +882,7 @@ export default function GuruKalenderLogbookPage() {
       {/* MODAL: Hari Kosong */}
       <Modal open={!!selectedEmptyDay} onClose={() => setSelectedEmptyDay(null)} title={`Tanggal ${selectedEmptyDay?.dayNum} ${currentBulan.label}`} maxWidth={440}>
         <p style={{ fontSize: 13, color: "#64748b", lineHeight: 1.5, marginBottom: 18 }}>
-          Tidak ada kelas atau logbook untuk tanggal ini. Hari libur / kosong.
+          Tidak ada jadwal sesi mengajar pada tanggal ini.
         </p>
         <div style={{ display: "flex", gap: 10 }}>
           <Link href="/guru/jadwal" className="btn btn-accent" style={{ flex: 1, textAlign: "center", textDecoration: "none", justifyContent: "center" }}>Lihat Jadwal</Link>

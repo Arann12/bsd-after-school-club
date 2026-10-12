@@ -16,6 +16,8 @@ export interface ReceiptData {
   metode: string;
   jalur?: string;
   jumlah: number | string;
+  cashReceived?: number | string;
+  changeAmount?: number | string;
   status: "Lunas" | "paid" | "Selesai" | string;
   cashierName?: string;
   notes?: string;
@@ -377,6 +379,27 @@ export function printReceipt(data: ReceiptData) {
         <td class="label">Metode Pembayaran</td>
         <td class="value">${data.metode} ${data.jalur && data.jalur !== "–" ? `(${data.jalur})` : ""}</td>
       </tr>
+      ${
+        data.cashReceived
+          ? `<tr>
+        <td class="label">Uang Tunai Diterima</td>
+        <td class="value">Rp ${cleanNumber(data.cashReceived).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</td>
+      </tr>`
+          : ""
+      }
+      ${
+        data.changeAmount !== undefined && data.changeAmount !== null && cleanNumber(data.changeAmount) > 0
+          ? `<tr>
+        <td class="label">Kembalian Kasir</td>
+        <td class="value" style="color: #059669; font-weight: 800;">Rp ${cleanNumber(data.changeAmount).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</td>
+      </tr>`
+          : data.cashReceived
+          ? `<tr>
+        <td class="label">Kembalian Kasir</td>
+        <td class="value" style="color: #64748b; font-weight: 600;">Rp 0 (Uang Pas)</td>
+      </tr>`
+          : ""
+      }
       ${
         data.notes
           ? `<tr>

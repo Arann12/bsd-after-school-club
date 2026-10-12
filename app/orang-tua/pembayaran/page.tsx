@@ -888,11 +888,15 @@ export default function PembayaranPage() {
             TOTAL TAGIHAN TERTUNDA
           </div>
           <div>
-            <div style={{ fontSize: 28, fontWeight: 800, color: totalUnpaidNominal > 0 ? "#dc2626" : "#16a34a", lineHeight: 1.1 }}>
-              {formatRupiah(totalUnpaidNominal)}
+            <div style={{ fontSize: 28, fontWeight: 800, color: totalUnpaidNominal > 0 ? "#dc2626" : paymentPlans.length === 0 ? "#64748b" : "#16a34a", lineHeight: 1.1 }}>
+              {paymentPlans.length > 0 ? formatRupiah(totalUnpaidNominal) : "Rp 0"}
             </div>
             <div style={{ fontSize: 12.5, color: "#64748b", marginTop: 6, fontWeight: 500 }}>
-              {unpaidPlans.length > 0 ? `${unpaidPlans.length} Sesi belum dibayar` : "Semua Sesi Telah Lunas"}
+              {paymentPlans.length === 0
+                ? "Tidak ada tagihan aktif"
+                : unpaidPlans.length > 0
+                ? `${unpaidPlans.length} sesi belum dibayar`
+                : "Semua sesi telah lunas"}
             </div>
           </div>
         </div>
@@ -914,8 +918,14 @@ export default function PembayaranPage() {
             PROGRESS PERTEMUAN (LUNAS)
           </div>
           <div>
-            <div style={{ fontSize: 28, fontWeight: 800, color: "#1e293b", lineHeight: 1.1 }}>
-              {completedSessionsCount} <span style={{ fontSize: 18, fontWeight: 600, color: "#94a3b8" }}>/{totalSessionsCount}</span>
+            <div style={{ fontSize: 28, fontWeight: 800, color: totalSessionsCount > 0 ? "#1e293b" : "#64748b", lineHeight: 1.1 }}>
+              {totalSessionsCount > 0 ? (
+                <>
+                  {completedSessionsCount} <span style={{ fontSize: 18, fontWeight: 600, color: "#94a3b8" }}>/{totalSessionsCount}</span>
+                </>
+              ) : (
+                "–"
+              )}
             </div>
             {/* Horizontal Progress Bar */}
             <div
@@ -1018,15 +1028,15 @@ export default function PembayaranPage() {
               </h2>
               <span
                 style={{
-                  background: "#e0f2fe",
-                  color: "#0369a1",
+                  background: paymentPlans.length > 0 ? "#e0f2fe" : "#f1f5f9",
+                  color: paymentPlans.length > 0 ? "#0369a1" : "#64748b",
                   fontSize: 11,
                   fontWeight: 700,
                   padding: "3px 10px",
                   borderRadius: 999,
                 }}
               >
-                Aktif
+                {paymentPlans.length > 0 ? "Aktif" : "Belum Terdaftar"}
               </span>
             </div>
 
@@ -1044,7 +1054,7 @@ export default function PembayaranPage() {
                   Total Pertemuan Paket
                 </div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: "#1e293b" }}>
-                  {totalSessionsCount} Pertemuan
+                  {totalSessionsCount > 0 ? `${totalSessionsCount} Pertemuan` : "–"}
                 </div>
               </div>
               <div>
@@ -1052,7 +1062,7 @@ export default function PembayaranPage() {
                   Harga per Pertemuan
                 </div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: "#1e293b" }}>
-                  {formatRupiah(paymentPlans[0]?.amount || 50000)}
+                  {paymentPlans.length > 0 && paymentPlans[0]?.amount ? formatRupiah(paymentPlans[0].amount) : "–"}
                 </div>
               </div>
             </div>
@@ -1186,8 +1196,8 @@ export default function PembayaranPage() {
               <h3 style={{ fontSize: 16, fontWeight: 800, color: "#1e293b", margin: 0 }}>
                 Bayar per Pertemuan
               </h3>
-              <span style={{ background: nextUnpaidSessions.length > 0 ? (nextUnpaidIsPendingCash ? "#fef3c7" : "#fee2e2") : "#dcfce7", color: nextUnpaidSessions.length > 0 ? (nextUnpaidIsPendingCash ? "#b45309" : "#dc2626") : "#16a34a", fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999 }}>
-                {nextUnpaidSessions.length > 0 ? (nextUnpaidIsPendingCash ? "Menunggu Verifikasi" : `${nextUnpaidSessions.length} Belum Dibayar`) : "Semua Lunas"}
+              <span style={{ background: paymentPlans.length === 0 ? "#f1f5f9" : nextUnpaidSessions.length > 0 ? (nextUnpaidIsPendingCash ? "#fef3c7" : "#fee2e2") : "#dcfce7", color: paymentPlans.length === 0 ? "#64748b" : nextUnpaidSessions.length > 0 ? (nextUnpaidIsPendingCash ? "#b45309" : "#dc2626") : "#16a34a", fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999 }}>
+                {paymentPlans.length === 0 ? "Belum Ada Tagihan" : nextUnpaidSessions.length > 0 ? (nextUnpaidIsPendingCash ? "Menunggu Verifikasi" : `${nextUnpaidSessions.length} Belum Dibayar`) : "Semua Lunas"}
               </span>
             </div>
 
@@ -1203,7 +1213,9 @@ export default function PembayaranPage() {
                   </div>
                 ))
               ) : (
-                <div style={{ fontSize: 13, color: "#16a34a", fontWeight: 700 }}>Semua tagihan pertemuan sudah lunas.</div>
+                <div style={{ fontSize: 13, color: paymentPlans.length === 0 ? "#64748b" : "#16a34a", fontWeight: 700 }}>
+                  {paymentPlans.length === 0 ? "Belum ada tagihan bimbingan aktif." : "Semua tagihan pertemuan sudah lunas."}
+                </div>
               )}
               <div style={{ height: 1, background: "#e2e8f0", margin: "4px 0" }} />
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -1240,11 +1252,13 @@ export default function PembayaranPage() {
                 <line x1="2" y1="10" x2="22" y2="10" />
               </svg>
               <span>
-                {unpaidPlans.length === 0
+                {paymentPlans.length === 0
+                  ? "Belum Ada Tagihan"
+                  : unpaidPlans.length === 0
                   ? "Semua Pertemuan Lunas"
                   : nextUnpaidIsPendingCash
                   ? "⏳ Menunggu Verifikasi Kasir"
-                  : `Bayar Pertemuan (Rp ${(nextUnpaidNominal / 1000)}k)`}
+                  : `Bayar Pertemuan (${formatRupiah(nextUnpaidNominal)})`}
               </span>
             </button>
           </div>
@@ -1278,7 +1292,7 @@ export default function PembayaranPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13, color: "rgba(255, 255, 255, 0.95)" }}>
                 <span>{unpaidPlans.length > 0 ? `Sisa Pertemuan (${unpaidPlans[0]?.session_number}-${unpaidPlans[unpaidPlans.length - 1]?.session_number})` : "Sisa Pertemuan"}</span>
-                <span style={{ fontWeight: 700 }}>{unpaidPlans.length > 0 ? `${unpaidPlans.length} x ${formatRupiah(unpaidPlans[0]?.amount || 50000)}` : "0 Pertemuan"}</span>
+                <span style={{ fontWeight: 700 }}>{unpaidPlans.length > 0 ? `${unpaidPlans.length} x ${formatRupiah(unpaidPlans[0]?.amount || 0)}` : "–"}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
                 <span style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.9)" }}>Total Pelunasan</span>
@@ -1307,7 +1321,7 @@ export default function PembayaranPage() {
               onMouseEnter={(e) => { if (unpaidPlans.length > 0) e.currentTarget.style.background = "#f8fafc"; }}
               onMouseLeave={(e) => { if (unpaidPlans.length > 0) e.currentTarget.style.background = "#ffffff"; }}
             >
-              {unpaidPlans.length === 0 ? "Semua Paket Sudah Lunas" : "Lunasi Paket Sekarang"}
+              {paymentPlans.length === 0 ? "Belum Ada Tagihan" : unpaidPlans.length === 0 ? "Semua Paket Sudah Lunas" : "Lunasi Paket Sekarang"}
             </button>
           </div>
         </div>
@@ -1458,8 +1472,8 @@ export default function PembayaranPage() {
             <li>Pembayaran tagihan maksimal dilakukan sebelum pertemuan dimulai.</li>
             <li>Pertemuan yang jatuh pada hari libur nasional (tanggal merah) tidak dikenakan biaya dan jadwal akan digeser ke pertemuan berikutnya.</li>
             <li>Jika anak izin (dengan pemberitahuan maksimal H-1), pertemuan dapat di-reschedule tanpa biaya tambahan (maksimal 2x per bulan).</li>
-            <li><strong>Pembayaran Non-Cash (VA, QRIS, E-Wallet):</strong> Terverifikasi <strong>OTOMATIS LUNAS</strong> secara instan oleh sistem payment gateway.</li>
-            <li><strong>Pembayaran Cash (Tunai):</strong> Menunggu proses <strong>ACC / Verifikasi Kasir Admin</strong> di cabang.</li>
+            <li><strong>Pembayaran Digital (VA, QRIS, E-Wallet):</strong> Status pembayaran langsung terverifikasi otomatis.</li>
+            <li><strong>Pembayaran Tunai (Cash):</strong> Dilayani langsung di Front Desk pada jam operasional kantor.</li>
           </ul>
         </div>
       </div>
@@ -1546,7 +1560,7 @@ export default function PembayaranPage() {
                     unpaidPlans.length > 0 ? (
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
                         <span>Sisa Pertemuan ({unpaidPlans[0]?.session_number} - {unpaidPlans[unpaidPlans.length - 1]?.session_number})</span>
-                        <span>{unpaidPlans.length} x {formatRupiah(unpaidPlans[0]?.amount || 50000)}</span>
+                        <span>{unpaidPlans.length} x {formatRupiah(unpaidPlans[0]?.amount || 0)}</span>
                       </div>
                     ) : (
                       <div style={{ fontSize: 13, color: "#16a34a", fontWeight: 600, marginBottom: 6 }}>
@@ -1731,11 +1745,7 @@ export default function PembayaranPage() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: "#92400e" }}>Pembayaran Tunai (Cash)</div>
                       <div style={{ fontSize: 12, color: "#b45309", marginTop: 4, lineHeight: 1.5 }}>
-                        Pembayaran tunai dilayani langsung di <strong>Front Desk BSD After School Club</strong> pada jam operasional kantor. Kasir akan memproses pembayaran dan mencetak kwitansi resmi.
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, padding: "6px 10px", background: "#fef9c3", borderRadius: 8, width: "fit-content" }}>
-                        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#a16207" strokeWidth={2.5}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-                        <span style={{ fontSize: 11, fontWeight: 600, color: "#a16207" }}>Tidak perlu upload bukti — dicatat langsung oleh kasir</span>
+                        Pembayaran tunai dilayani langsung di <strong>Front Desk BSD After School Club</strong> pada jam operasional kantor. Kasir akan memproses pembayaran.
                       </div>
                     </div>
                   </div>
@@ -1856,7 +1866,7 @@ export default function PembayaranPage() {
                     unpaidPlans.length > 0 ? (
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: liveFee ? 4 : 8 }}>
                         <span>Sisa Pertemuan ({unpaidPlans[0]?.session_number} - {unpaidPlans[unpaidPlans.length - 1]?.session_number})</span>
-                        <span>{unpaidPlans.length} x {formatRupiah(unpaidPlans[0]?.amount || 50000)}</span>
+                        <span>{unpaidPlans.length} x {formatRupiah(unpaidPlans[0]?.amount || 0)}</span>
                       </div>
                     ) : (
                       <div style={{ fontSize: 13, color: "#16a34a", fontWeight: 600, marginBottom: 8 }}>
@@ -2034,7 +2044,7 @@ export default function PembayaranPage() {
                     <div style={{ fontSize: 15, fontWeight: 800, color: "#92400e", marginBottom: 6 }}>Pembayaran Tunai di Front Desk</div>
                     <div style={{ fontSize: 13, color: "#b45309", lineHeight: 1.6 }}>
                       Silakan lakukan pembayaran langsung ke kasir di Front Desk BSD After School Club pada jam operasional kantor.<br />
-                      Kasir akan memproses pembayaran dan mencetak kwitansi resmi.
+                      Kasir akan memproses pembayaran.
                     </div>
                   </div>
                 )}
@@ -2601,7 +2611,7 @@ export default function PembayaranPage() {
                     unpaidPlans.length > 0 ? (
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
                         <span>Sisa Pertemuan ({unpaidPlans[0]?.session_number} - {unpaidPlans[unpaidPlans.length - 1]?.session_number})</span>
-                        <span>{unpaidPlans.length} x {formatRupiah(unpaidPlans[0]?.amount || 50000)}</span>
+                        <span>{unpaidPlans.length} x {formatRupiah(unpaidPlans[0]?.amount || 0)}</span>
                       </div>
                     ) : (
                       <div style={{ fontSize: 13, color: "#16a34a", fontWeight: 600, marginBottom: 6 }}>
@@ -2664,16 +2674,16 @@ export default function PembayaranPage() {
                 </div>
 
                 <h3 style={{ fontSize: 20, fontWeight: 800, color: "#1e293b", marginBottom: 6 }}>
-                  {selectedMethod === "cash" ? "Informasi Tunai" : "Pembayaran Otomatis Lunas!"}
+                  {selectedMethod === "cash" ? "Informasi Pembayaran Tunai" : "Pembayaran Berhasil"}
                 </h3>
                 <p style={{ fontSize: 13, color: "#64748b", marginBottom: 20, lineHeight: 1.5 }}>
                   {selectedMethod === "cash" ? (
                     <>
-                      Untuk pembayaran tunai, silakan kunjungi <strong>Front Desk BSD After School Club</strong> pada jam operasional. Kasir akan memproses pembayaran dan mencetak kwitansi resmi.
+                      Untuk pembayaran tunai, silakan kunjungi <strong>Front Desk BSD After School Club</strong> pada jam operasional kantor. Kasir akan memproses pembayaran.
                     </>
                   ) : (
                     <>
-                      Transaksi sebesar <strong>{lastSuccessAmount || (liveTotalAmount ? formatRupiah(liveTotalAmount) : totalAmount)}</strong> untuk <strong>{childName}</strong> telah <strong>terverifikasi OTOMATIS LUNAS</strong> oleh sistem Payment Gateway.
+                      Pembayaran sebesar <strong>{lastSuccessAmount || (liveTotalAmount ? formatRupiah(liveTotalAmount) : totalAmount)}</strong> untuk <strong>{childName}</strong> telah berhasil diterima.
                     </>
                   )}
                 </p>

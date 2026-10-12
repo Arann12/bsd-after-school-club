@@ -1,6 +1,6 @@
 import axiosInstance from "./axiosInstance";
 import type { PaginatedResponse, ApiResponse } from "./types";
-import type { Teacher } from "./teachers";
+import { mapTeacher, type Teacher, type TeacherRaw } from "./teachers";
 
 // ============================================================================
 // Types
@@ -109,7 +109,7 @@ export interface ClassScheduleRaw {
   effective_until: string | null;
   is_active: boolean;
   classroom?: ClassroomRaw;
-  teacher?: Teacher;
+  teacher?: TeacherRaw | Teacher;
 }
 
 export interface ClassSchedule {
@@ -139,7 +139,7 @@ export interface ClassSessionRaw {
   is_rescheduled: boolean;
   is_holiday: boolean;
   classroom?: ClassroomRaw;
-  teacher?: Teacher;
+  teacher?: TeacherRaw | Teacher;
   class_schedule?: ClassScheduleRaw;
   teacher_logbook?: any;
   student_attendances?: any[];
@@ -249,7 +249,7 @@ export function mapClassSchedule(raw: ClassScheduleRaw): ClassSchedule {
     effectiveUntil: raw.effective_until,
     isActive: raw.is_active,
     classroom: raw.classroom ? mapClassroom(raw.classroom) : undefined,
-    teacher: raw.teacher,
+    teacher: raw.teacher ? mapTeacher(raw.teacher as any) : undefined,
   };
 }
 
@@ -267,7 +267,7 @@ export function mapClassSession(raw: ClassSessionRaw): ClassSession {
     isRescheduled: raw.is_rescheduled,
     isHoliday: raw.is_holiday,
     classroom: raw.classroom ? mapClassroom(raw.classroom) : undefined,
-    teacher: raw.teacher,
+    teacher: raw.teacher ? mapTeacher(raw.teacher as any) : undefined,
     classSchedule: raw.class_schedule ? mapClassSchedule(raw.class_schedule) : undefined,
     teacherLogbook: raw.teacher_logbook,
     studentAttendances: raw.student_attendances,
@@ -429,7 +429,21 @@ export async function generateClassSessions(scheduleId: string, data: { total_se
 // API Calls: Class Sessions & Attendances
 // ============================================================================
 
-export async function getClassSessions(params?: { date?: string; teacher_id?: string; per_page?: number }) {
+export async function createClassSession(data: {
+  classroom_id: string;
+  teacher_id?: string;
+  class_schedule_id?: string | null;
+  session_number?: number;
+  session_date: string;
+  start_time: string;
+  end_time: string;
+  status?: string;
+}) {
+  const res = await axiosInstance.post<ApiResponse<ClassSessionRaw>>("/class-sessions", data);
+  return mapClassSession(res.data.data);
+}
+
+export async function getClassSessions(params?: { date?: string; teacher_id?: string; classroom_id?: string; per_page?: number }) {
   const res = await axiosInstance.get<ApiResponse<ClassSessionRaw[]>>("/class-sessions", { params });
   return res.data.data.map(mapClassSession);
 }

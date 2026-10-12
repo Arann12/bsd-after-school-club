@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/ui/Modal";
+import Toast, { useToast } from "@/components/ui/Toast";
 import {
   getClassSchedules, createClassSchedule, updateClassSchedule, deleteClassSchedule,
   getClassrooms,
@@ -30,6 +31,7 @@ function getDayOfWeekFromDate(dateStr: string): string {
 }
 
 export default function SchedulePage() {
+  const { toast, showToast } = useToast();
   const [schedules, setSchedules] = useState<ClassSchedule[]>([]);
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -49,6 +51,10 @@ export default function SchedulePage() {
     effective_until: "",
   });
   const [saving, setSaving] = useState(false);
+
+  // Delete Confirm State
+  const [scheduleToDelete, setScheduleToDelete] = useState<ClassSchedule | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -88,7 +94,7 @@ export default function SchedulePage() {
         classroom_id: sched.classroomId,
         teacher_id: sched.teacherId,
         day_of_week: derivedDay,
-        start_time: sched.startTime.substring(0, 5), // Format HH:mm
+        start_time: sched.startTime.substring(0, 5),
         end_time: sched.endTime.substring(0, 5),
         effective_from: effFrom,
         effective_until: sched.effectiveUntil || "",
@@ -120,7 +126,8 @@ export default function SchedulePage() {
 
   const handleSave = async () => {
     if (!formData.classroom_id || !formData.teacher_id || !formData.start_time || !formData.end_time || !formData.effective_from) {
-      return alert("Semua field wajib diisi kecuali Effective Until.");
+      showToast("Lengkapi semua kolom bertanda bintang.", "warning");
+      return;
     }
     setSaving(true);
     try {
@@ -133,37 +140,35 @@ export default function SchedulePage() {
 
       if (editingSchedule) {
         await updateClassSchedule(editingSchedule.id, payload);
+        showToast("Jadwal rutin berhasil diperbarui.", "success");
       } else {
         await createClassSchedule(payload);
+        showToast("Jadwal rutin berhasil ditambahkan.", "success");
       }
       setShowModal(false);
       fetchData();
     } catch (err: any) {
       console.error(err);
-      alert("Gagal menyimpan jadwal: " + (err.response?.data?.message || err.message));
+      showToast("Gagal menyimpan jadwal: " + (err.response?.data?.message || err.message), "danger");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Yakin ingin menghapus jadwal ini?")) return;
+  const handleConfirmDelete = async () => {
+    if (!scheduleToDelete) return;
+    setDeleting(true);
     try {
-      await deleteClassSchedule(id);
+      await deleteClassSchedule(scheduleToDelete.id);
+      showToast("Jadwal berhasil dihapus.", "success");
+      setScheduleToDelete(null);
       fetchData();
     } catch (err: any) {
-      alert("Gagal menghapus jadwal.");
+      console.error(err);
+      showToast("Gagal menghapus jadwal: " + (err.response?.data?.message || err.message), "danger");
+    } finally {
+      setDeleting(false);
     }
-  };
-
-  const DAYS = {
-    Monday: "Senin",
-    Tuesday: "Selasa",
-    Wednesday: "Rabu",
-    Thursday: "Kamis",
-    Friday: "Jumat",
-    Saturday: "Sabtu",
-    Sunday: "Minggu"
   };
 
   if (loading && schedules.length === 0) return <div style={{ padding: 24 }}>Memuat jadwal...</div>;
@@ -171,10 +176,12 @@ export default function SchedulePage() {
 
   return (
     <div style={{ padding: "16px 20px", maxWidth: 1100, margin: "0 auto" }}>
+      <Toast toast={toast} />
+
       <div className="page-header" style={{ marginBottom: 24 }}>
         <div>
           <h1 className="page-title">Jadwal Rutin Mingguan</h1>
-          <p className="page-subtitle">Kelola master jadwal kelas mingguan. Sesi absensi dan pertemuan otomatis dibuat saat siswa didaftarkan.</p>
+          <p className="page-subtitle">Master jadwal kelas mingguan (hari, jam, dan guru pengampu). Sesi absensi dan pertemuan otomatis dibuat saat siswa didaftarkan.</p>
         </div>
         <div className="page-header-actions">
           <button className="btn btn-primary" onClick={() => handleOpenModal()}>+ Tambah Jadwal</button>
@@ -199,14 +206,28 @@ export default function SchedulePage() {
               schedules.map((s, i) => (
                 <tr key={s.id} style={{ borderBottom: i < schedules.length - 1 ? "1px solid var(--color-border-light)" : "none" }}>
                   <td style={{ padding: "14px 16px" }}>
-                    <div style={{ fontWeight: 800, color: "var(--color-text-primary)", fontSize: 14 }}>{DAYS[s.dayOfWeek as keyof typeof DAYS]}</div>
+                    <div style={{ fontWeight: 800, color: "var(--color-text-primary)", fontSize: 14 }}>{DAYS[s.dayOfWeek as keyof typeof DAYS] || s.dayOfWeek}</div>
                     <div style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>{s.startTime.substring(0, 5)} - {s.endTime.substring(0, 5)}</div>
                   </td>
                   <td style={{ padding: "14px 16px", fontWeight: 600, color: "var(--color-text-primary)" }}>{s.classroom?.name}</td>
                   <td style={{ padding: "14px 16px" }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#0369a1", background: "#e0f2fe", padding: "2px 8px", borderRadius: 4 }}>
-                      {s.teacher?.name || "Tanpa Guru"}
-                    </span>
+                    {(() => {
+                      const teacherName = s.teacher?.name || (s.teacher as any)?.user?.name || teachers.find(t => t.id === s.teacherId)?.name;
+                      return (
+                        <span
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: teacherName ? "#0369a1" : "#64748b",
+                            background: teacherName ? "#e0f2fe" : "#f1f5f9",
+                            padding: "2px 8px",
+                            borderRadius: 4,
+                          }}
+                        >
+                          {teacherName || "Tanpa Guru"}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td style={{ padding: "14px 16px", fontSize: 12, color: "var(--color-text-muted)" }}>
                     Mulai: {s.effectiveFrom}
@@ -215,7 +236,7 @@ export default function SchedulePage() {
                   <td style={{ padding: "14px 16px" }}>
                     <div style={{ display: "flex", gap: 6 }}>
                       <button className="btn btn-ghost btn-sm" onClick={() => handleOpenModal(s)}>Edit</button>
-                      <button className="btn btn-ghost btn-sm" style={{ color: "var(--color-danger)" }} onClick={() => handleDelete(s.id)}>Hapus</button>
+                      <button className="btn btn-ghost btn-sm" style={{ color: "var(--color-danger)" }} onClick={() => setScheduleToDelete(s)}>Hapus</button>
                     </div>
                   </td>
                 </tr>
@@ -225,7 +246,7 @@ export default function SchedulePage() {
         </table>
       </div>
 
-      {/* MODAL FORM TAMBAH/EDIT */}
+      {/* MODAL FORM TAMBAH/EDIT JADWAL */}
       <Modal open={showModal} onClose={() => setShowModal(false)} title={editingSchedule ? "Edit Jadwal" : "Tambah Jadwal Baru"} maxWidth={500}>
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div className="form-group" style={{ marginBottom: 0 }}>
@@ -276,7 +297,7 @@ export default function SchedulePage() {
             </div>
           </div>
 
-          {/* Info Badge Hari Terhitung Otomatis */}
+          {/* Info Hari Rutin Otomatis */}
           <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 8, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#166534" }}>
             <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -285,9 +306,9 @@ export default function SchedulePage() {
               <line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
             <div>
-              Hari Rutin: <strong style={{ fontSize: 14 }}>{(DAYS as Record<string, string>)[formData.day_of_week] || formData.day_of_week}</strong>
+              Hari Rutin: <strong style={{ fontSize: 14 }}>{DAYS[formData.day_of_week] || formData.day_of_week}</strong>
               <span style={{ fontSize: 11.5, opacity: 0.85, display: "block", marginTop: 2 }}>
-                Otomatis ditentukan berdasarkan Tanggal Efektif Mulai ({formData.effective_from || "belum dipilih"})
+                Otomatis dihitung dari Tanggal Efektif Mulai ({formData.effective_from || "belum dipilih"})
               </span>
             </div>
           </div>
@@ -298,6 +319,30 @@ export default function SchedulePage() {
           </div>
         </div>
       </Modal>
+
+      {/* MODAL KONFIRMASI HAPUS JADWAL */}
+      {scheduleToDelete && (
+        <Modal
+          open
+          onClose={() => setScheduleToDelete(null)}
+          title="Hapus Jadwal Rutin"
+          maxWidth={440}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <p style={{ fontSize: 13.5, color: "var(--color-text-secondary)", lineHeight: 1.5, margin: 0 }}>
+              Yakin ingin menghapus jadwal untuk kelas <strong>{scheduleToDelete.classroom?.name}</strong> pada hari <strong>{DAYS[scheduleToDelete.dayOfWeek as keyof typeof DAYS] || scheduleToDelete.dayOfWeek}</strong> ({scheduleToDelete.startTime?.substring(0, 5)} - {scheduleToDelete.endTime?.substring(0, 5)})?
+            </p>
+            <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
+              <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setScheduleToDelete(null)} disabled={deleting}>
+                Batal
+              </button>
+              <button className="btn btn-danger" style={{ flex: 1 }} onClick={handleConfirmDelete} disabled={deleting}>
+                {deleting ? "Menghapus..." : "Hapus Jadwal"}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

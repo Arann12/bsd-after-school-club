@@ -59,7 +59,7 @@ interface SesiTampil {
   classroomId: string;
 }
 
-function mapSession(s: ClassSession): SesiTampil {
+function mapSession(s: ClassSession, totalSessionsCount: number = 0): SesiTampil {
   const dateKey = s.sessionDate?.split("T")[0] ?? "";
   // Use backend status as source of truth: 'completed' → Selesai
   const status = getStatusSesi(dateKey, s.status);
@@ -74,7 +74,7 @@ function mapSession(s: ClassSession): SesiTampil {
     kelas: s.classroom?.name ?? "Kelas",
     program: s.classroom?.programLevel?.name ?? s.classSchedule?.classroom?.programLevel?.name ?? "Program",
     sessionNumber: s.sessionNumber ?? 0,
-    totalSessions: 0,
+    totalSessions: totalSessionsCount,
     status,
     warna: warnaStatus(status),
     classroomId: s.classroomId || s.classroom?.id || "",
@@ -136,9 +136,24 @@ export default function GuruJadwalPage() {
         getClassSchedules(),
       ]);
 
-      const allSessions: SesiTampil[] = sessionsRes.status === "fulfilled"
-        ? sessionsRes.value.map(mapSession)
+      const rawSessions: ClassSession[] = sessionsRes.status === "fulfilled"
+        ? (Array.isArray(sessionsRes.value) ? sessionsRes.value : [])
         : [];
+
+      // Calculate real total sessions per classroom
+      const sessionCountsByClass: Record<string, number> = {};
+      rawSessions.forEach((s) => {
+        const cid = s.classroomId || s.classroom?.id;
+        if (cid) {
+          sessionCountsByClass[cid] = (sessionCountsByClass[cid] || 0) + 1;
+        }
+      });
+
+      const allSessions: SesiTampil[] = rawSessions.map((s) => {
+        const cid = s.classroomId || s.classroom?.id || "";
+        const totalCount = cid ? (sessionCountsByClass[cid] || 0) : 0;
+        return mapSession(s, totalCount);
+      });
 
       // Tampilkan schedules sebagai fallback jika belum ada sesi
       const allSchedules: SesiTampil[] =
@@ -191,7 +206,7 @@ export default function GuruJadwalPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Jadwal Mengajar</h1>
-          <p className="page-subtitle">Jadwal sesi mengajar berdasarkan database. Klik kelas untuk mulai absensi.</p>
+          <p className="page-subtitle">Jadwal sesi mengajar dan absensi kelas.</p>
         </div>
         <button className="btn btn-outline" onClick={fetchData}>Segarkan</button>
       </div>
@@ -233,8 +248,10 @@ export default function GuruJadwalPage() {
                 <div style={{ width: 1, height: 40, background: "rgba(255,255,255,0.25)", flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 16, fontWeight: 800 }}>{sesi.kelas} — {sesi.program}</div>
-                  {sesi.totalSessions > 0 && (
-                    <div style={{ fontSize: 12.5, opacity: 0.85, marginTop: 2 }}>Pertemuan {sesi.sessionNumber}/{sesi.totalSessions}</div>
+                  {sesi.sessionNumber > 0 && (
+                    <div style={{ fontSize: 12.5, opacity: 0.85, marginTop: 2 }}>
+                      Pertemuan {sesi.sessionNumber}{sesi.totalSessions > 0 ? `/${sesi.totalSessions}` : ""}
+                    </div>
                   )}
                 </div>
                 <Link href={`/guru/kelas/${sesi.classroomId || sesi.id}`} style={{ background: "#fff", color: "#047857", padding: "10px 20px", borderRadius: 10, fontWeight: 800, fontSize: 13.5, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>

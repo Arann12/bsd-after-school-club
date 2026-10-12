@@ -190,7 +190,7 @@ export default function AbsensiPage() {
                 </div>
                 
                 <h3 style={{ margin: "0 0 4px 0", fontSize: 16, color: "var(--color-text-primary)" }}>{s.classroom?.name}</h3>
-                <p style={{ margin: 0, fontSize: 13, color: "var(--color-text-secondary)" }}>Guru: {s.teacher?.name || "Tidak ada guru"}</p>
+                <p style={{ margin: 0, fontSize: 13, color: "var(--color-text-secondary)" }}>Guru: {s.teacher?.name || (s.teacher as any)?.user?.name || "Tidak ada guru"}</p>
                 <p style={{ margin: "4px 0 16px 0", fontSize: 12, color: "var(--color-text-muted)" }}>Sesi ke-{s.sessionNumber}</p>
                 
                 <button 

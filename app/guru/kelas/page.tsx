@@ -50,7 +50,7 @@ export default function GuruKelasListPage() {
         return;
       }
 
-      // Extract classrooms â€” API returns paginated data
+      // Ambil data classrooms
       const clsData = classroomsRes.value;
       const classrooms: Classroom[] = Array.isArray(clsData?.data)
         ? clsData.data
@@ -58,18 +58,18 @@ export default function GuruKelasListPage() {
         ? (clsData as unknown as Classroom[])
         : [];
 
-      // Extract schedules â€” API returns plain array via ApiResponse
+      // Ambil data schedules
       const schedules: ClassSchedule[] = schedulesRes.status === "fulfilled"
         ? (Array.isArray(schedulesRes.value) ? schedulesRes.value : [])
         : [];
 
-      // Extract sessions â€” API returns plain array via ApiResponse
+      // Ambil data sessions
       const sessions: ClassSession[] = sessionsRes.status === "fulfilled"
         ? (Array.isArray(sessionsRes.value) ? sessionsRes.value : [])
         : [];
 
-      
-      // Use local date to avoid UTC timezone shift
+
+      // Gunakan tanggal lokal
       const now = new Date();
       const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
@@ -83,9 +83,9 @@ export default function GuruKelasListPage() {
         // Cari sesi untuk kelas ini
         const clsSessions = sessions.filter((s: ClassSession) => s.classroomId === c.id);
         const completedSessions = clsSessions.filter((s: ClassSession) => s.status === "completed").length;
-        const totalSessions = clsSessions.length > 0 ? clsSessions.length : (c.students?.length ? c.students.length * 8 : 12);
+        const totalSessions = clsSessions.length;
 
-        // Status hari ini â€” compare date string directly
+        // Status hari ini
         const hasSessionToday = clsSessions.some((s: ClassSession) => {
           const sd = s.sessionDate ? s.sessionDate.substring(0, 10) : "";
           return sd === today;
@@ -94,7 +94,7 @@ export default function GuruKelasListPage() {
         const warna = hasSessionToday ? "#059669" : "#d97706";
         const bgWarna = hasSessionToday ? "#d1fae5" : "#fef3c7";
 
-        // Student count â€” use active_students_count from backend or students array
+        // Jumlah siswa
         const siswaCount = c.activeStudentsCount > 0 ? c.activeStudentsCount : (c.students?.length || 0);
 
         return {
@@ -199,7 +199,7 @@ export default function GuruKelasListPage() {
                       <span style={{ background: k.bgWarna, color: k.warna, fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 999 }}>{k.statusHariIni}</span>
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: "var(--color-primary)", marginBottom: 2 }}>{k.program}</div>
-                    <div style={{ fontSize: 12.5, color: "var(--color-text-muted)" }}>{k.jadwal} Â· {k.ruang}</div>
+                    <div style={{ fontSize: 12.5, color: "var(--color-text-muted)" }}>{k.jadwal} · {k.ruang}</div>
                   </div>
                   <div style={{ width: 44, height: 44, borderRadius: 12, background: k.bgWarna, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={k.warna} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -210,7 +210,9 @@ export default function GuruKelasListPage() {
                 <div style={{ marginBottom: 16 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                     <span style={{ fontSize: 12, color: "var(--color-text-muted)", fontWeight: 600 }}>Progress Pertemuan</span>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: "var(--color-primary)" }}>{k.pertemuan}/{k.totalPertemuan} Sesi ({persen}%)</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "var(--color-primary)" }}>
+                      {k.totalPertemuan > 0 ? `${k.pertemuan}/${k.totalPertemuan} Sesi (${persen}%)` : `${k.pertemuan} Sesi Selesai`}
+                    </span>
                   </div>
                   <div style={{ height: 7, background: "var(--color-border)", borderRadius: 999, overflow: "hidden" }}>
                     <div style={{ height: "100%", background: `linear-gradient(90deg, ${k.warna}, ${k.warna}cc)`, width: `${persen}%`, borderRadius: 999, transition: "width .4s ease" }} />
@@ -237,13 +239,13 @@ export default function GuruKelasListPage() {
 
       {/* Modal Detail Kelas */}
       {dipilih && (
-      <Modal open onClose={() => setDipilih(null)} title={`${dipilih.kelas} â€” ${dipilih.program}`} maxWidth={520}>
+      <Modal open onClose={() => setDipilih(null)} title={`${dipilih.kelas} — ${dipilih.program}`} maxWidth={520}>
             {/* Info Detail */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 20 }}>
               {[
                 { label: "Jadwal", val: dipilih?.jadwal },
                 { label: "Ruangan", val: dipilih?.ruang },
-                { label: "Pertemuan", val: `${dipilih?.pertemuan} dari ${dipilih?.totalPertemuan}` },
+                { label: "Pertemuan", val: dipilih?.totalPertemuan ? `${dipilih?.pertemuan} dari ${dipilih?.totalPertemuan} Sesi` : `${dipilih?.pertemuan} Sesi` },
                 { label: "Status Hari Ini", val: dipilih?.statusHariIni },
               ].map(item => (
                 <div key={item.label} style={{ background: "var(--color-bg)", borderRadius: 10, padding: "12px 14px" }}>

@@ -50,7 +50,7 @@ export default function AdminTagihanPage() {
   const [selectedTagihan, setSelectedTagihan] = useState<TagihanItem | null>(null);
   const [selectedEnrollmentId, setSelectedEnrollmentId] = useState("");
   const [searchUnpaid, setSearchUnpaid] = useState("");
-  const [cashAmount, setCashAmount] = useState<number>(100000);
+  const [cashAmount, setCashAmount] = useState<number>(0);
   const [cashNote, setCashNote] = useState("");
 
   const daftarStatus = ["Semua", "Lunas", "Menunggu Konfirmasi", "Belum Bayar", "Overdue"];
@@ -193,17 +193,28 @@ export default function AdminTagihanPage() {
       return;
     }
 
+    const tagihanNominal = Math.round(targetPlan.jumlah);
+    const nominalDiterima = Math.round(cashAmount || 0);
+
+    if (nominalDiterima < tagihanNominal) {
+      const kurang = tagihanNominal - nominalDiterima;
+      showToast(`Uang fisik kurang Rp ${kurang.toLocaleString("id-ID")}. Pembayaran tunai harus minimal Rp ${tagihanNominal.toLocaleString("id-ID")}.`);
+      return;
+    }
+
+    const kembalian = nominalDiterima - tagihanNominal;
+
     try {
       setSubmitting(true);
 
       const res = await submitCashTransaction({
         payment_plan_id: targetPlan.rawPlanId,
-        notes: cashNote.trim() || "Pembayaran tunai langsung di kantor",
+        notes: cashNote.trim() || `Pembayaran tunai langsung di kantor (Diterima: Rp ${nominalDiterima.toLocaleString("id-ID")}${kembalian > 0 ? `, Kembalian: Rp ${kembalian.toLocaleString("id-ID")}` : ""})`,
       });
 
       if (res?.data?.id) {
         await confirmCashTransaction(res.data.id, {
-          admin_notes: "Diterima dan dikonfirmasi langsung oleh kasir kantor.",
+          admin_notes: `Diterima tunai Rp ${nominalDiterima.toLocaleString("id-ID")}${kembalian > 0 ? `, Kembalian: Rp ${kembalian.toLocaleString("id-ID")}` : " (Uang Pas)"}. Dikonfirmasi langsung oleh kasir kantor.`,
           receipt_number: `KW-${Date.now().toString().slice(-6)}`,
         });
       }
@@ -218,18 +229,21 @@ export default function AdminTagihanPage() {
         keterangan: targetPlan.pertemuan,
         metode: "Cash (Tunai Langsung)",
         jalur: "Kasir Front Desk BSD",
-        jumlah: cashAmount || targetPlan.jumlah,
+        jumlah: tagihanNominal,
+        cashReceived: nominalDiterima,
+        changeAmount: kembalian,
         status: "Lunas",
         cashierName: "Kasir Front Desk Cabang BSD",
-        notes: cashNote.trim() || "Diterima tunai langsung di kantor",
+        notes: cashNote.trim() || `Diterima tunai Rp ${nominalDiterima.toLocaleString("id-ID")}${kembalian > 0 ? ` (Kembalian Rp ${kembalian.toLocaleString("id-ID")})` : " (Uang Pas)"}`,
       });
 
-      showToast(`Pembayaran Cash Manual Rp ${Math.round(cashAmount || targetPlan.jumlah).toLocaleString("id-ID", { maximumFractionDigits: 0 })} berhasil dicatat!`);
+      showToast(`Pembayaran Cash Rp ${tagihanNominal.toLocaleString("id-ID")} Lunas! ${kembalian > 0 ? `Kembalian: Rp ${kembalian.toLocaleString("id-ID")}` : "Uang Pas."}`);
       setShowInputCashModal(false);
       setSelectedTagihan(null);
       setSelectedEnrollmentId("");
       setSearchUnpaid("");
       setCashNote("");
+      setCashAmount(0);
       await loadData();
     } catch (err: any) {
       console.error("Gagal input cash manual:", err);
@@ -263,6 +277,7 @@ export default function AdminTagihanPage() {
               setSelectedEnrollmentId("");
               setSearchUnpaid("");
               setCashNote("");
+              setCashAmount(0);
               setShowInputCashModal(true);
             }}
           >
@@ -649,31 +664,144 @@ export default function AdminTagihanPage() {
             </div>
           )}
 
-          {/* Input Jumlah Uang Diterima */}
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Jumlah Uang Diterima Fisik (Rp)</label>
-            <input
-              className="form-input"
-              type="number"
-              value={cashAmount}
-              onChange={(e) => setCashAmount(Number(e.target.value))}
-              placeholder="100000"
-            />
-          </div>
+          {/* Input Jumlah Uang Diterima & Validasi Kembalian */}
+          {(() => {
+            const nominalTagihan = selectedTagihan ? Math.round(selectedTagihan.jumlah) : 0;
+            const isKurang = Boolean(selectedTagihan && cashAmount > 0 && cashAmount < nominalTagihan);
+            const isPas = Boolean(selectedTagihan && cashAmount === nominalTagihan);
+            const kembalian = selectedTagihan && cashAmount > nominalTagihan ? cashAmount - nominalTagihan : 0;
+
+            return (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <label className="form-label" style={{ fontSize: 12, fontWeight: 700, margin: 0 }}>
+                      Jumlah Uang Diterima Fisik (Rp)
+                    </label>
+                    {nominalTagihan > 0 && (
+                      <span style={{ fontSize: 11, color: "var(--color-text-muted)" }}>
+                        Tagihan: Rp {nominalTagihan.toLocaleString("id-ID")}
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    className="form-input"
+                    type="number"
+                    min={0}
+                    value={cashAmount || ""}
+                    onChange={(e) => setCashAmount(Number(e.target.value) || 0)}
+                    placeholder={nominalTagihan > 0 ? String(nominalTagihan) : "100000"}
+                    style={{
+                      borderColor: isKurang ? "#ef4444" : isPas || kembalian > 0 ? "#10b981" : undefined,
+                      fontWeight: 700,
+                    }}
+                  />
+
+                  {/* Tombol Preset Cepat */}
+                  {nominalTagihan > 0 && (
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+                      <button
+                        type="button"
+                        className="btn btn-sm"
+                        style={{
+                          fontSize: 11,
+                          padding: "3px 9px",
+                          background: isPas ? "#dcfce7" : "#f1f5f9",
+                          color: isPas ? "#166534" : "#475569",
+                          border: isPas ? "1px solid #86efac" : "1px solid #cbd5e1",
+                          fontWeight: 700,
+                        }}
+                        onClick={() => setCashAmount(nominalTagihan)}
+                      >
+                        Uang Pas (Rp {nominalTagihan.toLocaleString("id-ID")})
+                      </button>
+                      {[50000, 100000, 150000, 200000, 300000, 500000]
+                        .filter((nom) => nom > nominalTagihan)
+                        .slice(0, 3)
+                        .map((nom) => (
+                          <button
+                            key={nom}
+                            type="button"
+                            className="btn btn-sm"
+                            style={{
+                              fontSize: 11,
+                              padding: "3px 9px",
+                              background: cashAmount === nom ? "#dcfce7" : "#f8fafc",
+                              color: cashAmount === nom ? "#166534" : "#475569",
+                              border: cashAmount === nom ? "1px solid #86efac" : "1px solid #e2e8f0",
+                              fontWeight: 600,
+                            }}
+                            onClick={() => setCashAmount(nom)}
+                          >
+                            Rp {nom.toLocaleString("id-ID")}
+                          </button>
+                        ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Box Status Validasi & Kembalian */}
+                {selectedTagihan && cashAmount > 0 && (
+                  <>
+                    {isKurang && (
+                      <div style={{ background: "#fef2f2", border: "1.5px solid #fecaca", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+                        <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth={2.5} style={{ flexShrink: 0 }}>
+                          <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                        <div style={{ fontSize: 12, color: "#991b1b", lineHeight: 1.4 }}>
+                          <strong>Nominal kurang Rp {(nominalTagihan - cashAmount).toLocaleString("id-ID")}.</strong><br />
+                          Total tagihan Rp {nominalTagihan.toLocaleString("id-ID")}. Pembayaran tunai harus mencukupi nominal tagihan.
+                        </div>
+                      </div>
+                    )}
+
+                    {isPas && (
+                      <div style={{ background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 10, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth={2.5}>
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                          <span style={{ fontSize: 12.5, fontWeight: 700, color: "#166534" }}>Uang Pas</span>
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "#15803d" }}>Tidak ada kembalian</span>
+                      </div>
+                    )}
+
+                    {kembalian > 0 && (
+                      <div style={{ background: "#ecfdf5", border: "1.5px solid #a7f3d0", borderRadius: 10, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: "#047857", textTransform: "uppercase" }}>Kembalian</div>
+                          <div style={{ fontSize: 11.5, color: "#065f46", marginTop: 2 }}>
+                            Diterima: Rp {cashAmount.toLocaleString("id-ID")} · Tagihan: Rp {nominalTagihan.toLocaleString("id-ID")}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontSize: 11, color: "#047857", fontWeight: 700 }}>Kembalian</div>
+                          <div style={{ fontSize: 17, fontWeight: 800, color: "#059669" }}>
+                            Rp {kembalian.toLocaleString("id-ID")}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Catatan Kasir */}
           <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Catatan Kasir / Keterangan (Opsional)</label>
+            <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Catatan (Opsional)</label>
             <input
               className="form-input"
               value={cashNote}
               onChange={(e) => setCashNote(e.target.value)}
-              placeholder="Contoh: Diterima tunai langsung oleh Kasir Front Desk BSD"
+              placeholder="Tambahkan catatan jika diperlukan"
             />
           </div>
 
           <div style={{ background: "#f0f9ff", border: "1.5px solid #bae6fd", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#0369a1" }}>
-            Pembayaran tunai ini akan langsung dicatat sebagai transaksi <strong>Lunas</strong> dan kwitansi resmi akan otomatis terbuka untuk dicetak.
+            Pembayaran tunai akan dicatat <strong>Lunas</strong> dan kwitansi resmi langsung dibuka untuk dicetak.
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
@@ -683,9 +811,18 @@ export default function AdminTagihanPage() {
             <button
               className="btn btn-accent"
               onClick={handleSaveCashManual}
-              disabled={submitting || (!selectedTagihan && !selectedEnrollmentId)}
+              disabled={
+                submitting ||
+                !selectedTagihan ||
+                !cashAmount ||
+                cashAmount < Math.round(selectedTagihan.jumlah)
+              }
             >
-              {submitting ? "Menyimpan..." : "Simpan & Lunaskan"}
+              {submitting
+                ? "Menyimpan..."
+                : selectedTagihan && cashAmount > 0 && cashAmount < Math.round(selectedTagihan.jumlah)
+                ? `Kurang Rp ${(Math.round(selectedTagihan.jumlah) - cashAmount).toLocaleString("id-ID")}`
+                : "Simpan & Lunaskan"}
             </button>
           </div>
         </div>

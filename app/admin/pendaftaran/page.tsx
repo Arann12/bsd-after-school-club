@@ -31,8 +31,8 @@ const warnaStatus: Record<string, { bg: string; color: string; label: string }> 
 };
 
 const formatSkema: Record<string, string> = {
-  package:     "Paket Lunas",
-  per_session: "Per Sesi / Mingguan",
+  package:     "Lunas di Muka",
+  per_session: "Per Pertemuan",
   monthly:     "Bulanan",
 };
 
@@ -381,7 +381,7 @@ export default function PendaftaranPage() {
                         {en.startDate}
                       </td>
                       <td style={{ padding: "14px 16px", color: "var(--color-text-secondary)" }}>
-                        <strong>{en.totalSessions} Sesi</strong> ({en.sessionsPerWeek}x/minggu)
+                        <strong>{en.totalSessions} Sesi</strong>
                       </td>
                       <td style={{ padding: "14px 16px", fontSize: 12.5, color: "var(--color-text-secondary)" }}>
                         {formatSkema[en.paymentScheme] || en.paymentScheme}
@@ -552,35 +552,18 @@ export default function PendaftaranPage() {
             </div>
           </div>
 
-          {/* Frekuensi & Skema Pembayaran */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Frekuensi Perminggu</label>
-              <select
-                className="select-control"
-                style={{ width: "100%" }}
-                value={sessionsPerWeek}
-                onChange={(e) => setSessionsPerWeek(Number(e.target.value))}
-              >
-                <option value={1}>1x Seminggu</option>
-                <option value={2}>2x Seminggu (Rekomendasi)</option>
-                <option value={3}>3x Seminggu</option>
-              </select>
-            </div>
-
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Skema Pembayaran</label>
-              <select
-                className="select-control"
-                style={{ width: "100%" }}
-                value={paymentScheme}
-                onChange={(e) => setPaymentScheme(e.target.value as any)}
-              >
-                <option value="package">Paket Lunas di Muka (1 Tagihan Total)</option>
-                <option value="per_session">Per Sesi / Mingguan (Tagihan Berkala)</option>
-                <option value="monthly">Bulanan (Cicilan per 4 Minggu)</option>
-              </select>
-            </div>
+          {/* Skema Pembayaran */}
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Skema Pembayaran</label>
+            <select
+              className="select-control"
+              style={{ width: "100%" }}
+              value={paymentScheme}
+              onChange={(e) => setPaymentScheme(e.target.value as any)}
+            >
+              <option value="package">Lunas di Muka (1 Tagihan Total Paket)</option>
+              <option value="per_session">Bayar per Pertemuan (Tagihan per Sesi)</option>
+            </select>
           </div>
 
           {/* Total Nominal Tagihan */}
@@ -607,10 +590,10 @@ export default function PendaftaranPage() {
                 <line x1="12" y1="16" x2="12" y2="12" />
                 <line x1="12" y1="8" x2="12.01" y2="8" />
               </svg>
-              <span>Ketentuan Tagihan & Jadwal Sesi ({totalSessions} Pertemuan)</span>
+              <span>Informasi Tagihan & Jadwal ({totalSessions} Sesi)</span>
             </div>
             <div style={{ lineHeight: 1.5, color: "#475569" }}>
-              Pendaftaran ini akan otomatis menerbitkan rencana tagihan dan menjadwalkan {totalSessions} sesi pertemuan kelas pada kalender akademik sesuai jadwal rutin aktif.
+              Sistem akan otomatis membuat tagihan dan menjadwalkan {totalSessions} sesi pertemuan sesuai jadwal kelas.
             </div>
           </div>
 
@@ -648,7 +631,7 @@ export default function PendaftaranPage() {
                 { label: "Program", value: dipilih.programName },
                 { label: "Kelas", value: dipilih.className },
                 { label: "Mulai Belajar", value: dipilih.startDate },
-                { label: "Total Pertemuan", value: `${dipilih.totalSessions} Sesi (${dipilih.sessionsPerWeek}x/mgg)` },
+                { label: "Total Pertemuan", value: `${dipilih.totalSessions} Sesi` },
                 { label: "Skema Pembayaran", value: formatSkema[dipilih.paymentScheme] || dipilih.paymentScheme },
                 { label: "Status Pendaftaran", value: warnaStatus[dipilih.status]?.label || dipilih.status },
               ].map((f) => (
