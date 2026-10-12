@@ -275,11 +275,11 @@ export default function AdminInventarisPage() {
               </div>
               <div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Harga Satuan</div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: "#059669", marginTop: 2 }}>Rp {selectedItem.hargaSatuan.toLocaleString("id-ID")}</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#059669", marginTop: 2 }}>Rp {Math.round(selectedItem.hargaSatuan).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</div>
               </div>
               <div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Total Nilai Aset</div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: "#2563eb", marginTop: 2 }}>Rp {(selectedItem.jumlah * selectedItem.hargaSatuan).toLocaleString("id-ID")}</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#2563eb", marginTop: 2 }}>Rp {Math.round(selectedItem.jumlah * selectedItem.hargaSatuan).toLocaleString("id-ID", { maximumFractionDigits: 0 })}</div>
               </div>
             </div>
 

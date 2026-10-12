@@ -208,19 +208,19 @@ export default function OwnerTarifPage() {
                 <div style={{ background: "var(--color-bg)", padding: "10px 14px", borderRadius: 8, border: "1px solid var(--color-border)" }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Tarif Dasar / Jam</div>
                   <div style={{ fontSize: 16, fontWeight: 800, color: g.tarifPerJam > 0 ? "var(--color-primary)" : "var(--color-text-muted)", marginTop: 2 }}>
-                    {g.tarifPerJam > 0 ? `Rp ${g.tarifPerJam.toLocaleString("id")}` : "Belum diatur"}
+                    {g.tarifPerJam > 0 ? `Rp ${Math.round(g.tarifPerJam).toLocaleString("id-ID", { maximumFractionDigits: 0 })}` : "Belum diatur"}
                   </div>
                 </div>
                 <div style={{ background: "var(--color-bg)", padding: "10px 14px", borderRadius: 8, border: "1px solid var(--color-border)" }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Tarif Lembur / Jam</div>
                   <div style={{ fontSize: 16, fontWeight: 800, color: g.tarifLembur > 0 ? "#b45309" : "var(--color-text-muted)", marginTop: 2 }}>
-                    {g.tarifLembur > 0 ? `Rp ${g.tarifLembur.toLocaleString("id")}` : "Belum diatur"}
+                    {g.tarifLembur > 0 ? `Rp ${Math.round(g.tarifLembur).toLocaleString("id-ID", { maximumFractionDigits: 0 })}` : "Belum diatur"}
                   </div>
                 </div>
                 <div style={{ background: "var(--color-bg)", padding: "10px 14px", borderRadius: 8, border: "1px solid var(--color-border)" }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Bonus per Sesi</div>
                   <div style={{ fontSize: 16, fontWeight: 800, color: g.bonusSesi > 0 ? "#059669" : "var(--color-text-muted)", marginTop: 2 }}>
-                    {g.bonusSesi > 0 ? `Rp ${g.bonusSesi.toLocaleString("id")}` : "Belum diatur"}
+                    {g.bonusSesi > 0 ? `Rp ${Math.round(g.bonusSesi).toLocaleString("id-ID", { maximumFractionDigits: 0 })}` : "Belum diatur"}
                   </div>
                 </div>
               </div>

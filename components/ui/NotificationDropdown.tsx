@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { getCashTransactions, getPaymentPlans } from "@/lib/api/finance";
+import { getPaymentPlans } from "@/lib/api/finance";
 import { getClassSessions } from "@/lib/api/academic";
 import { getAnnouncements } from "@/lib/api/operational";
 
@@ -96,8 +96,8 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
         (async () => {
           if (resolvedRole === "owner" || resolvedRole === "admin") {
             return {
-              type: "cash",
-              res: await getCashTransactions({ status: "menunggu_konfirmasi_admin", per_page: 10 }),
+              type: "tagihan",
+              res: await getPaymentPlans({ is_paid: false, per_page: 5 }),
             };
           }
           if (resolvedRole === "guru") {
@@ -122,22 +122,22 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
       // 1. Proses Notifikasi Tugas Role
       if (roleTaskRes.status === "fulfilled" && roleTaskRes.value) {
         const val = roleTaskRes.value;
-        if (val.type === "cash") {
-          const cashList = Array.isArray(val.res?.data?.data)
+        if (val.type === "tagihan") {
+          const unpaidList = Array.isArray(val.res?.data?.data)
             ? val.res.data.data
             : Array.isArray(val.res?.data)
             ? val.res.data
             : [];
-          if (cashList.length > 0) {
-            const id = `live-cash-pending-${cashList.length}`;
+          if (unpaidList.length > 0) {
+            const id = `live-tagihan-unpaid-${unpaidList.length}`;
             liveItems.push({
               id,
-              title: "Verifikasi Pembayaran Tunai",
-              message: `Terdapat ${cashList.length} pembayaran cash dari orang tua yang menunggu konfirmasi Anda`,
+              title: "Tagihan Siswa",
+              message: `Terdapat ${unpaidList.length} tagihan siswa aktif yang belum diselesaikan`,
               type: "warning",
               read: readSet.has(id),
               createdAt: new Date().toISOString(),
-              href: rolePrefix === "admin" ? "/admin/verifikasi-cash" : "/owner/verifikasi-cash",
+              href: rolePrefix === "admin" ? "/admin/tagihan" : "/owner/tagihan",
             });
           }
         } else if (val.type === "guru") {

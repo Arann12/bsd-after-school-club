@@ -123,17 +123,17 @@ export default function OwnerLaporanKeuanganPage() {
         <div className="stat-card" style={{ gap: 6 }}>
           <span className="stat-card-label">Total Pendapatan Bersih</span>
           <div style={{ fontSize: 26, fontWeight: 800, color: "#1d4ed8" }}>
-            {loading ? "..." : `Rp ${totalIncome.toLocaleString("id-ID")}`}
+            {loading ? "..." : `Rp ${Math.round(totalIncome).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`}
           </div>
           <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
-            Digital: Rp {digitalIncome.toLocaleString("id-ID")} · Cash: Rp {cashIncome.toLocaleString("id-ID")}
+            Digital: Rp {Math.round(digitalIncome).toLocaleString("id-ID", { maximumFractionDigits: 0 })} · Cash: Rp {Math.round(cashIncome).toLocaleString("id-ID", { maximumFractionDigits: 0 })}
           </div>
         </div>
 
         <div className="stat-card" style={{ gap: 6 }}>
           <span className="stat-card-label">Pengeluaran Payroll / Honor</span>
           <div style={{ fontSize: 26, fontWeight: 800, color: "#dc2626" }}>
-            {loading ? "..." : `Rp ${totalPayroll.toLocaleString("id-ID")}`}
+            {loading ? "..." : `Rp ${Math.round(totalPayroll).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`}
           </div>
           <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Honor guru & pengajar</div>
         </div>
@@ -141,7 +141,7 @@ export default function OwnerLaporanKeuanganPage() {
         <div className="stat-card" style={{ gap: 6 }}>
           <span className="stat-card-label">Laba Bersih Operasional</span>
           <div style={{ fontSize: 26, fontWeight: 800, color: "#059669" }}>
-            {loading ? "..." : `Rp ${netIncome.toLocaleString("id-ID")}`}
+            {loading ? "..." : `Rp ${Math.round(netIncome).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`}
           </div>
           <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Pendapatan - Beban Honor</div>
         </div>
@@ -149,7 +149,7 @@ export default function OwnerLaporanKeuanganPage() {
         <div className="stat-card" style={{ gap: 6 }}>
           <span className="stat-card-label">Tunggakan Belum Lunas</span>
           <div style={{ fontSize: 26, fontWeight: 800, color: "#b45309" }}>
-            {loading ? "..." : `Rp ${overdueAmount.toLocaleString("id-ID")}`}
+            {loading ? "..." : `Rp ${Math.round(overdueAmount).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`}
           </div>
           <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Tagihan melewati jatuh tempo</div>
         </div>
@@ -204,7 +204,7 @@ export default function OwnerLaporanKeuanganPage() {
                         </span>
                       </td>
                       <td style={{ padding: "14px 16px", fontWeight: 800, color: "#059669" }}>
-                        Rp {Number(t.total_amount || t.amount || 0).toLocaleString("id-ID")}
+                        Rp {Math.round(Number(t.total_amount || t.amount || 0)).toLocaleString("id-ID", { maximumFractionDigits: 0 })}
                       </td>
                       <td style={{ padding: "14px 16px" }}>
                         <span

@@ -595,7 +595,7 @@ export default function PendaftaranPage() {
               required
             />
             <div style={{ fontSize: 11.5, color: "var(--color-text-muted)", marginTop: 4 }}>
-              Estimasi: Rp {(totalAmount / totalSessions).toLocaleString("id-ID")} / sesi
+              Estimasi: Rp {Math.round(totalAmount / (totalSessions || 1)).toLocaleString("id-ID", { maximumFractionDigits: 0 })} / sesi
             </div>
           </div>
 

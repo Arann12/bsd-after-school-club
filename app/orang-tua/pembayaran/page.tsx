@@ -2,10 +2,12 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useState, useRef, useEffect } from "react";
-import { chargePayment, checkPaymentStatus, getPaymentMethods, getPaymentPlans, getPayments, submitCashTransaction } from "@/lib/api/finance";
+import { chargePayment, checkPaymentStatus, getPaymentMethods, getPaymentPlans, getPayments } from "@/lib/api/finance";
 import { getStudents } from "@/lib/api/students";
 import { getMyParentProfile } from "@/lib/api/parents";
 import { SkeletonTable } from "@/components/ui/Skeleton";
+import { printReceipt } from "@/lib/utils/printReceipt";
+import { formatRupiah } from "@/lib/constants";
 
 interface PanduanItem {
   title?: string;
@@ -177,9 +179,7 @@ export default function PembayaranPage() {
   // Copy VA feedback
   const [vaCopied, setVaCopied] = useState(false);
 
-  // Uploaded proof file name and file object for cash payment
-  const [uploadedFile, setUploadedFile] = useState<string | null>(null);
-  const [proofFile, setProofFile] = useState<File | null>(null);
+  // Cash payment state no longer needed — cash handled at front desk only
 
   // Real Payment Gateway State
   const [activePaymentId, setActivePaymentId] = useState<string | null>(null);
@@ -235,8 +235,8 @@ export default function PembayaranPage() {
 
   const totalAmount =
     paymentType === "per_pertemuan"
-      ? `Rp ${nextUnpaidNominal.toLocaleString("id-ID")}`
-      : `Rp ${totalUnpaidNominal.toLocaleString("id-ID")}`;
+      ? formatRupiah(nextUnpaidNominal)
+      : formatRupiah(totalUnpaidNominal);
 
   const selectedStudent = students.find((s) => s.id === selectedStudentId);
   const childName =
@@ -270,7 +270,7 @@ export default function PembayaranPage() {
       tanggal: new Date(p.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
       keterangan: p.notes || (p.payment_plan ? `Pertemuan ${p.payment_plan.session_number}` : "Pembayaran Tagihan"),
       metode: p.payment_method === "cash" ? "Cash (Di Cabang)" : (p.payment_channel ? `${p.payment_channel}` : (p.payment_method?.toUpperCase() || "Digital")),
-      jumlah: `Rp ${Number(p.total_amount || p.amount).toLocaleString("id-ID")}`,
+      jumlah: formatRupiah(p.total_amount || p.amount),
       status: statusLabel,
     };
   });
@@ -299,16 +299,14 @@ export default function PembayaranPage() {
     }
     const currentNominalStr =
       type === "per_pertemuan"
-        ? `Rp ${nextUnpaidNominal.toLocaleString("id-ID")}`
-        : `Rp ${totalUnpaidNominal.toLocaleString("id-ID")}`;
+        ? formatRupiah(nextUnpaidNominal)
+        : formatRupiah(totalUnpaidNominal);
     setLastSuccessAmount(currentNominalStr);
     setPaymentType(type);
     setSelectedMethod("va");
     setSelectedBank("BCA");
     setSelectedEwallet("ShopeePay");
     setVaCopied(false);
-    setUploadedFile(null);
-    setProofFile(null);
     setIsGenerated(false);
     setLiveVaNumber(null);
     setLiveQrUrl(null);
@@ -331,235 +329,19 @@ export default function PembayaranPage() {
 
   const handlePrintReceipt = (item: any) => {
     if (!item) return;
-    const receiptWindow = window.open("", "_blank", "width=700,height=800");
-    if (!receiptWindow) {
-      window.print();
-      return;
-    }
-    const isPaid = item.status === "Selesai" || item.status === "paid" || item.status === "Lunas";
-    const receiptHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8" />
-          <title>Kuitansi Pembayaran - ${item.id}</title>
-          <style>
-            @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-            * { box-sizing: border-box; }
-            body {
-              font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-              color: #1e293b;
-              background: #ffffff;
-              margin: 0;
-              padding: 36px 20px;
-            }
-            .receipt-card {
-              max-width: 580px;
-              margin: 0 auto;
-              border: 1.5px solid #e2e8f0;
-              border-radius: 16px;
-              padding: 32px 28px;
-              box-shadow: 0 4px 16px rgba(0,0,0,0.06);
-              background: #fff;
-            }
-            .header-flex {
-              display: flex;
-              justify-content: space-between;
-              align-items: flex-start;
-              border-bottom: 2px solid #0e7490;
-              padding-bottom: 18px;
-              margin-bottom: 24px;
-            }
-            .brand-name {
-              font-size: 20px;
-              font-weight: 800;
-              color: #0e7490;
-              margin: 0;
-            }
-            .brand-desc {
-              font-size: 12px;
-              color: #64748b;
-              margin-top: 4px;
-            }
-            .badge-status {
-              background: ${isPaid ? "#dcfce7" : "#fef3c7"};
-              color: ${isPaid ? "#16a34a" : "#b45309"};
-              border: 1px solid ${isPaid ? "#bbf7d0" : "#fde68a"};
-              font-weight: 800;
-              font-size: 12px;
-              padding: 5px 14px;
-              border-radius: 999px;
-              text-transform: uppercase;
-              letter-spacing: 0.05em;
-            }
-            .title-receipt {
-              font-size: 16px;
-              font-weight: 800;
-              color: #0f172a;
-              margin-bottom: 16px;
-              text-align: center;
-              letter-spacing: 0.05em;
-              text-transform: uppercase;
-            }
-            .data-table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-bottom: 22px;
-            }
-            .data-table td {
-              padding: 10px 0;
-              font-size: 13.5px;
-              border-bottom: 1px dashed #e2e8f0;
-            }
-            .data-table .label {
-              color: #64748b;
-              width: 38%;
-            }
-            .data-table .val {
-              font-weight: 700;
-              color: #1e293b;
-              text-align: right;
-            }
-            .total-panel {
-              background: #f8fafc;
-              border: 1.5px solid #e2e8f0;
-              border-radius: 12px;
-              padding: 16px 20px;
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-bottom: 26px;
-            }
-            .total-text {
-              font-size: 14px;
-              font-weight: 700;
-              color: #334155;
-            }
-            .total-val {
-              font-size: 24px;
-              font-weight: 800;
-              color: #0e7490;
-            }
-            .stamp-row {
-              display: flex;
-              justify-content: space-between;
-              align-items: flex-end;
-              margin-top: 24px;
-              padding-top: 20px;
-              border-top: 1px solid #f1f5f9;
-            }
-            .stamp-box {
-              border: 2.5px dashed ${isPaid ? "#16a34a" : "#d97706"};
-              color: ${isPaid ? "#16a34a" : "#d97706"};
-              font-weight: 800;
-              font-size: 13px;
-              padding: 8px 16px;
-              border-radius: 8px;
-              text-transform: uppercase;
-              letter-spacing: 0.08em;
-              display: inline-block;
-            }
-            .signature-box {
-              text-align: right;
-            }
-            .sig-title {
-              font-size: 11.5px;
-              color: #64748b;
-            }
-            .sig-name {
-              font-size: 13px;
-              font-weight: 700;
-              color: #1e293b;
-              margin-top: 40px;
-              border-bottom: 1px solid #cbd5e1;
-              display: inline-block;
-              padding-bottom: 2px;
-            }
-            .footer-note {
-              font-size: 11px;
-              color: #94a3b8;
-              text-align: center;
-              margin-top: 24px;
-              line-height: 1.4;
-            }
-            @media print {
-              body { padding: 0; }
-              .receipt-card { border: none; box-shadow: none; max-width: 100%; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="receipt-card">
-            <div class="header-flex">
-              <div>
-                <div class="brand-name">BSD After School Club</div>
-                <div class="brand-desc">Pusat Belajar & Bimbingan Akademik Siswa</div>
-              </div>
-              <div class="badge-status">${isPaid ? "LUNAS (PAID)" : item.status}</div>
-            </div>
-
-            <div class="title-receipt">
-              Kuitansi Bukti Pembayaran Resmi
-            </div>
-
-            <table class="data-table">
-              <tr>
-                <td class="label">ID Transaksi / Invoice</td>
-                <td class="val" style="font-family: monospace;">${item.id}</td>
-              </tr>
-              <tr>
-                <td class="label">Tanggal Transaksi</td>
-                <td class="val">${item.tanggal}</td>
-              </tr>
-              <tr>
-                <td class="label">Nama Siswa</td>
-                <td class="val">${childName}</td>
-              </tr>
-              <tr>
-                <td class="label">Program Kursus</td>
-                <td class="val">${programName} (${levelName})</td>
-              </tr>
-              <tr>
-                <td class="label">Keterangan / Sesi</td>
-                <td class="val">${item.keterangan}</td>
-              </tr>
-              <tr>
-                <td class="label">Metode Pembayaran</td>
-                <td class="val">${item.metode}</td>
-              </tr>
-            </table>
-
-            <div class="total-panel">
-              <div class="total-text">Total Pembayaran Lunas</div>
-              <div class="total-val">${item.jumlah}</div>
-            </div>
-
-            <div class="stamp-row">
-              <div>
-                <div class="stamp-box">${isPaid ? "TERVERIFIKASI LUNAS" : item.status}</div>
-                <div style="font-size: 10px; color: #94a3b8; margin-top: 6px;">Sistem Payment Digital BSD After School Club</div>
-              </div>
-              <div class="signature-box">
-                <div class="sig-title">Administrasi & Keuangan</div>
-                <div class="sig-name">BSD After School Club</div>
-              </div>
-            </div>
-
-            <div class="footer-note">
-              Bukti pembayaran ini sah dan diterbitkan secara digital oleh sistem BSD After School Club. Terima kasih atas kepercayaan Anda.
-            </div>
-          </div>
-          <script>
-            window.onload = function() {
-              window.print();
-            };
-          </script>
-        </body>
-      </html>
-    `;
-    receiptWindow.document.write(receiptHtml);
-    receiptWindow.document.close();
+    printReceipt({
+      invoiceCode: item.id,
+      tanggal: item.tanggal,
+      studentName: childName,
+      programName: programName,
+      levelName: levelName,
+      keterangan: item.keterangan,
+      metode: item.metode,
+      jumlah: item.jumlah,
+      status: item.status === "Selesai" ? "Lunas" : item.status,
+    });
   };
+
 
   const requestCharge = async (method: "va" | "qris" | "ewallet", channelName: string) => {
     if (!targetPlanId) {
@@ -595,7 +377,7 @@ export default function PembayaranPage() {
         if (inst.amount !== undefined) setLiveAmount(inst.amount);
         if (inst.total_amount !== undefined) {
           setLiveTotalAmount(inst.total_amount);
-          setLastSuccessAmount(`Rp ${Number(inst.total_amount).toLocaleString("id-ID")}`);
+          setLastSuccessAmount(formatRupiah(inst.total_amount));
         }
         setIsGenerated(true);
       } else if (res && !res.success) {
@@ -632,9 +414,9 @@ export default function PembayaranPage() {
           clearInterval(interval);
 
           const paidAmountDisplay = data?.total_amount
-            ? `Rp ${Number(data.total_amount).toLocaleString("id-ID")}`
+            ? formatRupiah(data.total_amount)
             : liveTotalAmount
-            ? `Rp ${liveTotalAmount.toLocaleString("id-ID")}`
+            ? formatRupiah(liveTotalAmount)
             : lastSuccessAmount || totalAmount;
 
           setLastSuccessAmount(paidAmountDisplay);
@@ -776,7 +558,7 @@ export default function PembayaranPage() {
       if (feeFmt.includes("%")) return feeFmt;
       if (!isNaN(Number(feeFmt))) {
         const num = Number(feeFmt);
-        return num <= 10 ? `${num}%` : `Rp ${num.toLocaleString("id-ID")}`;
+        return num <= 10 ? `${num}%` : formatRupiah(num);
       }
       return feeFmt;
     }
@@ -784,7 +566,7 @@ export default function PembayaranPage() {
       if (feeVal <= 10) {
         return `${feeVal}%`;
       }
-      return `Rp ${feeVal.toLocaleString("id-ID")}`;
+      return formatRupiah(feeVal);
     }
     return null;
   };
@@ -871,39 +653,8 @@ export default function PembayaranPage() {
   };
 
   const handleGeneratePayment = async () => {
-    if (selectedMethod === "cash") {
-      if (!targetPlanId) {
-        alert("Semua tagihan pertemuan sudah berstatus lunas.");
-        return;
-      }
-      if (paymentType === "per_pertemuan" && nextUnpaidIsPendingCash) {
-        alert("Pengajuan pembayaran tunai untuk pertemuan ini sudah tercatat dan sedang menunggu verifikasi kasir di cabang.");
-        return;
-      }
-
-      setIsCharging(true);
-      try {
-        await submitCashTransaction({
-          payment_plan_id: targetPlanId,
-          payment_type: paymentType,
-          proof_image: proofFile || undefined,
-          notes:
-            paymentType === "pelunasan"
-              ? `Pelunasan Sisa Paket (${unpaidPlans.length} Sesi)`
-              : `Pembayaran Tunai Sesi #${nextUnpaidSession?.session_number || 1}`,
-        });
-        await loadFinanceData();
-        setModalStep("success");
-      } catch (err: any) {
-        console.warn("Gagal submit pembayaran tunai:", err);
-        const errMsg = err?.response?.data?.message || err?.message || "Gagal mengajukan pembayaran tunai.";
-        alert(errMsg);
-      } finally {
-        setIsCharging(false);
-      }
-      return;
-    }
-
+    // Cash tidak lagi diproses dari portal orang tua — hanya di front desk BSD
+    if (selectedMethod === "cash") return;
     const channel = selectedMethod === "va" ? selectedBank : selectedMethod === "ewallet" ? selectedEwallet : "QRIS";
     await requestCharge(selectedMethod, channel);
   };
@@ -1138,7 +889,7 @@ export default function PembayaranPage() {
           </div>
           <div>
             <div style={{ fontSize: 28, fontWeight: 800, color: totalUnpaidNominal > 0 ? "#dc2626" : "#16a34a", lineHeight: 1.1 }}>
-              Rp {totalUnpaidNominal.toLocaleString("id-ID")}
+              {formatRupiah(totalUnpaidNominal)}
             </div>
             <div style={{ fontSize: 12.5, color: "#64748b", marginTop: 6, fontWeight: 500 }}>
               {unpaidPlans.length > 0 ? `${unpaidPlans.length} Sesi belum dibayar` : "Semua Sesi Telah Lunas"}
@@ -1301,7 +1052,7 @@ export default function PembayaranPage() {
                   Harga per Pertemuan
                 </div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: "#1e293b" }}>
-                  Rp {paymentPlans[0]?.amount ? Number(paymentPlans[0].amount).toLocaleString("id-ID") : "50.000"}
+                  {formatRupiah(paymentPlans[0]?.amount || 50000)}
                 </div>
               </div>
             </div>
@@ -1375,7 +1126,7 @@ export default function PembayaranPage() {
                               ? "Lunas"
                               : isPendingCash
                               ? "Menunggu verifikasi kasir di cabang"
-                              : `Jatuh tempo ${new Date(plan.due_date).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}`} • Rp {Number(plan.amount).toLocaleString("id-ID")}
+                              : `Jatuh tempo ${new Date(plan.due_date).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}`} • {formatRupiah(plan.amount)}
                           </div>
                         </div>
                       </div>
@@ -1448,7 +1199,7 @@ export default function PembayaranPage() {
               {nextUnpaidSessions.length > 0 ? (
                 nextUnpaidSessions.map((session) => (
                   <div key={session.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13.5, fontWeight: 700, color: "#334155" }}>
-                    <span>Pertemuan {session.session_number}</span><span>Rp {Number(session.amount).toLocaleString("id-ID")}</span>
+                    <span>Pertemuan {session.session_number}</span><span>{formatRupiah(session.amount)}</span>
                   </div>
                 ))
               ) : (
@@ -1457,7 +1208,7 @@ export default function PembayaranPage() {
               <div style={{ height: 1, background: "#e2e8f0", margin: "4px 0" }} />
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>Total Dibayar</span>
-                <span style={{ fontSize: 22, fontWeight: 800, color: nextUnpaidNominal > 0 ? (nextUnpaidIsPendingCash ? "#d97706" : "#dc2626") : "#16a34a" }}>Rp {nextUnpaidNominal.toLocaleString("id-ID")}</span>
+                <span style={{ fontSize: 22, fontWeight: 800, color: nextUnpaidNominal > 0 ? (nextUnpaidIsPendingCash ? "#d97706" : "#dc2626") : "#16a34a" }}>{formatRupiah(nextUnpaidNominal)}</span>
               </div>
             </div>
 
@@ -1527,11 +1278,11 @@ export default function PembayaranPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13, color: "rgba(255, 255, 255, 0.95)" }}>
                 <span>{unpaidPlans.length > 0 ? `Sisa Pertemuan (${unpaidPlans[0]?.session_number}-${unpaidPlans[unpaidPlans.length - 1]?.session_number})` : "Sisa Pertemuan"}</span>
-                <span style={{ fontWeight: 700 }}>{unpaidPlans.length > 0 ? `${unpaidPlans.length} x Rp ${Number(unpaidPlans[0]?.amount || 50000).toLocaleString("id-ID")}` : "0 Pertemuan"}</span>
+                <span style={{ fontWeight: 700 }}>{unpaidPlans.length > 0 ? `${unpaidPlans.length} x ${formatRupiah(unpaidPlans[0]?.amount || 50000)}` : "0 Pertemuan"}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
                 <span style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.9)" }}>Total Pelunasan</span>
-                <span style={{ fontSize: 24, fontWeight: 800, color: "#ffffff" }}>Rp {totalUnpaidNominal.toLocaleString("id-ID")}</span>
+                <span style={{ fontSize: 24, fontWeight: 800, color: "#ffffff" }}>{formatRupiah(totalUnpaidNominal)}</span>
               </div>
             </div>
 
@@ -1783,7 +1534,7 @@ export default function PembayaranPage() {
                       nextUnpaidSessions.map((session) => (
                         <div key={session.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
                           <span>Pertemuan {session.session_number}</span>
-                          <span>Rp {Number(session.amount).toLocaleString("id-ID")}</span>
+                          <span>{formatRupiah(session.amount)}</span>
                         </div>
                       ))
                     ) : (
@@ -1795,7 +1546,7 @@ export default function PembayaranPage() {
                     unpaidPlans.length > 0 ? (
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
                         <span>Sisa Pertemuan ({unpaidPlans[0]?.session_number} - {unpaidPlans[unpaidPlans.length - 1]?.session_number})</span>
-                        <span>{unpaidPlans.length} x Rp {Number(unpaidPlans[0]?.amount || 50000).toLocaleString("id-ID")}</span>
+                        <span>{unpaidPlans.length} x {formatRupiah(unpaidPlans[0]?.amount || 50000)}</span>
                       </div>
                     ) : (
                       <div style={{ fontSize: 13, color: "#16a34a", fontWeight: 600, marginBottom: 6 }}>
@@ -1963,35 +1714,31 @@ export default function PembayaranPage() {
                     );
                   })()}
 
-                  {/* Option 4: Cash */}
-                  {(() => {
-                    const isSelected = selectedMethod === "cash";
-                    return (
-                    <div
-                      onClick={() => handleSelectMethod("cash")}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 14,
-                        padding: "14px 16px",
-                        background: isSelected ? "#f0fdf4" : "#ffffff",
-                        cursor: "pointer", transition: "all 0.15s ease",
-                      }}
-                    >
-                      <div style={{ width: 20, height: 20, borderRadius: "50%", border: isSelected ? "2px solid #16a34a" : "2px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "#fff" }}>
-                        {isSelected && <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#16a34a" }} />}
-                      </div>
-                      <div style={{ width: 40, height: 40, borderRadius: 10, background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                        </svg>
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Tunai (Cash)</div>
-                        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 1 }}>Bayar langsung di lokasi</div>
-                      </div>
-                      <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+                  {/* Option 4: Cash — Info Front Desk (Bukan opsi selectable) */}
+                  <div
+                    style={{
+                      display: "flex", alignItems: "flex-start", gap: 14,
+                      padding: "16px 16px",
+                      background: "#fffbeb",
+                      borderTop: "1px dashed #fde68a",
+                    }}
+                  >
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
+                      </svg>
                     </div>
-                    );
-                  })()}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#92400e" }}>Pembayaran Tunai (Cash)</div>
+                      <div style={{ fontSize: 12, color: "#b45309", marginTop: 4, lineHeight: 1.5 }}>
+                        Pembayaran tunai dilayani langsung di <strong>Front Desk BSD After School Club</strong> pada jam operasional kantor. Kasir akan memproses pembayaran dan mencetak kwitansi resmi.
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, padding: "6px 10px", background: "#fef9c3", borderRadius: 8, width: "fit-content" }}>
+                        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#a16207" strokeWidth={2.5}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "#a16207" }}>Tidak perlu upload bukti — dicatat langsung oleh kasir</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Footer Buttons */}
@@ -2097,7 +1844,7 @@ export default function PembayaranPage() {
                       nextUnpaidSessions.map((session) => (
                         <div key={session.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: liveFee ? 4 : 8 }}>
                           <span>Pertemuan {session.session_number}</span>
-                          <span>Rp {Number(session.amount).toLocaleString("id-ID")}</span>
+                          <span>{formatRupiah(session.amount)}</span>
                         </div>
                       ))
                     ) : (
@@ -2109,7 +1856,7 @@ export default function PembayaranPage() {
                     unpaidPlans.length > 0 ? (
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: liveFee ? 4 : 8 }}>
                         <span>Sisa Pertemuan ({unpaidPlans[0]?.session_number} - {unpaidPlans[unpaidPlans.length - 1]?.session_number})</span>
-                        <span>{unpaidPlans.length} x Rp {Number(unpaidPlans[0]?.amount || 50000).toLocaleString("id-ID")}</span>
+                        <span>{unpaidPlans.length} x {formatRupiah(unpaidPlans[0]?.amount || 50000)}</span>
                       </div>
                     ) : (
                       <div style={{ fontSize: 13, color: "#16a34a", fontWeight: 600, marginBottom: 8 }}>
@@ -2122,7 +1869,7 @@ export default function PembayaranPage() {
                   {liveFee !== null && liveFee > 0 && (
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, fontWeight: 600, color: "#64748b", marginBottom: 10 }}>
                       <span>Biaya Transaksi / Fee Gateway</span>
-                      <span>+ Rp {liveFee.toLocaleString("id-ID")}</span>
+                      <span>+ {formatRupiah(liveFee)}</span>
                     </div>
                   )}
 
@@ -2134,7 +1881,7 @@ export default function PembayaranPage() {
                       )}
                     </div>
                     <span style={{ fontSize: 20, fontWeight: 800, color: "#0e7490" }}>
-                      {liveTotalAmount ? `Rp ${liveTotalAmount.toLocaleString("id-ID")}` : totalAmount}
+                      {liveTotalAmount ? formatRupiah(liveTotalAmount) : totalAmount}
                     </span>
                   </div>
                 </div>
@@ -2262,10 +2009,10 @@ export default function PembayaranPage() {
                       )}
 
                       <div style={{ fontSize: 13, color: "#475569", marginTop: 8, fontWeight: 600 }}>
-                        Total Transfer: <strong>{liveTotalAmount ? `Rp ${liveTotalAmount.toLocaleString("id-ID")}` : totalAmount}</strong>
+                        Total Transfer: <strong>{liveTotalAmount ? formatRupiah(liveTotalAmount) : totalAmount}</strong>
                         {liveFee !== null && liveFee > 0 && (
                           <span style={{ fontSize: 11, color: "#64748b", marginLeft: 6 }}>
-                            (Tagihan: Rp {(liveAmount || 0).toLocaleString("id-ID")} + Fee: Rp {liveFee.toLocaleString("id-ID")})
+                            (Tagihan: {formatRupiah(liveAmount || 0)} + Fee: {formatRupiah(liveFee)})
                           </span>
                         )}
                       </div>
@@ -2278,48 +2025,17 @@ export default function PembayaranPage() {
                   </>
                 )}
 
-                {/* ── DETAILS FOR CASH (UPLOAD BUKTI) ── */}
+                {/* ── INFO CASH: BAYAR DI FRONT DESK ── */}
                 {selectedMethod === "cash" && (
-                  <div style={{ marginBottom: 20 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#475569", marginBottom: 8 }}>
-                      Upload Bukti Pembayaran / Struk Tunai:
+                  <div style={{ background: "#fffbeb", border: "1.5px solid #fde68a", borderRadius: 12, padding: "20px", marginBottom: 20, textAlign: "center" }}>
+                    <svg width={36} height={36} viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 10 }}>
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "#92400e", marginBottom: 6 }}>Pembayaran Tunai di Front Desk</div>
+                    <div style={{ fontSize: 13, color: "#b45309", lineHeight: 1.6 }}>
+                      Silakan lakukan pembayaran langsung ke kasir di Front Desk BSD After School Club pada jam operasional kantor.<br />
+                      Kasir akan memproses pembayaran dan mencetak kwitansi resmi.
                     </div>
-                    <label
-                      style={{
-                        border: "2px dashed #0e7490",
-                        borderRadius: 12,
-                        padding: "20px",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        background: "#f0f9ff",
-                        cursor: "pointer",
-                        gap: 8,
-                      }}
-                    >
-                      <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#0e7490" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="17 8 12 3 7 8" />
-                        <line x1="12" y1="3" x2="12" y2="15" />
-                      </svg>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#0e7490", textAlign: "center" }}>
-                        {uploadedFile ? uploadedFile : "Klik untuk memilih file bukti bayar (JPEG, PNG, WEBP, HEIC iPhone, PDF)"}
-                      </span>
-                      <span style={{ fontSize: 11, color: "#64748b" }}>Mendukung foto kamera HP Android & iPhone (Maks 10 MB)</span>
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic,.heif,.pdf,application/pdf"
-                        style={{ display: "none" }}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setUploadedFile(file.name);
-                            setProofFile(file);
-                          }
-                        }}
-                      />
-                    </label>
                   </div>
                 )}
 
@@ -2449,10 +2165,10 @@ export default function PembayaranPage() {
                       )}
 
                       <div style={{ fontSize: 13, color: "#475569", marginTop: 8, fontWeight: 600 }}>
-                        Total Tagihan: <strong>{liveTotalAmount ? `Rp ${liveTotalAmount.toLocaleString("id-ID")}` : totalAmount}</strong>
+                        Total Tagihan: <strong>{liveTotalAmount ? formatRupiah(liveTotalAmount) : totalAmount}</strong>
                         {liveFee !== null && liveFee > 0 && (
                           <span style={{ fontSize: 11, color: "#64748b", marginLeft: 6 }}>
-                            (Tagihan: Rp {(liveAmount || 0).toLocaleString("id-ID")} + Fee: Rp {liveFee.toLocaleString("id-ID")})
+                            (Tagihan: {formatRupiah(liveAmount || 0)} + Fee: {formatRupiah(liveFee)})
                           </span>
                         )}
                       </div>
@@ -2535,10 +2251,10 @@ export default function PembayaranPage() {
                 {selectedMethod === "ewallet" && (
                   <div style={{ background: "#f8fafc", borderRadius: 12, padding: "14px", border: "1px solid #e2e8f0", textAlign: "center", marginBottom: 16 }}>
                     <div style={{ fontSize: 13, color: "#475569", fontWeight: 600 }}>
-                      Total Transfer: <strong>{liveTotalAmount ? `Rp ${liveTotalAmount.toLocaleString("id-ID")}` : totalAmount}</strong>
+                      Total Transfer: <strong>{liveTotalAmount ? formatRupiah(liveTotalAmount) : totalAmount}</strong>
                       {liveFee !== null && liveFee > 0 && (
                         <span style={{ fontSize: 11, color: "#64748b", marginLeft: 6 }}>
-                          (Tagihan: Rp {(liveAmount || 0).toLocaleString("id-ID")} + Fee: Rp {liveFee.toLocaleString("id-ID")})
+                          (Tagihan: {formatRupiah(liveAmount || 0)} + Fee: {formatRupiah(liveFee)})
                         </span>
                       )}
                     </div>
@@ -2741,43 +2457,18 @@ export default function PembayaranPage() {
                   </button>
 
                   {selectedMethod === "cash" ? (
-                    <button
-                      onClick={handleGeneratePayment}
-                      disabled={isCharging}
-                      style={{
-                        padding: "12px",
-                        background: isCharging ? "#94a3b8" : "#0e7490",
-                        color: "#ffffff",
-                        border: "none",
-                        borderRadius: 10,
-                        fontWeight: 700,
-                        fontSize: 14,
-                        cursor: isCharging ? "not-allowed" : "pointer",
-                        boxShadow: isCharging ? "none" : "0 4px 12px rgba(14,116,144,0.25)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 8,
-                      }}
-                    >
-                      {isCharging ? (
-                        <>
-                          <div
-                            style={{
-                              width: 16,
-                              height: 16,
-                              borderRadius: "50%",
-                              border: "2px solid #ffffff",
-                              borderTopColor: "transparent",
-                              animation: "spin 0.8s linear infinite",
-                            }}
-                          />
-                          <span>Mengirim Pengajuan...</span>
-                        </>
-                      ) : (
-                        "Konfirmasi Bayar Tunai"
-                      )}
-                    </button>
+                    <div style={{
+                      padding: "12px 16px",
+                      background: "#fffbeb",
+                      border: "1px solid #fde68a",
+                      borderRadius: 10,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "#92400e",
+                      textAlign: "center",
+                    }}>
+                      Silakan kunjungi Front Desk BSD untuk pembayaran tunai
+                    </div>
                   ) : !isGenerated ? (
                     <button
                       onClick={handleGeneratePayment}
@@ -2898,7 +2589,7 @@ export default function PembayaranPage() {
                       nextUnpaidSessions.map((session) => (
                         <div key={session.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
                           <span>Pertemuan {session.session_number}</span>
-                          <span>Rp {Number(session.amount).toLocaleString("id-ID")}</span>
+                          <span>{formatRupiah(session.amount)}</span>
                         </div>
                       ))
                     ) : (
@@ -2910,7 +2601,7 @@ export default function PembayaranPage() {
                     unpaidPlans.length > 0 ? (
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>
                         <span>Sisa Pertemuan ({unpaidPlans[0]?.session_number} - {unpaidPlans[unpaidPlans.length - 1]?.session_number})</span>
-                        <span>{unpaidPlans.length} x Rp {Number(unpaidPlans[0]?.amount || 50000).toLocaleString("id-ID")}</span>
+                        <span>{unpaidPlans.length} x {formatRupiah(unpaidPlans[0]?.amount || 50000)}</span>
                       </div>
                     ) : (
                       <div style={{ fontSize: 13, color: "#16a34a", fontWeight: 600, marginBottom: 6 }}>
@@ -2973,16 +2664,16 @@ export default function PembayaranPage() {
                 </div>
 
                 <h3 style={{ fontSize: 20, fontWeight: 800, color: "#1e293b", marginBottom: 6 }}>
-                  {selectedMethod === "cash" ? "Bukti Cash Terkirim!" : "Pembayaran Otomatis Lunas!"}
+                  {selectedMethod === "cash" ? "Informasi Tunai" : "Pembayaran Otomatis Lunas!"}
                 </h3>
                 <p style={{ fontSize: 13, color: "#64748b", marginBottom: 20, lineHeight: 1.5 }}>
                   {selectedMethod === "cash" ? (
                     <>
-                      Bukti pembayaran tunai sebesar <strong>{lastSuccessAmount || (liveTotalAmount ? `Rp ${liveTotalAmount.toLocaleString("id-ID")}` : totalAmount)}</strong> untuk <strong>{childName}</strong> telah berhasil terkirim. Status saat ini: <strong>Menunggu ACC / Verifikasi Kasir Admin</strong>.
+                      Untuk pembayaran tunai, silakan kunjungi <strong>Front Desk BSD After School Club</strong> pada jam operasional. Kasir akan memproses pembayaran dan mencetak kwitansi resmi.
                     </>
                   ) : (
                     <>
-                      Transaksi sebesar <strong>{lastSuccessAmount || (liveTotalAmount ? `Rp ${liveTotalAmount.toLocaleString("id-ID")}` : totalAmount)}</strong> untuk <strong>{childName}</strong> telah <strong>terverifikasi OTOMATIS LUNAS</strong> oleh sistem Payment Gateway.
+                      Transaksi sebesar <strong>{lastSuccessAmount || (liveTotalAmount ? formatRupiah(liveTotalAmount) : totalAmount)}</strong> untuk <strong>{childName}</strong> telah <strong>terverifikasi OTOMATIS LUNAS</strong> oleh sistem Payment Gateway.
                     </>
                   )}
                 </p>

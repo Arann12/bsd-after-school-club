@@ -205,7 +205,7 @@ export default function OwnerDashboardPage() {
               </div>
             </div>
           </div>
-          <Link href="/owner/verifikasi-cash" className="btn btn-sm" style={{ background: "var(--color-accent-dark)", color: "#fff", border: "none" }}>Konfirmasi Sekarang →</Link>
+          <Link href="/owner/tagihan" className="btn btn-sm" style={{ background: "var(--color-accent-dark)", color: "#fff", border: "none" }}>Buka Tagihan & Kasir →</Link>
         </div>
       )}
 
@@ -266,7 +266,7 @@ export default function OwnerDashboardPage() {
         <ShortcutGrid items={[
           { label: "Tagihan", sub: `${data.overdueCount} Overdue`, href: "/owner/tagihan", color: "var(--color-danger)", bg: "var(--color-danger-bg)" },
           { label: "Pembayaran", sub: data.totalRevenue > 0 ? formatRupiah(data.totalRevenue) : "Lihat detail", href: "/owner/pembayaran", color: "#059669", bg: "var(--color-success-bg)" },
-          { label: "Verifikasi Cash", sub: `${data.pendingCashCount} Menunggu`, href: "/owner/verifikasi-cash", color: "#b45309", bg: "var(--color-warning-bg)" },
+          { label: "Laporan Keuangan", sub: "Arus kas & laba", href: "/owner/laporan/keuangan", color: "#0284c7", bg: "#e0f2fe" },
           { label: "Honor Guru", sub: "Kelola honorarium", href: "/owner/honor", color: "#7c3aed", bg: "#ede9fe" },
         ]} />
       </div>

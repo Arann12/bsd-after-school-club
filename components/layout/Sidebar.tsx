@@ -206,9 +206,8 @@ export const ownerNav: NavSection[] = [
   {
     section: "FINANCE",
     items: [
-      { label: "Tagihan", href: "/owner/tagihan", icon: "Invoice" },
+      { label: "Tagihan & Kasir", href: "/owner/tagihan", icon: "Invoice" },
       { label: "Pembayaran", href: "/owner/pembayaran", icon: "CreditCard" },
-      { label: "Verifikasi Cash", href: "/owner/verifikasi-cash", icon: "CheckCircle" },
       { label: "Honor Guru/Staff", href: "/owner/honor", icon: "DollarSign" },
     ],
   },
@@ -266,9 +265,8 @@ export const adminNav: NavSection[] = [
   {
     section: "FINANCE",
     items: [
-      { label: "Tagihan", href: "/admin/tagihan", icon: "Invoice" },
+      { label: "Tagihan & Kasir", href: "/admin/tagihan", icon: "Invoice" },
       { label: "Pembayaran", href: "/admin/pembayaran", icon: "CreditCard" },
-      { label: "Verifikasi Cash", href: "/admin/verifikasi-cash", icon: "CheckCircle" },
     ],
   },
   {

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { getPayments } from "@/lib/api/finance";
 import { SkeletonTable } from "@/components/ui/Skeleton";
+import { printReceipt } from "@/lib/utils/printReceipt";
 
 export interface PaymentRecord {
   id: string;
@@ -159,16 +160,16 @@ export default function FinancePembayaranPage() {
           <line x1="12" y1="8" x2="12.01" y2="8" />
         </svg>
         <span>
-          <strong>Aturan ACC Sistem:</strong> Pembayaran selain Cash (VA BCA, QRIS, Transfer, E-Wallet) <strong>terverifikasi OTOMATIS LUNAS</strong> secara langsung. ACC manual hanya dilakukan untuk pembayaran <strong>Cash / Tunai</strong> pada menu Verifikasi Cash.
+          <strong>Aturan Pembayaran:</strong> Pembayaran online (VA, QRIS, E-Wallet) <strong>terverifikasi OTOMATIS LUNAS</strong> oleh Payment Gateway. Pembayaran tunai fisik diterima di front desk dan dilunaskan di menu <strong>Tagihan & Kasir (+ Input Cash Manual)</strong>.
         </span>
       </div>
 
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
         {[
-          { label: "Total Pembayaran Masuk", value: `Rp ${totalBerhasil.toLocaleString("id-ID")}`, color: "#059669" },
+          { label: "Total Pembayaran Masuk", value: `Rp ${Math.round(totalBerhasil).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`, color: "#059669" },
           { label: "Transaksi Berhasil", value: countBerhasil, color: "#1d4ed8" },
-          { label: "Pending Cash", value: countPending, color: "#b45309" },
+          { label: "Transaksi Tunai (Cash)", value: payments.filter((p) => p.metode.toLowerCase().includes("cash") || p.metode.toLowerCase().includes("tunai")).length, color: "#0284c7" },
         ].map((c) => (
           <div key={c.label} className="stat-card" style={{ gap: 8 }}>
             <span className="stat-card-label">{c.label}</span>
@@ -243,7 +244,7 @@ export default function FinancePembayaranPage() {
                       <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>Siswa: {p.namaSiswa}</div>
                     </td>
                     <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 900, color: "#059669" }}>
-                      Rp {p.jumlah.toLocaleString("id-ID")}
+                      Rp {Math.round(p.jumlah).toLocaleString("id-ID", { maximumFractionDigits: 0 })}
                     </td>
                     <td style={{ padding: "14px 16px" }}>
                       <span style={{ background: "#e0f2fe", color: "#0369a1", fontSize: 11.5, fontWeight: 700, padding: "3px 10px", borderRadius: 6 }}>{p.metode}</span>
@@ -264,7 +265,28 @@ export default function FinancePembayaranPage() {
                       </span>
                     </td>
                     <td style={{ padding: "14px 16px" }}>
-                      <button className="btn btn-ghost btn-sm" onClick={() => window.print()}>
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
+                        onClick={() => {
+                          printReceipt({
+                            invoiceCode: p.invoiceId,
+                            tanggal: p.tglBayar,
+                            studentName: p.namaSiswa,
+                            programName: "Bimbingan Belajar",
+                            keterangan: `Pembayaran ${p.metode}`,
+                            metode: p.metode,
+                            jumlah: p.jumlah,
+                            status: p.status === "Berhasil" ? "Lunas" : p.status,
+                            cashierName: "Kasir Front Desk BSD",
+                          });
+                        }}
+                      >
+                        <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                          <polyline points="6 9 6 2 18 2 18 9" />
+                          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                          <rect x="6" y="14" width="12" height="8" />
+                        </svg>
                         Kwitansi
                       </button>
                     </td>

@@ -80,8 +80,10 @@ export const INVENTORY_CONDITION_COLOR: Record<InventoryCondition, { bg: string;
 };
 
 /* ---- Utility: format Rupiah ---- */
-export function formatRupiah(n: number): string {
-  return `Rp ${n.toLocaleString("id-ID")}`;
+export function formatRupiah(n: number | string | undefined | null): string {
+  if (n === undefined || n === null || n === "") return "Rp 0";
+  const num = typeof n === "number" ? n : parseFloat(String(n).replace(/Rp\s*/gi, "").replace(/\./g, "").replace(/,/g, ".")) || 0;
+  return `Rp ${Math.round(num).toLocaleString("id-ID", { maximumFractionDigits: 0 })}`;
 }
 
 /* ---- Utility: format date ---- */
