@@ -51,28 +51,53 @@ function getMonthMeta(year: number, month: number) {
 
 const HARI = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Ming"];
 
-function getStatusSesi(sessionDate: string): "Hari Ini" | "Mendatang" | "Selesai" {
+function getStatusSesi(sessionDate: string, isCompleted: boolean = false): "Hari Ini" | "Mendatang" | "Selesai" {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const d = new Date(sessionDate); d.setHours(0, 0, 0, 0);
-  if (d.getTime() === today.getTime()) return "Hari Ini";
   if (d > today) return "Mendatang";
-  return "Selesai";
+  if (isCompleted) return "Selesai";
+  if (d.getTime() === today.getTime()) return "Hari Ini";
+  return "Hari Ini";
 }
 
 function warnaStatus(status: string) {
   if (status === "Hari Ini") return "#059669";
-  if (status === "Mendatang") return "#1d4ed8";
+  if (status === "Mendatang") return "#0284c7";
+  if (status === "Selesai") return "#059669";
   return "#64748b";
 }
 
 function statusBadgeStyle(status: string): { bg: string; color: string } {
   if (status === "Selesai") return { bg: "#d1fae5", color: "#059669" };
   if (status === "Hari Ini") return { bg: "#dbeafe", color: "#1d4ed8" };
-  return { bg: "#fef3c7", color: "#d97706" };
+  return { bg: "#e0f2fe", color: "#0284c7" };
 }
 
-function isLogbookCompleted(entry: LogbookEntry) {
-  return Boolean(entry.materi && entry.materi !== "Belum diisi" && entry.materi.trim() !== "");
+function isLogbookCompleted(entry: LogbookEntry | null | undefined): boolean {
+  if (!entry) return false;
+  // Sesi di masa mendatang TIDAK PERNAH berstatus selesai
+  if (entry.status === "Mendatang") return false;
+  // Sesi proyeksi kalender otomatis (belum ada di DB) belum pernah selesai
+  if (entry.id.startsWith("sched-")) return false;
+
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const d = new Date(entry.tanggal); d.setHours(0, 0, 0, 0);
+  // Tanggal yang lebih dari hari ini TIDAK BISA selesai
+  if (d > today) return false;
+
+  // Harus ada materi nyata (bukan placeholder teks)
+  if (!entry.materi) return false;
+  const m = entry.materi.trim().toLowerCase();
+  if (
+    m === "" ||
+    m === "belum diisi" ||
+    m === "jadwal mendatang" ||
+    m.includes("siap diisi") ||
+    m.includes("sesi hari ini")
+  ) {
+    return false;
+  }
+  return true;
 }
 
 export default function GuruKalenderLogbookPage() {
@@ -119,7 +144,8 @@ export default function GuruKalenderLogbookPage() {
         const bulanKey = dateKey.substring(0, 7);
         const dayNum = parseInt(dateKey.substring(8, 10), 10);
         const tglDisplay = new Date(dateKey).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-        const status = getStatusSesi(dateKey);
+        const isCompleted = s.status === "completed" || Boolean(s.teacherLogbook?.material);
+        const status = getStatusSesi(dateKey, isCompleted);
 
         const attendances = s.studentAttendances || [];
         const hadir = attendances.filter((a: any) => a.attendance_status === "present").length;
@@ -227,7 +253,7 @@ export default function GuruKalenderLogbookPage() {
               ruang: "Ruang Kelas",
               pertemuan: totalPertemuan + Math.floor(offset / 7) + 1,
               totalPertemuan: totalPertemuan > 0 ? totalPertemuan + 8 : 12,
-              materi: isToday ? "Sesi Hari Ini (Siap Diisi)" : "Jadwal Mendatang",
+              materi: "Belum diisi",
               catatanGuru: isToday
                 ? "Jadwal kelas hari ini. Klik untuk memulai absensi dan mengisi materi logbook."
                 : "Sesi mendatang terjadwal rutin. Materi dan absensi dapat diisi pada hari H sesi.",
@@ -921,10 +947,21 @@ export default function GuruKalenderLogbookPage() {
         </div>
 
         {/* Materi */}
-        <div style={{ background: "linear-gradient(135deg, #f0fdf8, #dcfce7)", border: "1.5px solid #bbf7d0", borderRadius: 14, padding: "14px 18px", marginBottom: 18 }}>
-          <div style={{ fontSize: 10.5, fontWeight: 900, color: "#166534", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Materi Pembelajaran</div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: "#14532d", lineHeight: 1.4 }}>{selectedLogbook?.materi}</div>
-        </div>
+        {selectedLogbook?.status === "Mendatang" ? (
+          <div style={{ background: "linear-gradient(135deg, #f0f7ff, #e0f2fe)", border: "1.5px solid #bae6fd", borderRadius: 14, padding: "14px 18px", marginBottom: 18 }}>
+            <div style={{ fontSize: 10.5, fontWeight: 900, color: "#0369a1", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Informasi Sesi</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#0c4a6e", lineHeight: 1.4 }}>
+              Jadwal Mendatang — Materi pembelajaran dan absensi akan diisi pada hari pelaksanaan sesi.
+            </div>
+          </div>
+        ) : (
+          <div style={{ background: isLogbookCompleted(selectedLogbook) ? "linear-gradient(135deg, #f0fdf8, #dcfce7)" : "linear-gradient(135deg, #fffbeb, #fef9c3)", border: isLogbookCompleted(selectedLogbook) ? "1.5px solid #bbf7d0" : "1.5px solid #fde68a", borderRadius: 14, padding: "14px 18px", marginBottom: 18 }}>
+            <div style={{ fontSize: 10.5, fontWeight: 900, color: isLogbookCompleted(selectedLogbook) ? "#166534" : "#b45309", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Materi Pembelajaran</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: isLogbookCompleted(selectedLogbook) ? "#14532d" : "#78350f", lineHeight: 1.4 }}>
+              {isLogbookCompleted(selectedLogbook) ? selectedLogbook?.materi : "Belum diisi"}
+            </div>
+          </div>
+        )}
 
         {/* Kehadiran */}
         <div style={{ marginBottom: 18 }}>
@@ -994,7 +1031,7 @@ export default function GuruKalenderLogbookPage() {
             className="btn btn-primary"
             style={{ flex: 1, minWidth: 160, textDecoration: "none", textAlign: "center", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}
           >
-            {selectedLogbook?.status === "Mendatang" ? "Lihat Detail Kelas" : selectedLogbook?.materi === "Belum diisi" ? "Isi Absensi & Logbook" : "Perbarui Absensi"}
+            {selectedLogbook?.status === "Mendatang" ? "Lihat Detail Kelas" : !isLogbookCompleted(selectedLogbook) ? "Isi Absensi & Logbook" : "Perbarui Absensi"}
           </Link>
 
           <button

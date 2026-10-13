@@ -266,13 +266,44 @@ export default function PembayaranPage() {
       statusLabel = "Gagal";
     }
 
+    const rowProg =
+      p.enrollment?.program?.name ||
+      p.payment_plan?.enrollment?.program?.name ||
+      p.paymentPlan?.enrollment?.program?.name ||
+      programName;
+
+    const rowLvl =
+      p.enrollment?.program_level?.name ||
+      p.enrollment?.programLevel?.name ||
+      p.payment_plan?.enrollment?.program_level?.name ||
+      p.payment_plan?.enrollment?.programLevel?.name ||
+      p.paymentPlan?.enrollment?.program_level?.name ||
+      p.paymentPlan?.enrollment?.programLevel?.name ||
+      levelName;
+
+    const fullProgName = rowLvl && rowLvl !== "–" && rowLvl !== "Reguler"
+      ? `${rowProg} (${rowLvl})`
+      : rowProg;
+
+    const rowChild =
+      p.enrollment?.student?.full_name ||
+      p.enrollment?.student?.name ||
+      p.payment_plan?.enrollment?.student?.full_name ||
+      p.payment_plan?.enrollment?.student?.name ||
+      p.paymentPlan?.enrollment?.student?.full_name ||
+      p.paymentPlan?.enrollment?.student?.name ||
+      childName;
+
     return {
       id: p.payment_code || p.id,
       tanggal: new Date(p.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
-      keterangan: p.notes || (p.payment_plan ? `Pertemuan ${p.payment_plan.session_number}` : "Pembayaran Tagihan"),
+      keterangan: p.notes || (p.payment_plan ? `Pertemuan ${p.payment_plan.session_number}` : p.paymentPlan ? `Pertemuan ${p.paymentPlan.session_number}` : "Pembayaran Tagihan"),
       metode: p.payment_method === "cash" ? "Cash (Di Cabang)" : (p.payment_channel ? `${p.payment_channel}` : (p.payment_method?.toUpperCase() || "Digital")),
       jumlah: formatRupiah(p.total_amount || p.amount),
       status: statusLabel,
+      program: fullProgName,
+      studentName: rowChild,
+      levelName: rowLvl,
     };
   });
 
@@ -333,9 +364,9 @@ export default function PembayaranPage() {
     printReceipt({
       invoiceCode: item.id,
       tanggal: item.tanggal,
-      studentName: childName,
-      programName: programName,
-      levelName: levelName,
+      studentName: item.studentName || childName,
+      programName: item.program || programName,
+      levelName: item.levelName || levelName,
       keterangan: item.keterangan,
       metode: item.metode,
       jumlah: item.jumlah,
@@ -2736,8 +2767,8 @@ export default function PembayaranPage() {
               { label: "Tanggal", value: detailItem.tanggal },
               { label: "Keterangan", value: detailItem.keterangan },
               { label: "Metode Pembayaran", value: detailItem.metode },
-              { label: "Anak", value: childName },
-              { label: "Program", value: "Phonics Level 2" },
+              { label: "Anak", value: detailItem.studentName || childName },
+              { label: "Program", value: detailItem.program || (levelName !== "–" && levelName !== "Reguler" ? `${programName} (${levelName})` : programName) },
             ].map((field) => (
               <div key={field.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
                 <span style={{ fontSize: 12.5, color: "#64748b", fontWeight: 600 }}>{field.label}</span>

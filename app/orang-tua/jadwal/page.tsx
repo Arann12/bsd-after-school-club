@@ -119,20 +119,26 @@ export default function OrangTuaJadwalPage() {
         return;
       }
 
-      // 2. Fetch sessions for each unique classroom in parallel
+      // 2. Fetch sessions and recurring schedules for each unique classroom in parallel
       const sessionMap = new Map<string, ClassSession>();
+      const existingSessionDates = new Set<string>();
+
       await Promise.all(
         enrollments.map(async (enroll: any) => {
           if (!enroll.classroom?.id) return;
+          const cid = enroll.classroom.id;
+
+          // A. Sesi aktual dari database
           try {
             const sesRes = await axiosInstance.get<any>("/class-sessions", {
-              params: { classroom_id: enroll.classroom.id },
+              params: { classroom_id: cid },
             });
             const rawSessions: any[] = sesRes.data.data || [];
             for (const s of rawSessions) {
               if (sessionMap.has(s.id)) continue;
               const dateStr = s.session_date?.substring(0, 10) ?? "";
               const logbook = s.teacher_logbook || s.teacherLogbook || null;
+              existingSessionDates.add(`${cid}_${dateStr}`);
               sessionMap.set(s.id, {
                 id: s.id,
                 sessionNumber: s.session_number ?? 0,
@@ -143,13 +149,88 @@ export default function OrangTuaJadwalPage() {
                 endTime:   s.end_time   ? s.end_time.substring(0, 5)   : "--:--",
                 status: getSessionStatus(dateStr, s.status ?? ""),
                 classroomName: enroll.classroom?.name ?? s.classroom?.name ?? "-",
-                classroomId: enroll.classroom.id,
+                classroomId: cid,
                 programName: `${enroll.program?.name ?? ""} ${enroll.program_level?.name ?? ""}`.trim(),
-                teacherName: s.teacher?.user?.name ?? "-",
+                teacherName: s.teacher?.user?.name ?? s.teacher?.name ?? "-",
                 material: logbook?.material ?? "",
               });
             }
-          } catch { /* skip failed classroom */ }
+          } catch { /* skip failed classroom sessions */ }
+
+          // B. Proyeksi jadwal rutin mingguan mendatang (recurring class schedules)
+          try {
+            let schedules: any[] = enroll.classroom?.class_schedules || enroll.classroom?.classSchedules || [];
+            if (!schedules || schedules.length === 0) {
+              const schedRes = await axiosInstance.get<any>("/class-schedules", {
+                params: { classroom_id: cid },
+              });
+              schedules = schedRes.data.data || [];
+            }
+
+            if (Array.isArray(schedules) && schedules.length > 0) {
+              const dayMap: Record<string, number> = {
+                sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,
+                minggu: 0, senin: 1, selasa: 2, rabu: 3, kamis: 4, jumat: 5, sabtu: 6,
+              };
+
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+
+              const maxSessions = enroll.total_sessions || 12;
+              const maxNumInClass = Array.from(sessionMap.values())
+                .filter(s => s.classroomId === cid)
+                .reduce((max, s) => Math.max(max, s.sessionNumber), 0);
+
+              let currentNum = maxNumInClass;
+
+              for (const sc of schedules) {
+                const targetDay = dayMap[(sc.day_of_week || sc.dayOfWeek || "").toLowerCase()];
+                if (targetDay === undefined) continue;
+
+                for (let offset = 0; offset <= 60; offset++) {
+                  const checkD = new Date(today);
+                  checkD.setDate(checkD.getDate() + offset);
+
+                  if (checkD.getDay() === targetDay) {
+                    const yyyy = checkD.getFullYear();
+                    const mm = String(checkD.getMonth() + 1).padStart(2, "0");
+                    const dd = String(checkD.getDate()).padStart(2, "0");
+                    const dateKey = `${yyyy}-${mm}-${dd}`;
+
+                    const effFrom = sc.effective_from || sc.effectiveFrom;
+                    const effUntil = sc.effective_until || sc.effectiveUntil;
+                    if (effFrom && effFrom > dateKey) continue;
+                    if (effUntil && effUntil < dateKey) continue;
+
+                    if (existingSessionDates.has(`${cid}_${dateKey}`)) continue;
+
+                    currentNum++;
+                    if (currentNum > maxSessions) break;
+
+                    const isToday = offset === 0;
+                    const status = isToday ? "Hari Ini" : "Mendatang";
+                    const tName = sc.teacher?.user?.name || sc.teacher?.name || "-";
+
+                    sessionMap.set(`sched-${sc.id}-${dateKey}`, {
+                      id: `sched-${sc.id}-${dateKey}`,
+                      sessionNumber: currentNum,
+                      sessionDate: dateKey,
+                      sessionDateDisplay: formatDateShort(dateKey),
+                      dayName: getDayName(dateKey) || sc.day_of_week || sc.dayOfWeek || "",
+                      startTime: sc.start_time ? sc.start_time.substring(0, 5) : (sc.startTime ? sc.startTime.substring(0, 5) : "--:--"),
+                      endTime: sc.end_time ? sc.end_time.substring(0, 5) : (sc.endTime ? sc.endTime.substring(0, 5) : "--:--"),
+                      status,
+                      classroomName: enroll.classroom?.name ?? "-",
+                      classroomId: cid,
+                      programName: `${enroll.program?.name ?? ""} ${enroll.program_level?.name ?? ""}`.trim(),
+                      teacherName: tName,
+                      material: "",
+                    });
+                  }
+                }
+              }
+            }
+          } catch { /* skip failed schedules */ }
         })
       );
 
