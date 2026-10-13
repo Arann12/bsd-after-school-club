@@ -81,7 +81,7 @@ export default function OrangTuaAnakPage() {
           {children.map((child, idx) => (
             <div key={child.id} className="card" style={{ padding: "24px 28px" }}>
               {/* Header Kartu */}
-              <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 16, marginBottom: 20 }}>
                 <div style={{ width: 64, height: 64, borderRadius: "50%", background: idx === 0 ? "var(--color-primary)" : "#7c3aed", color: "#fff", fontWeight: 900, fontSize: 26, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   {child.name.charAt(0).toUpperCase()}
                 </div>

@@ -62,7 +62,7 @@ export default function OwnerLaporanInventarisPage() {
             Laporan kondisi fasilitas, alat peraga, dan aset BSD After School Club langsung dari database.
           </p>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div className="page-header-actions">
           <button className="btn btn-outline" onClick={() => window.print()}>
             Cetak PDF Laporan
           </button>
@@ -106,6 +106,8 @@ export default function OwnerLaporanInventarisPage() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
+            flexWrap: "wrap",
+            gap: 8,
           }}
         >
           <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>
@@ -124,7 +126,7 @@ export default function OwnerLaporanInventarisPage() {
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+            <table style={{ width: "100%", minWidth: 700, borderCollapse: "collapse", textAlign: "left" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--color-border)" }}>
                   {["Kode", "Nama Barang", "Kategori", "Jumlah", "Kondisi", "Lokasi", "Harga Satuan", "Total Nilai"].map((h) => (
@@ -136,6 +138,7 @@ export default function OwnerLaporanInventarisPage() {
                         fontWeight: 700,
                         color: "var(--color-text-muted)",
                         textTransform: "uppercase",
+                        whiteSpace: "nowrap",
                       }}
                     >
                       {h}

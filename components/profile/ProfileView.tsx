@@ -396,7 +396,7 @@ export default function ProfileView({
             }}
           >
             {/* Avatar & Basic Info */}
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 18 }}>
+            <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 18 }}>
               <div
                 style={{
                   width: 64,
@@ -511,6 +511,7 @@ export default function ProfileView({
             background: "#f8fafc",
             padding: "0 16px",
             gap: 8,
+            overflowX: "auto",
           }}
         >
           <button

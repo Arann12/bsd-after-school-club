@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Modal from "@/components/ui/Modal";
 import { SkeletonTable } from "@/components/ui/Skeleton";
-import { getClassSessions, type ClassSession } from "@/lib/api/academic";
+import { getClassSessions, getClassSchedules, type ClassSession, type ClassSchedule } from "@/lib/api/academic";
 
 export interface SiswaAbsenItem {
   nama: string;
@@ -92,19 +92,29 @@ export default function GuruKalenderLogbookPage() {
   const fetchLogbooks = useCallback(async () => {
     setLoading(true);
     try {
-      const sessionsRes = await getClassSessions({ per_page: 500 });
-      const sessions: ClassSession[] = Array.isArray(sessionsRes) ? sessionsRes : ((sessionsRes as any)?.data || []);
+      const [sessionsRes, schedulesRes] = await Promise.allSettled([
+        getClassSessions({ per_page: 500 }),
+        getClassSchedules(),
+      ]);
+
+      const rawSessions: ClassSession[] = sessionsRes.status === "fulfilled"
+        ? (Array.isArray(sessionsRes.value) ? sessionsRes.value : ((sessionsRes.value as any)?.data || []))
+        : [];
+
+      const rawSchedules: ClassSchedule[] = schedulesRes.status === "fulfilled" && Array.isArray(schedulesRes.value)
+        ? schedulesRes.value
+        : [];
 
       // Calculate total sessions per classroom from real database records
       const sessionCountsByClass: Record<string, number> = {};
-      sessions.forEach((s) => {
+      rawSessions.forEach((s) => {
         const cid = s.classroomId || s.classroom?.id;
         if (cid) {
           sessionCountsByClass[cid] = (sessionCountsByClass[cid] || 0) + 1;
         }
       });
 
-      const entries: LogbookEntry[] = sessions.map((s) => {
+      const entries: LogbookEntry[] = rawSessions.map((s) => {
         const dateKey = s.sessionDate?.split("T")[0] ?? "";
         const bulanKey = dateKey.substring(0, 7);
         const dayNum = parseInt(dateKey.substring(8, 10), 10);
@@ -160,7 +170,87 @@ export default function GuruKalenderLogbookPage() {
         };
       });
 
-      setLogbookList(entries);
+      // Proyeksikan jadwal mendatang dari recurring class schedules ke kalender (hingga 90 hari ke depan)
+      const existingSessionDates = new Set(entries.map((e) => `${e.classroomId}_${e.tanggal}`));
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const dayMap: Record<string, number> = {
+        sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,
+        minggu: 0, senin: 1, selasa: 2, rabu: 3, kamis: 4, jumat: 5, sabtu: 6,
+      };
+
+      const projectedEntries: LogbookEntry[] = [];
+
+      rawSchedules.forEach((sc) => {
+        const targetDay = dayMap[(sc.dayOfWeek || "").toLowerCase()];
+        if (targetDay === undefined) return;
+
+        const cid = sc.classroomId || sc.classroom?.id || "";
+        const totalPertemuan = sessionCountsByClass[cid] || 0;
+
+        for (let offset = 0; offset <= 90; offset++) {
+          const checkD = new Date(today);
+          checkD.setDate(checkD.getDate() + offset);
+
+          if (checkD.getDay() === targetDay) {
+            const yyyy = checkD.getFullYear();
+            const mm = String(checkD.getMonth() + 1).padStart(2, "0");
+            const dd = String(checkD.getDate()).padStart(2, "0");
+            const dateKey = `${yyyy}-${mm}-${dd}`;
+
+            if (sc.effectiveFrom && sc.effectiveFrom > dateKey) continue;
+            if (sc.effectiveUntil && sc.effectiveUntil < dateKey) continue;
+
+            if (existingSessionDates.has(`${cid}_${dateKey}`)) continue;
+
+            const isToday = offset === 0;
+            const status = isToday ? "Hari Ini" : "Mendatang";
+            const bulanKey = `${yyyy}-${mm}`;
+            const dayNum = parseInt(dd, 10);
+            const tglDisplay = checkD.toLocaleDateString("id-ID", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            });
+
+            projectedEntries.push({
+              id: `sched-${sc.id}-${dateKey}`,
+              tanggal: dateKey,
+              tglDisplay,
+              dayNum,
+              bulanKey,
+              kelas: sc.classroom?.name || "Kelas",
+              program: sc.classroom?.programLevel?.name || "Program",
+              jam: `${sc.startTime?.substring(0, 5) || "--"} - ${sc.endTime?.substring(0, 5) || "--"}`,
+              ruang: "Ruang Kelas",
+              pertemuan: totalPertemuan + Math.floor(offset / 7) + 1,
+              totalPertemuan: totalPertemuan > 0 ? totalPertemuan + 8 : 12,
+              materi: isToday ? "Sesi Hari Ini (Siap Diisi)" : "Jadwal Mendatang",
+              catatanGuru: isToday
+                ? "Jadwal kelas hari ini. Klik untuk memulai absensi dan mengisi materi logbook."
+                : "Sesi mendatang terjadwal rutin. Materi dan absensi dapat diisi pada hari H sesi.",
+              hadir: 0,
+              totalSiswa: 0,
+              izin: 0,
+              sakit: 0,
+              alpha: 0,
+              status,
+              warna: warnaStatus(status),
+              siswaAbsensi: [],
+              isLibur: false,
+              classroomId: cid,
+            });
+          }
+        }
+      });
+
+      const allEntries = [...entries, ...projectedEntries].sort((a, b) =>
+        a.tanggal.localeCompare(b.tanggal)
+      );
+
+      setLogbookList(allEntries);
 
       // Auto-align calendar to active month if current month has 0 sessions
       if (entries.length > 0) {
@@ -215,7 +305,8 @@ export default function GuruKalenderLogbookPage() {
 
   const sessionsInCurrentMonth = logbookList.filter((l) => l.bulanKey === selectedBulanKey);
   const completedSessionsInMonth = sessionsInCurrentMonth.filter(isLogbookCompleted);
-  const pendingSessionsInMonth = sessionsInCurrentMonth.filter((s) => !isLogbookCompleted(s));
+  const upcomingSessionsInMonth = sessionsInCurrentMonth.filter((s) => s.status === "Mendatang");
+  const pendingSessionsInMonth = sessionsInCurrentMonth.filter((s) => s.status !== "Mendatang" && !isLogbookCompleted(s));
   const totalPresentInMonth = sessionsInCurrentMonth.reduce((acc, s) => acc + s.hadir, 0);
   const percentCompleted = sessionsInCurrentMonth.length > 0
     ? Math.round((completedSessionsInMonth.length / sessionsInCurrentMonth.length) * 100)
@@ -295,6 +386,14 @@ export default function GuruKalenderLogbookPage() {
           border-color: #059669;
           box-shadow: 0 6px 20px rgba(5,150,105,0.14);
         }
+        .cal-cell.has-upcoming {
+          background: linear-gradient(135deg, #f0f7ff 0%, #e0f2fe 100%);
+          border-color: #bae6fd;
+        }
+        .cal-cell.has-upcoming:hover {
+          border-color: #0284c7;
+          box-shadow: 0 6px 20px rgba(2,132,199,0.14);
+        }
         .cal-cell.has-pending {
           background: linear-gradient(135deg, #fffbeb 0%, #fef9c3 100%);
           border-color: #fde68a;
@@ -340,6 +439,14 @@ export default function GuruKalenderLogbookPage() {
         .session-card.completed:hover {
           border-color: #059669;
           box-shadow: 0 6px 20px rgba(5,150,105,0.15);
+        }
+        .session-card.upcoming {
+          background: linear-gradient(135deg, #f0f7ff 0%, #e0f2fe 100%);
+          border-color: #bae6fd;
+        }
+        .session-card.upcoming:hover {
+          border-color: #0284c7;
+          box-shadow: 0 6px 20px rgba(2,132,199,0.15);
         }
         .session-card.pending {
           background: linear-gradient(135deg, #fffbeb 0%, #fef9c3 100%);
@@ -419,6 +526,10 @@ export default function GuruKalenderLogbookPage() {
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#059669", flexShrink: 0 }} />
               <span style={{ color: "#059669" }}>Hadir & Logbook Terisi</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#0284c7", flexShrink: 0 }} />
+              <span style={{ color: "#0284c7" }}>Jadwal Mendatang</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ea580c", flexShrink: 0 }} />
@@ -503,12 +614,14 @@ export default function GuruKalenderLogbookPage() {
 
             // Determine overall status for the cell
             const allCompleted = sessionsToday.length > 0 && sessionsToday.every(isLogbookCompleted);
-            const hasSomePending = sessionsToday.length > 0 && sessionsToday.some(s => !isLogbookCompleted(s));
+            const hasSomePending = sessionsToday.length > 0 && sessionsToday.some(s => s.status !== "Mendatang" && !isLogbookCompleted(s));
+            const hasUpcoming = sessionsToday.length > 0 && sessionsToday.some(s => s.status === "Mendatang");
             const isToday = dateStr === todayStr;
 
             let cellClass = "cal-cell";
             if (allCompleted) cellClass += " has-class";
             else if (hasSomePending) cellClass += " has-pending";
+            else if (hasUpcoming) cellClass += " has-upcoming";
             if (isToday) cellClass += " is-today";
             if (hasMulti) cellClass += " has-multi";
 
@@ -555,6 +668,11 @@ export default function GuruKalenderLogbookPage() {
                       Pending
                     </span>
                   )}
+                  {sessionCount === 1 && !allCompleted && !hasSomePending && hasUpcoming && (
+                    <span style={{ fontSize: 10.5, fontWeight: 800, padding: "2px 9px", borderRadius: 999, background: "#e0f2fe", color: "#0284c7" }}>
+                      Mendatang
+                    </span>
+                  )}
                 </div>
 
                 {/* Session pills */}
@@ -562,17 +680,18 @@ export default function GuruKalenderLogbookPage() {
                   <div style={{ display: "flex", flexDirection: "column", gap: 3, marginTop: "auto", overflow: "hidden" }}>
                     {sessionsToday.slice(0, 3).map((sess, idx) => {
                       const completed = isLogbookCompleted(sess);
+                      const isUpcoming = sess.status === "Mendatang";
                       return (
                         <div
                           key={sess.id}
                           className="mini-session-pill"
                           style={{
-                            background: completed ? "#d1fae5" : "#fef3c7",
-                            color: completed ? "#059669" : "#b45309",
+                            background: completed ? "#d1fae5" : isUpcoming ? "#e0f2fe" : "#fef3c7",
+                            color: completed ? "#059669" : isUpcoming ? "#0284c7" : "#b45309",
                             animationDelay: `${idx * 0.05}s`,
                           }}
                         >
-                          <span style={{ width: 5, height: 5, borderRadius: "50%", background: completed ? "#059669" : "#b45309", display: "inline-block", flexShrink: 0 }} />
+                          <span style={{ width: 5, height: 5, borderRadius: "50%", background: completed ? "#059669" : isUpcoming ? "#0284c7" : "#b45309", display: "inline-block", flexShrink: 0 }} />
                           {sess.kelas}
                           <span style={{ opacity: 0.7 }}>·</span>
                           <span style={{ opacity: 0.8 }}>{sess.jam.split(" - ")[0]}</span>
@@ -628,13 +747,22 @@ export default function GuruKalenderLogbookPage() {
               </svg>
               {selectedDaySessions.sessions.filter(isLogbookCompleted).length} Selesai
             </div>
-            {selectedDaySessions.sessions.filter(s => !isLogbookCompleted(s)).length > 0 && (
+            {selectedDaySessions.sessions.filter(s => s.status === "Mendatang").length > 0 && (
+              <div style={{
+                display: "flex", alignItems: "center", gap: 6,
+                background: "#e0f2fe", padding: "6px 14px",
+                borderRadius: 999, fontSize: 13, fontWeight: 800, color: "#0284c7",
+              }}>
+                ● {selectedDaySessions.sessions.filter(s => s.status === "Mendatang").length} Mendatang
+              </div>
+            )}
+            {selectedDaySessions.sessions.filter(s => s.status !== "Mendatang" && !isLogbookCompleted(s)).length > 0 && (
               <div style={{
                 display: "flex", alignItems: "center", gap: 6,
                 background: "#fef3c7", padding: "6px 14px",
                 borderRadius: 999, fontSize: 13, fontWeight: 800, color: "#d97706",
               }}>
-                ○ {selectedDaySessions.sessions.filter(s => !isLogbookCompleted(s)).length} Pending
+                ○ {selectedDaySessions.sessions.filter(s => s.status !== "Mendatang" && !isLogbookCompleted(s)).length} Pending
               </div>
             )}
           </div>
@@ -647,11 +775,12 @@ export default function GuruKalenderLogbookPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {selectedDaySessions.sessions.map((session, idx) => {
               const completed = isLogbookCompleted(session);
+              const isUpcoming = session.status === "Mendatang";
               const badge = statusBadgeStyle(session.status);
               return (
                 <div
                   key={session.id}
-                  className={`session-card ${completed ? "completed" : "pending"}`}
+                  className={`session-card ${completed ? "completed" : isUpcoming ? "upcoming" : "pending"}`}
                   style={{ animationDelay: `${idx * 0.06}s` }}
                   onClick={() => handlePickSession(session)}
                 >
@@ -662,7 +791,7 @@ export default function GuruKalenderLogbookPage() {
                         {/* Session number indicator */}
                         <div style={{
                           width: 32, height: 32, borderRadius: 10,
-                          background: completed ? "linear-gradient(135deg, #059669, #10b981)" : "linear-gradient(135deg, #d97706, #f59e0b)",
+                          background: completed ? "linear-gradient(135deg, #059669, #10b981)" : isUpcoming ? "linear-gradient(135deg, #0284c7, #38bdf8)" : "linear-gradient(135deg, #d97706, #f59e0b)",
                           color: "#fff", fontWeight: 900, fontSize: 14,
                           display: "flex", alignItems: "center", justifyContent: "center",
                           flexShrink: 0,
@@ -776,11 +905,11 @@ export default function GuruKalenderLogbookPage() {
               {selectedLogbook?.kelas}
             </span>
             <span style={{
-              background: isLogbookCompleted(selectedLogbook) ? "#d1fae5" : "#fef3c7",
-              color: isLogbookCompleted(selectedLogbook) ? "#059669" : "#d97706",
+              background: isLogbookCompleted(selectedLogbook) ? "#d1fae5" : selectedLogbook?.status === "Mendatang" ? "#e0f2fe" : "#fef3c7",
+              color: isLogbookCompleted(selectedLogbook) ? "#059669" : selectedLogbook?.status === "Mendatang" ? "#0284c7" : "#d97706",
               fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999
             }}>
-              {isLogbookCompleted(selectedLogbook) ? "Logbook Tersimpan" : "Belum Diisi"}
+              {isLogbookCompleted(selectedLogbook) ? "Logbook Tersimpan" : selectedLogbook?.status === "Mendatang" ? "Jadwal Mendatang" : "Belum Diisi"}
             </span>
           </div>
           <h2 style={{ fontSize: 18, fontWeight: 900, color: "#1a202c", margin: 0 }}>
@@ -865,7 +994,7 @@ export default function GuruKalenderLogbookPage() {
             className="btn btn-primary"
             style={{ flex: 1, minWidth: 160, textDecoration: "none", textAlign: "center", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}
           >
-            {selectedLogbook?.materi === "Belum diisi" ? "Isi Absensi & Logbook" : "Perbarui Absensi"}
+            {selectedLogbook?.status === "Mendatang" ? "Lihat Detail Kelas" : selectedLogbook?.materi === "Belum diisi" ? "Isi Absensi & Logbook" : "Perbarui Absensi"}
           </Link>
 
           <button

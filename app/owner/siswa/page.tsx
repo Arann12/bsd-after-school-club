@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/ui/Modal";
 import { getStudents, createStudent, updateStudent, deleteStudent, Student } from "@/lib/api/students";
 import { getParents, Parent, attachStudentToParent } from "@/lib/api/parents";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 export default function OwnerSiswaPage() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -260,13 +261,13 @@ export default function OwnerSiswaPage() {
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Status Siswa</label>
-              <select className="form-input" value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}>
+              <SearchableSelect className="form-input" value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}>
                 <option value="trial">Trial</option>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
                 <option value="graduated">Graduated</option>
                 <option value="on_leave">On Leave</option>
-              </select>
+              </SearchableSelect>
             </div>
           </div>
 
@@ -288,12 +289,12 @@ export default function OwnerSiswaPage() {
 
           <div className="form-group" style={{ marginBottom: 0, padding: 12, background: "#f8fafc", borderRadius: 8, border: "1px dashed #cbd5e1" }}>
             <label className="form-label">{editingStudent ? "Kaitkan dengan Orang Tua Lain (Opsional)" : "Pilih Orang Tua / Wali (Opsional)"}</label>
-            <select className="form-input" value={formData.parent_id} onChange={e => setFormData({ ...formData, parent_id: e.target.value })}>
+            <SearchableSelect className="form-input" value={formData.parent_id} onChange={e => setFormData({ ...formData, parent_id: e.target.value })}>
               <option value="">-- Pilih Orang Tua --</option>
               {parents.map(p => (
                 <option key={p.id} value={p.id}>{p.name} ({p.phone})</option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
 
           <div style={{ display: "flex", gap: 10, marginTop: 10 }}>

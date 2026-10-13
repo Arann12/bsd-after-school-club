@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 export interface Column<T> {
   key: string;
@@ -98,16 +99,16 @@ export default function DataTable<T extends object>({
               <label style={{ fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", display: "block", marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 {f.label}
               </label>
-              <select
+              <SearchableSelect
                 className="select-control"
-                style={{ padding: "8px 12px", fontSize: 13 }}
+                style={{ padding: "8px 12px", fontSize: 13, minWidth: 140 }}
                 value={filterValues?.[f.label] || "Semua"}
                 onChange={e => onFilterChange?.(f.label, e.target.value)}
               >
                 {f.values.map(v => (
                   <option key={v} value={v}>{v === "Semua" ? `Semua ${f.label}` : v}</option>
                 ))}
-              </select>
+              </SearchableSelect>
             </div>
           ))}
           <span style={{ fontSize: 12.5, color: "var(--color-text-muted)", marginLeft: "auto", alignSelf: "flex-end" }}>
@@ -118,7 +119,7 @@ export default function DataTable<T extends object>({
 
       {/* Table */}
       <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+        <table style={{ width: "100%", minWidth: 600, borderCollapse: "collapse", textAlign: "left" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid var(--color-border)", background: "var(--color-bg)" }}>
               {columns.map(col => (

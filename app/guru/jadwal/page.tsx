@@ -155,13 +155,69 @@ export default function GuruJadwalPage() {
         return mapSession(s, totalCount);
       });
 
-      // Tampilkan schedules sebagai fallback jika belum ada sesi
-      const allSchedules: SesiTampil[] =
-        schedulesRes.status === "fulfilled" && allSessions.length === 0
-          ? schedulesRes.value.map(mapSchedule)
-          : [];
+      // Tampilkan jadwal mendatang dari recurring class schedules untuk 60 hari ke depan
+      const projectedSchedules: SesiTampil[] = [];
+      if (schedulesRes.status === "fulfilled" && Array.isArray(schedulesRes.value)) {
+        const rawSchedules = schedulesRes.value;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-      const combined = [...allSessions, ...allSchedules].sort((a, b) =>
+        const existingSessionsSet = new Set(
+          allSessions.map((s) => `${s.classroomId}_${s.dateKey}`)
+        );
+
+        const dayMap: Record<string, number> = {
+          sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,
+          minggu: 0, senin: 1, selasa: 2, rabu: 3, kamis: 4, jumat: 5, sabtu: 6,
+        };
+
+        rawSchedules.forEach((sc) => {
+          const targetDay = dayMap[(sc.dayOfWeek || "").toLowerCase()];
+          if (targetDay === undefined) return;
+
+          const cid = sc.classroomId || sc.classroom?.id || "";
+          const classSessionCount = sessionCountsByClass[cid] || 0;
+
+          // Proyeksikan 60 hari ke depan (sekitar 8-9 minggu)
+          for (let offset = 0; offset <= 60; offset++) {
+            const checkD = new Date(today);
+            checkD.setDate(checkD.getDate() + offset);
+
+            if (checkD.getDay() === targetDay) {
+              const yyyy = checkD.getFullYear();
+              const mm = String(checkD.getMonth() + 1).padStart(2, "0");
+              const dd = String(checkD.getDate()).padStart(2, "0");
+              const dateKey = `${yyyy}-${mm}-${dd}`;
+
+              if (sc.effectiveFrom && sc.effectiveFrom > dateKey) continue;
+              if (sc.effectiveUntil && sc.effectiveUntil < dateKey) continue;
+
+              if (existingSessionsSet.has(`${cid}_${dateKey}`)) continue;
+
+              const isToday = offset === 0;
+              const status: "Hari Ini" | "Mendatang" = isToday ? "Hari Ini" : "Mendatang";
+
+              projectedSchedules.push({
+                id: `sched-${sc.id}-${dateKey}`,
+                dateKey,
+                tanggal: formatTgl(dateKey),
+                hari: formatHari(dateKey) || sc.dayOfWeek || "",
+                jam: sc.startTime ? sc.startTime.substring(0, 5) : "--:--",
+                jamEnd: sc.endTime ? sc.endTime.substring(0, 5) : "--",
+                kelas: sc.classroom?.name ?? "Kelas",
+                program: sc.classroom?.programLevel?.name ?? "Program",
+                sessionNumber: classSessionCount + Math.floor(offset / 7) + 1,
+                totalSessions: classSessionCount > 0 ? classSessionCount + 8 : 12,
+                status,
+                warna: warnaStatus(status),
+                classroomId: cid,
+              });
+            }
+          }
+        });
+      }
+
+      const combined = [...allSessions, ...projectedSchedules].sort((a, b) =>
         a.dateKey.localeCompare(b.dateKey)
       );
       setSessions(combined);

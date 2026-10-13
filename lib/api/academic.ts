@@ -35,6 +35,7 @@ export interface ClassroomRaw {
   active_students_count?: number;
   program_level?: ProgramLevelRaw;
   teachers?: ClassTeacherRaw[];
+  class_schedules?: ClassScheduleRaw[];
   enrollments?: {
     id: string;
     student_id: string;
@@ -84,6 +85,7 @@ export interface Classroom {
   activeStudentsCount: number;
   programLevel?: ProgramLevel;
   teachers: ClassTeacher[];
+  schedules?: ClassSchedule[];
   students: { id: string; name: string }[];
 }
 
@@ -230,6 +232,7 @@ export function mapClassroom(raw: ClassroomRaw): Classroom {
     activeStudentsCount: raw.active_students_count || 0,
     programLevel: raw.program_level ? mapProgramLevel(raw.program_level) : undefined,
     teachers: raw.teachers ? raw.teachers.map(mapClassTeacher) : [],
+    schedules: raw.class_schedules ? raw.class_schedules.map(mapClassSchedule) : [],
     students: raw.enrollments ? raw.enrollments.map(e => ({
       id: e.student_id,
       name: e.student?.full_name || "Unknown Student"

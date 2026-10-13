@@ -118,7 +118,7 @@ export default function OrangTuaSertifikatPage() {
           {certs.map((c) => (
             <div key={c.id} className="card" style={{ padding: 24, opacity: c.isGenerated ? 1 : 0.85 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
                   <div
                     style={{
                       width: 52,
@@ -206,11 +206,11 @@ export default function OrangTuaSertifikatPage() {
               </div>
               Telah menyelesaikan program <strong>{selectedCert.program} ({selectedCert.level})</strong> dengan predikat <strong>{selectedCert.predikat}</strong>.
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 24, fontSize: 12, color: "var(--color-text-muted)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginTop: 24, fontSize: 12, color: "var(--color-text-muted)" }}>
               <span>No. Registrasi: {selectedCert.nomorSertifikat}</span>
               <span>Tanggal: {selectedCert.tglLulus}</span>
             </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 24 }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 24, flexWrap: "wrap" }}>
               <button className="btn btn-ghost" onClick={() => setSelectedCert(null)}>
                 Tutup
               </button>

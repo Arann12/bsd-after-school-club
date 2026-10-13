@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { getPayments } from "@/lib/api/finance";
 import { SkeletonTable } from "@/components/ui/Skeleton";
 import { printReceipt } from "@/lib/utils/printReceipt";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 export interface PaymentRecord {
   id: string;
@@ -132,12 +133,12 @@ export default function FinancePembayaranPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Header */}
-      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+      <div className="page-header">
         <div>
           <h1 className="page-title">Riwayat Pembayaran</h1>
           <p className="page-subtitle">Daftar transaksi masuk, metode pembayaran (VA, QRIS, Transfer, Cash), dan kwitansi pembayaran.</p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="page-header-actions">
           <button
             className="btn btn-outline btn-sm"
             onClick={() => fetchPayments(false)}
@@ -196,18 +197,18 @@ export default function FinancePembayaranPage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <select
+            <SearchableSelect
               className="select-control"
               value={filterMetode}
               onChange={(e) => setFilterMetode(e.target.value)}
-              style={{ padding: "8px 14px", fontSize: 13 }}
+              style={{ padding: "8px 14px", fontSize: 13, minWidth: 200 }}
             >
               <option value="Semua">Semua Metode Pembayaran</option>
               <option value="Virtual">Virtual Account (VA)</option>
               <option value="QRIS">QRIS</option>
               <option value="E-Wallet">E-Wallet</option>
               <option value="Cash">Cash / Tunai</option>
-            </select>
+            </SearchableSelect>
           </div>
         </div>
       </div>
@@ -224,11 +225,11 @@ export default function FinancePembayaranPage() {
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
+            <table style={{ width: "100%", minWidth: 700, borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
               <thead>
                 <tr style={{ background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}>
                   {["ID Transaksi", "No. Tagihan / Ref", "Orang Tua & Siswa", "Jumlah Pembayaran", "Metode", "Waktu Transaksi", "Status", "Kwitansi"].map((h) => (
-                    <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
+                    <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>
                       {h}
                     </th>
                   ))}

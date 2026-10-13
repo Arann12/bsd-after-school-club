@@ -77,7 +77,7 @@ export default function LaporanKehadiranPage() {
           <h1 className="page-title">Laporan Kehadiran & Partisipasi</h1>
           <p className="page-subtitle">Rekap kehadiran siswa, kelas aktif, dan performa jam mengajar guru.</p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div className="page-header-actions">
           <button className="btn btn-outline" onClick={() => window.print()} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
             <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
@@ -116,11 +116,11 @@ export default function LaporanKehadiranPage() {
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
+            <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--color-border)", background: "var(--color-bg)" }}>
                   {["Kode Kelas", "Nama Kelas", "Program & Level", "Kapasitas", "Status"].map((h) => (
-                    <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
+                    <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>
                       {h}
                     </th>
                   ))}
@@ -196,11 +196,11 @@ export default function LaporanKehadiranPage() {
               <SkeletonTable rows={4} />
             </div>
           ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
+            <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--color-border)", background: "var(--color-bg)" }}>
                   {["NIS / Kode", "Nama Siswa", "Program", "Status Belajar"].map((h) => (
-                    <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
+                    <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>
                       {h}
                     </th>
                   ))}

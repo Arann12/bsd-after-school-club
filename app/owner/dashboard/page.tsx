@@ -218,7 +218,7 @@ export default function OwnerDashboardPage() {
           </div>
         </div>
         {data.totalRevenue > 0 && (
-          <div style={{ display: "flex", gap: 24, borderLeft: "1px solid rgba(255,255,255,0.2)", paddingLeft: 24 }}>
+          <div style={{ display: "flex", gap: 24, borderLeft: "1px solid rgba(255,255,255,0.2)", paddingLeft: 24, flexWrap: "wrap" }}>
             <div>
               <div style={{ fontSize: 12, opacity: 0.8 }}>Honor Terbayar</div>
               <div style={{ fontSize: 20, fontWeight: 800 }}>{formatRupiah(data.honorPaid)}</div>
@@ -272,7 +272,7 @@ export default function OwnerDashboardPage() {
       </div>
 
       {/* TAGIHAN OVERDUE + INVENTARIS */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
         {/* TAGIHAN OVERDUE */}
         <div className="card" style={{ padding: 22 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
@@ -284,7 +284,7 @@ export default function OwnerDashboardPage() {
               <div style={{ textAlign: "center", padding: "24px 16px", color: "var(--color-text-muted)", fontSize: 13 }}>Tidak ada tagihan overdue</div>
             ) : data.overdueInvoices.map((inv, i) => (
               <div key={i} style={{ background: "#fff5f5", border: "1.5px solid #fecaca", borderRadius: 10, padding: "12px 14px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 }}>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: "var(--color-danger)" }}>{inv.studentName}</div>
                     <div style={{ fontSize: 11.5, color: "var(--color-danger)", marginTop: 1 }}>{inv.program}</div>
@@ -322,7 +322,7 @@ export default function OwnerDashboardPage() {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {data.recentAnnouncements.map(a => (
-              <div key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: "var(--color-bg)", borderRadius: 8, border: "1px solid var(--color-border)" }}>
+              <div key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, padding: "10px 12px", background: "var(--color-bg)", borderRadius: 8, border: "1px solid var(--color-border)" }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text-primary)" }}>{a.title}</span>
                 <StatusBadge status={a.status} variant="announcement" size="sm" />
               </div>

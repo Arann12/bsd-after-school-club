@@ -11,7 +11,7 @@ export type CashStatus = "Menunggu Konfirmasi" | "Dikonfirmasi" | "Ditolak";
 export type EnrollmentStatus = "Pending" | "Approved" | "Rejected";
 export type AnnouncementStatus = "Draft" | "Published" | "Archived";
 export type InventoryCondition = "Good" | "Damaged" | "Lost" | "Under Repair";
-export type PackageType = "8 Pertemuan" | "12 Pertemuan";
+export type PackageType = "8 Pertemuan" | "12 Pertemuan" | string;
 export type PaymentMethod = "Virtual Account" | "E-Wallet" | "QRIS" | "Cash";
 
 /* ---- Core Entities ---- */

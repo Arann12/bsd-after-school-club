@@ -15,6 +15,7 @@ interface PengumumanView {
   posterUrl?: string | null;
   detail: string;
   penting: boolean;
+  expires_at?: string | null;
 }
 
 const kategoriColor: Record<string, { bg: string; color: string }> = {
@@ -28,6 +29,8 @@ export default function OrangTuaPengumumanPage() {
   const [daftar, setDaftar] = useState<PengumumanView[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<PengumumanView | null>(null);
+  const [filterKategori, setFilterKategori] = useState("Semua");
+  const [search, setSearch] = useState("");
 
   const formatTanggal = (dateStr?: string | null) => {
     if (!dateStr) return "–";
@@ -82,6 +85,7 @@ export default function OrangTuaPengumumanPage() {
           posterUrl: resolveMediaUrl(item.poster_url),
           detail: item.description,
           penting: isImportant,
+          expires_at: item.expires_at,
         };
       });
 
@@ -116,13 +120,162 @@ export default function OrangTuaPengumumanPage() {
     }
   }, [daftar]);
 
+  const terfilter = daftar.filter((p) => {
+    const matchKategori = filterKategori === "Semua" || p.kategori.toUpperCase() === filterKategori.toUpperCase();
+    const matchSearch =
+      !search.trim() ||
+      p.judul.toLowerCase().includes(search.toLowerCase()) ||
+      p.ringkasan.toLowerCase().includes(search.toLowerCase());
+    return matchKategori && matchSearch;
+  });
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <style>{`
+        .ortu-kartu-pengumuman:hover{box-shadow:0 4px 16px rgba(0,0,0,.09)!important;transform:translateY(-1px)}
+        .ortu-kartu-pengumuman{transition:all .2s ease;cursor:pointer}
+
+        .ortu-filter-bar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 12px;
+        }
+
+        .ortu-filter-chips {
+          display: flex;
+          gap: 8px;
+          overflow-x: auto;
+          padding-bottom: 2px;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+        }
+        .ortu-filter-chips::-webkit-scrollbar {
+          display: none;
+        }
+        .ortu-filter-chips .filter-chip {
+          flex-shrink: 0;
+          white-space: nowrap;
+        }
+
+        .ortu-search-wrap {
+          position: relative;
+          min-width: 260px;
+        }
+
+        .ortu-card-inner {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 16px;
+        }
+
+        .ortu-poster-thumb {
+          width: 76px;
+          height: 76px;
+          border-radius: 10px;
+          overflow: hidden;
+          flex-shrink: 0;
+          border: 1px solid var(--color-border-light);
+          background: var(--color-bg);
+        }
+
+        .ortu-read-more {
+          font-size: 12.5px;
+          font-weight: 700;
+          color: var(--color-primary);
+          white-space: nowrap;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        @media (max-width: 640px) {
+          .page-header {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 12px !important;
+          }
+
+          .ortu-kartu-pengumuman {
+            padding: 16px 14px !important;
+          }
+
+          .ortu-filter-bar {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+          }
+
+          .ortu-search-wrap {
+            width: 100% !important;
+            min-width: 100% !important;
+          }
+
+          .ortu-card-inner {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 12px !important;
+          }
+
+          .ortu-poster-thumb {
+            width: 100% !important;
+            height: 160px !important;
+            border-radius: 10px !important;
+            order: 2 !important;
+          }
+
+          .ortu-card-content {
+            order: 1 !important;
+          }
+
+          .ortu-card-footer {
+            order: 3 !important;
+            display: flex !important;
+            justify-content: flex-end !important;
+            padding-top: 4px !important;
+          }
+
+          .ortu-read-more {
+            font-size: 13px !important;
+          }
+        }
+      `}</style>
+
       {/* Header */}
       <div className="page-header">
         <div>
           <h1 className="page-title">Pengumuman BSD After School Club</h1>
           <p className="page-subtitle">Informasi resmi, jadwal, dan pengumuman penting dari manajemen kursus untuk orang tua.</p>
+        </div>
+      </div>
+
+      {/* Filter & Live Search */}
+      <div className="ortu-filter-bar">
+        <div className="ortu-filter-chips">
+          {["Semua", "Penting", "Keuangan", "Program", "Umum"].map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setFilterKategori(cat)}
+              className={`filter-chip${filterKategori === cat ? " active" : ""}`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        <div className="ortu-search-wrap" style={{ flex: 1, maxWidth: 360 }}>
+          <input
+            className="search-input"
+            style={{ width: "100%", paddingLeft: 36 }}
+            placeholder="Cari pengumuman..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth={2} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }}>
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
         </div>
       </div>
 
@@ -132,20 +285,20 @@ export default function OrangTuaPengumumanPage() {
       ) : (
         /* Daftar Pengumuman */
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {daftar.map((p) => (
+          {terfilter.map((p) => (
             <div
               key={p.id}
-              className="card"
+              className="ortu-kartu-pengumuman card"
               onClick={() => setSelected(p)}
               style={{
-                padding: 22,
+                padding: "20px 22px",
                 cursor: "pointer",
                 borderLeft: p.penting ? "4px solid #dc2626" : "4px solid var(--color-border)",
                 transition: "all .15s ease",
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
-                <div style={{ flex: 1 }}>
+              <div className="ortu-card-inner">
+                <div className="ortu-card-content" style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
                     <span style={{ ...(kategoriColor[p.kategori] || kategoriColor["UMUM"]), fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 999, textTransform: "uppercase" }}>
                       {p.kategori}
@@ -155,28 +308,41 @@ export default function OrangTuaPengumumanPage() {
                         Ada Flyer / Poster
                       </span>
                     )}
+                    {p.expires_at && (
+                      <span style={{ background: "#fef3c7", color: "#92400e", fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999 }}>
+                        Berlaku s/d {formatTanggal(p.expires_at)}
+                      </span>
+                    )}
                     <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{p.tanggal}</span>
                   </div>
-                  <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 6px" }}>{p.judul}</h3>
+                  <h3 style={{ fontSize: 16, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 6px", wordBreak: "break-word" }}>{p.judul}</h3>
                   <p style={{ fontSize: 13, color: "var(--color-text-secondary)", margin: 0, lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                     {p.ringkasan}
                   </p>
                 </div>
+
                 {p.posterUrl && (
-                  <div style={{ width: 72, height: 72, borderRadius: 10, overflow: "hidden", flexShrink: 0, border: "1px solid var(--color-border-light)", background: "var(--color-bg)" }}>
+                  <div className="ortu-poster-thumb">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={p.posterUrl} alt={p.judul} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   </div>
                 )}
-                <span style={{ fontSize: 12.5, fontWeight: 700, color: "var(--color-primary)", whiteSpace: "nowrap" }}>Baca Selengkapnya →</span>
+
+                <div className="ortu-card-footer">
+                  <span className="ortu-read-more">
+                    Baca Selengkapnya →
+                  </span>
+                </div>
               </div>
             </div>
           ))}
 
-          {daftar.length === 0 && (
+          {terfilter.length === 0 && (
             <div className="card" style={{ padding: "48px 24px", textAlign: "center" }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)", marginBottom: 6 }}>Belum ada pengumuman untuk orang tua</div>
-              <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>Pengumuman resmi dari manajemen kursus akan ditampilkan di sini setelah dipublikasikan.</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text-primary)", marginBottom: 6 }}>Belum ada pengumuman</div>
+              <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
+                {search || filterKategori !== "Semua" ? "Tidak ada pengumuman yang sesuai dengan pencarian atau filter ini." : "Pengumuman resmi dari manajemen kursus akan ditampilkan di sini setelah dipublikasikan."}
+              </div>
             </div>
           )}
         </div>
@@ -186,8 +352,8 @@ export default function OrangTuaPengumumanPage() {
       {selected && (
         <Modal open onClose={() => setSelected(null)} title="Detail Pengumuman" maxWidth={640}>
           {/* Modal Header */}
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
               <span style={{ ...(kategoriColor[selected.kategori] || kategoriColor["UMUM"]), fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 999 }}>
                 {selected.kategori}
               </span>
@@ -196,27 +362,32 @@ export default function OrangTuaPengumumanPage() {
                   Poster Resmi
                 </span>
               )}
+              {selected.expires_at && (
+                <span style={{ background: "#fef3c7", color: "#92400e", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 999 }}>
+                  Berlaku s/d {formatTanggal(selected.expires_at)}
+                </span>
+              )}
               <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{selected.tanggal}</span>
             </div>
-            <h2 style={{ fontSize: 20, fontWeight: 900, color: "var(--color-text-primary)", margin: 0, lineHeight: 1.3 }}>{selected.judul}</h2>
+            <h2 style={{ fontSize: 19, fontWeight: 900, color: "var(--color-text-primary)", margin: 0, lineHeight: 1.3, wordBreak: "break-word" }}>{selected.judul}</h2>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {/* Flyer / Poster Visual */}
             {selected.posterUrl && (
-              <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid var(--color-border)" }}>
+              <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid var(--color-border)", background: "#0f172a", textAlign: "center" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={selected.posterUrl} alt={selected.judul} style={{ width: "100%", maxHeight: 380, objectFit: "cover" }} />
+                <img src={selected.posterUrl} alt={selected.judul} style={{ width: "100%", maxHeight: 460, objectFit: "contain", display: "block", margin: "0 auto" }} />
               </div>
             )}
 
             {/* Detail Teks Pengumuman */}
             <div style={{ background: "var(--color-bg)", borderRadius: 12, padding: "16px 18px", border: "1px solid var(--color-border)" }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: "var(--color-text-muted)", textTransform: "uppercase", marginBottom: 10 }}>Informasi Lengkap</div>
-              <pre style={{ fontSize: 13, color: "var(--color-text-primary)", whiteSpace: "pre-wrap", lineHeight: 1.7, fontFamily: "inherit", margin: 0 }}>{selected.detail}</pre>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "var(--color-text-muted)", textTransform: "uppercase", marginBottom: 8 }}>Informasi Lengkap</div>
+              <pre style={{ fontSize: 13.5, color: "var(--color-text-primary)", whiteSpace: "pre-wrap", lineHeight: 1.7, fontFamily: "inherit", margin: 0, wordBreak: "break-word" }}>{selected.detail}</pre>
             </div>
 
-            <button className="btn btn-accent" onClick={() => setSelected(null)}>Tutup Pengumuman</button>
+            <button className="btn btn-accent" style={{ width: "100%", justifyContent: "center" }} onClick={() => setSelected(null)}>Tutup Pengumuman</button>
           </div>
         </Modal>
       )}

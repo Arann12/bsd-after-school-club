@@ -9,6 +9,7 @@ import {
   getPrograms, type Classroom, type Program, type ClassTeacher
 } from "@/lib/api/academic";
 import { getTeachers, type Teacher } from "@/lib/api/teachers";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 export default function ClassesPage() {
   // Data State
@@ -180,80 +181,84 @@ export default function ClassesPage() {
   if (error) return <div style={{ padding: 24, color: "var(--color-danger)" }}>{error}</div>;
 
   return (
-    <div style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+    <div style={{ maxWidth: 1100, margin: "0 auto", width: "100%" }}>
+      <div className="page-header" style={{ marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Manajemen Kelas</h1>
-          <p style={{ color: "var(--color-text-secondary)", margin: "4px 0 0 0", fontSize: 14 }}>Kelola kelas belajar, penugasan guru, dan pantau kapasitas.</p>
+          <h1 className="page-title">Manajemen Kelas</h1>
+          <p className="page-subtitle">Kelola kelas belajar, penugasan guru, dan pantau kapasitas.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => handleOpenModal()}>+ Buat Kelas Baru</button>
+        <div className="page-header-actions">
+          <button className="btn btn-primary" onClick={() => handleOpenModal()}>+ Buat Kelas Baru</button>
+        </div>
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-          <thead style={{ background: "#f8fafc", borderBottom: "1px solid var(--color-border-light)" }}>
-            <tr>
-              <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Kode / Nama Kelas</th>
-              <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Program & Level</th>
-              <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Guru Aktif</th>
-              <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Kapasitas</th>
-              <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {classrooms.length === 0 ? (
-              <tr><td colSpan={5} style={{ textAlign: "center", padding: 24, color: "var(--color-text-muted)" }}>Tidak ada data kelas.</td></tr>
-            ) : (
-              classrooms.map((cls, i) => {
-                const activeTeachers = cls.teachers.filter(t => !t.effectiveUntil);
-                return (
-                  <tr key={cls.id} style={{ borderBottom: i < classrooms.length - 1 ? "1px solid var(--color-border-light)" : "none" }}>
-                    <td style={{ padding: "14px 16px" }}>
-                      <div style={{ fontFamily: "monospace", fontSize: 11, color: "var(--color-text-muted)" }}>{cls.classCode}</div>
-                      <div style={{ fontWeight: 800, color: "var(--color-text-primary)", fontSize: 14 }}>{cls.name}</div>
-                      <span style={{ fontSize: 11, padding: "2px 6px", borderRadius: 4, background: cls.status === 'active' ? "#d1fae5" : "#f1f5f9", color: cls.status === 'active' ? "#059669" : "#64748b" }}>
-                        {cls.status.toUpperCase()}
-                      </span>
-                    </td>
-                    <td style={{ padding: "14px 16px" }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text-primary)" }}>{cls.programLevel?.name}</div>
-                      <div style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>{programs.find(p => p.id === cls.programLevel?.programId)?.name || "-"}</div>
-                    </td>
-                    <td style={{ padding: "14px 16px" }}>
-                      {activeTeachers.length > 0 ? (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                          {activeTeachers.map(t => (
-                            <span key={t.id} style={{ fontSize: 12, fontWeight: 600, color: t.role === 'primary' ? "#0369a1" : "#4f46e5", background: t.role === 'primary' ? "#e0f2fe" : "#e0e7ff", padding: "2px 8px", borderRadius: 4, width: "max-content" }}>
-                              {t.name} ({t.role})
-                            </span>
-                          ))}
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", textAlign: "left" }}>
+            <thead style={{ background: "#f8fafc", borderBottom: "1px solid var(--color-border-light)" }}>
+              <tr>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Kode / Nama Kelas</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Program & Level</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Guru Aktif</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Kapasitas</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {classrooms.length === 0 ? (
+                <tr><td colSpan={5} style={{ textAlign: "center", padding: 24, color: "var(--color-text-muted)" }}>Tidak ada data kelas.</td></tr>
+              ) : (
+                classrooms.map((cls, i) => {
+                  const activeTeachers = cls.teachers.filter(t => !t.effectiveUntil);
+                  return (
+                    <tr key={cls.id} style={{ borderBottom: i < classrooms.length - 1 ? "1px solid var(--color-border-light)" : "none" }}>
+                      <td style={{ padding: "14px 16px" }}>
+                        <div style={{ fontFamily: "monospace", fontSize: 11, color: "var(--color-text-muted)" }}>{cls.classCode}</div>
+                        <div style={{ fontWeight: 800, color: "var(--color-text-primary)", fontSize: 14 }}>{cls.name}</div>
+                        <span style={{ fontSize: 11, padding: "2px 6px", borderRadius: 4, background: cls.status === 'active' ? "#d1fae5" : "#f1f5f9", color: cls.status === 'active' ? "#059669" : "#64748b" }}>
+                          {cls.status.toUpperCase()}
+                        </span>
+                      </td>
+                      <td style={{ padding: "14px 16px" }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text-primary)" }}>{cls.programLevel?.name}</div>
+                        <div style={{ fontSize: 12, color: "var(--color-text-secondary)" }}>{programs.find(p => p.id === cls.programLevel?.programId)?.name || "-"}</div>
+                      </td>
+                      <td style={{ padding: "14px 16px" }}>
+                        {activeTeachers.length > 0 ? (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                            {activeTeachers.map(t => (
+                              <span key={t.id} style={{ fontSize: 12, fontWeight: 600, color: t.role === 'primary' ? "#0369a1" : "#4f46e5", background: t.role === 'primary' ? "#e0f2fe" : "#e0e7ff", padding: "2px 8px", borderRadius: 4, width: "max-content" }}>
+                                {t.name} ({t.role})
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: 12, color: "var(--color-danger)" }}>Belum Ada</span>
+                        )}
+                      </td>
+                      <td style={{ padding: "14px 16px" }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: cls.activeStudentsCount >= cls.capacity ? "var(--color-danger)" : "var(--color-text-primary)" }}>
+                          {cls.activeStudentsCount} / {cls.capacity} Siswa
                         </div>
-                      ) : (
-                        <span style={{ fontSize: 12, color: "var(--color-danger)" }}>Belum Ada</span>
-                      )}
-                    </td>
-                    <td style={{ padding: "14px 16px" }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: cls.activeStudentsCount >= cls.capacity ? "var(--color-danger)" : "var(--color-text-primary)" }}>
-                        {cls.activeStudentsCount} / {cls.capacity} Siswa
-                      </div>
-                      <div style={{ width: "100%", height: 6, background: "#f1f5f9", borderRadius: 3, marginTop: 4, overflow: "hidden" }}>
-                        <div style={{ height: "100%", background: cls.activeStudentsCount >= cls.capacity ? "var(--color-danger)" : "#3b82f6", width: `${Math.min((cls.activeStudentsCount / cls.capacity) * 100, 100)}%` }}></div>
-                      </div>
-                    </td>
-                    <td style={{ padding: "14px 16px" }}>
-                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                        <Link href={`/admin/pendaftaran`} className="btn btn-primary btn-sm" style={{ textDecoration: "none" }}>+ Siswa</Link>
-                        <button className="btn btn-ghost btn-sm" onClick={() => handleOpenTeacherModal(cls)}>Assign Guru</button>
-                        <button className="btn btn-ghost btn-sm" onClick={() => handleOpenModal(cls)}>Edit</button>
-                        <button className="btn btn-ghost btn-sm" style={{ color: "var(--color-danger)" }} onClick={() => handleDeleteClassroom(cls.id)}>Hapus</button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                        <div style={{ width: "100%", height: 6, background: "#f1f5f9", borderRadius: 3, marginTop: 4, overflow: "hidden" }}>
+                          <div style={{ height: "100%", background: cls.activeStudentsCount >= cls.capacity ? "var(--color-danger)" : "#3b82f6", width: `${Math.min((cls.activeStudentsCount / cls.capacity) * 100, 100)}%` }}></div>
+                        </div>
+                      </td>
+                      <td style={{ padding: "14px 16px" }}>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          <Link href={`/admin/pendaftaran`} className="btn btn-primary btn-sm" style={{ textDecoration: "none" }}>+ Siswa</Link>
+                          <button className="btn btn-ghost btn-sm" onClick={() => handleOpenTeacherModal(cls)}>Assign Guru</button>
+                          <button className="btn btn-ghost btn-sm" onClick={() => handleOpenModal(cls)}>Edit</button>
+                          <button className="btn btn-ghost btn-sm" style={{ color: "var(--color-danger)" }} onClick={() => handleDeleteClassroom(cls.id)}>Hapus</button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* MODAL KELAS */}
@@ -264,24 +269,24 @@ export default function ClassesPage() {
             <input className="form-input" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Cth: Kelas A - Calistung" />
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Program *</label>
-              <select className="form-input" value={selectedProgramId} onChange={e => { setSelectedProgramId(e.target.value); setFormData({ ...formData, program_level_id: "" }); }}>
+              <SearchableSelect className="form-input" value={selectedProgramId} onChange={e => { setSelectedProgramId(e.target.value); setFormData({ ...formData, program_level_id: "" }); }}>
                 <option value="">-- Pilih Program --</option>
                 {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
+              </SearchableSelect>
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Level *</label>
-              <select className="form-input" value={formData.program_level_id} onChange={e => setFormData({ ...formData, program_level_id: e.target.value })} disabled={!selectedProgramId}>
+              <SearchableSelect className="form-input" value={formData.program_level_id} onChange={e => setFormData({ ...formData, program_level_id: e.target.value })} disabled={!selectedProgramId}>
                 <option value="">-- Pilih Level --</option>
                 {availableLevels.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-              </select>
+              </SearchableSelect>
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Kapasitas Maksimal</label>
               <input type="number" className="form-input" value={formData.capacity} onChange={e => setFormData({ ...formData, capacity: parseInt(e.target.value) || 0 })} min={1} max={100} />
@@ -289,15 +294,15 @@ export default function ClassesPage() {
             {editingClass && (
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Status</label>
-                <select className="form-input" value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}>
+                <SearchableSelect className="form-input" value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}>
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
-                </select>
+                </SearchableSelect>
               </div>
             )}
           </div>
 
-          <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+          <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
             <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setShowModal(false)} disabled={saving}>Batal</button>
             <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleSaveClassroom} disabled={saving}>{saving ? "Menyimpan..." : "Simpan Data"}</button>
           </div>
@@ -316,7 +321,7 @@ export default function ClassesPage() {
                 <div style={{ padding: 16, textAlign: "center", color: "var(--color-text-muted)", fontSize: 13 }}>Belum ada guru aktif di kelas ini.</div>
               ) : (
                 activeClassroom.teachers.filter(t => !t.effectiveUntil).map((t, i, arr) => (
-                  <div key={t.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 16px", borderBottom: i < arr.length - 1 ? "1px solid var(--color-border-light)" : "none", background: "#fff" }}>
+                  <div key={t.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 16px", borderBottom: i < arr.length - 1 ? "1px solid var(--color-border-light)" : "none", background: "#fff", flexWrap: "wrap", gap: 8 }}>
                     <div>
                       <div style={{ fontWeight: 700, fontSize: 13, color: "var(--color-text-primary)" }}>{t.name}</div>
                       <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>Role: {t.role} • Sejak: {t.effectiveFrom}</div>
@@ -334,20 +339,20 @@ export default function ClassesPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label" style={{ fontSize: 12 }}>Pilih Guru</label>
-                <select className="form-input" value={teacherForm.teacher_id} onChange={e => setTeacherForm({ ...teacherForm, teacher_id: e.target.value })}>
+                <SearchableSelect className="form-input" value={teacherForm.teacher_id} onChange={e => setTeacherForm({ ...teacherForm, teacher_id: e.target.value })}>
                   <option value="">-- Pilih Guru --</option>
                   {teachers.map(t => (
                     <option key={t.id} value={t.id}>{t.name} ({t.teacherCode})</option>
                   ))}
-                </select>
+                </SearchableSelect>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label" style={{ fontSize: 12 }}>Role</label>
-                  <select className="form-input" value={teacherForm.role} onChange={e => setTeacherForm({ ...teacherForm, role: e.target.value as "primary" | "assistant" })}>
+                  <SearchableSelect className="form-input" value={teacherForm.role} onChange={e => setTeacherForm({ ...teacherForm, role: e.target.value as "primary" | "assistant" })}>
                     <option value="primary">Primary (Guru Utama)</option>
                     <option value="assistant">Assistant (Asisten Guru)</option>
-                  </select>
+                  </SearchableSelect>
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label" style={{ fontSize: 12 }}>Efektif Mulai</label>

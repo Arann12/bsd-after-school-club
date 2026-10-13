@@ -57,31 +57,41 @@ export default function OrangTuaLaporanPage() {
         const studentId = st.id;
         const myCert = certs.find((c: any) => c.student_id === studentId);
         const myFinal = finalReports.find((f: any) => f.student_id === studentId);
-        const myAssessments = assessments.filter((a: any) => a.student_id === studentId);
-        const myAttendances = attendances.filter((at: any) => at.studentId === studentId);
+        const myAssessments = assessments.filter((a: any) => (a.student_id || a.studentId) === studentId);
+        const myAttendances = attendances.filter((at: any) => (at.student_id || at.studentId) === studentId);
 
         const primaryEnrollment = st.enrollments?.[0];
         const programName = primaryEnrollment?.classroom?.program_level?.program?.name || st.program?.name || "Program Reguler";
         const levelName = primaryEnrollment?.classroom?.program_level?.name || "Level 1";
 
-        const countHadir = myAttendances.filter((at: any) => at.status === "present" || at.status === "late").length;
-        const countIzin = myAttendances.filter((at: any) => at.status === "excused").length;
-        const countAlpha = myAttendances.filter((at: any) => at.status === "absent").length;
-        const totalSesiReal = myAttendances.length > 0 ? myAttendances.length : 12;
-        const hadirDisplay = myAttendances.length > 0 ? countHadir : 12;
-        const kehadiranScore = totalSesiReal > 0 ? Math.round((hadirDisplay / totalSesiReal) * 100) : 100;
+        const countHadir = myAttendances.filter((at: any) => {
+          const s = at.attendance_status || at.status;
+          return s === "present" || s === "late";
+        }).length;
+        const countIzin = myAttendances.filter((at: any) => {
+          const s = at.attendance_status || at.status;
+          return s === "excused";
+        }).length;
+        const countAlpha = myAttendances.filter((at: any) => {
+          const s = at.attendance_status || at.status;
+          return s === "absent";
+        }).length;
+        const totalSesiReal = myAttendances.length;
+        const hadirDisplay = countHadir;
+        const kehadiranScore = totalSesiReal > 0 ? Math.round((hadirDisplay / totalSesiReal) * 100) : 0;
 
         const avgScore = myAssessments.length > 0
           ? Math.round(myAssessments.reduce((acc: number, a: any) => acc + Number(a.score || 0), 0) / myAssessments.length)
-          : Number(myFinal?.final_score || 85);
+          : Number(myFinal?.final_score || 0);
 
-        let pred = "Baik";
+        let pred = "-";
         if (avgScore >= 90) pred = "Dengan Pujian (Cumlaude)";
         else if (avgScore >= 80) pred = "Sangat Baik";
         else if (avgScore >= 70) pred = "Baik";
-        else pred = "Cukup";
+        else if (avgScore > 0) pred = "Cukup";
+        else pred = "Belum Dinilai";
 
-        const isGrad = !!myCert || myFinal?.status === "passed" || myFinal?.status === "graduated" || avgScore >= 75;
+        const isGrad = !!myCert || myFinal?.status === "passed" || myFinal?.status === "graduated";
 
         return {
           id: studentId,
@@ -93,15 +103,15 @@ export default function OrangTuaLaporanPage() {
           izin: countIzin,
           alpha: countAlpha,
           nilai: {
-            sikap: Math.min(100, avgScore + 3),
-            kehadiran: Math.min(100, kehadiranScore),
+            sikap: avgScore > 0 ? Math.min(100, avgScore + 2) : 0,
+            kehadiran: kehadiranScore,
             assessment: avgScore,
-            praktik: Math.min(100, avgScore + 2),
+            praktik: avgScore > 0 ? Math.min(100, avgScore + 1) : 0,
             akhir: avgScore,
           },
           predikat: pred,
           isGraduated: isGrad,
-          catatan: myAssessments[0]?.notes || `${st.name || "Siswa"} menunjukkan perkembangan yang sangat baik dalam mengikuti setiap sesi dan evaluasi materi.`,
+          catatan: myAssessments[0]?.notes || myFinal?.notes || (avgScore > 0 ? `${st.name || "Siswa"} telah menyelesaikan evaluasi pembelajaran.` : "Belum ada evaluasi penilaian."),
           nomorSertifikat: myCert?.certificate_code,
           tglTerbit: myCert?.issued_date,
         };
@@ -131,15 +141,17 @@ export default function OrangTuaLaporanPage() {
           <p className="page-subtitle">Rincian evaluasi capaian, penilaian akhir, dan kelulusan program belajar anak.</p>
         </div>
         {currentReport?.isGraduated && (
-          <button className="btn btn-accent" onClick={() => setShowSertifikat(true)}>
-            Lihat Sertifikat
-          </button>
+          <div className="page-header-actions">
+            <button className="btn btn-accent" onClick={() => setShowSertifikat(true)}>
+              Lihat Sertifikat
+            </button>
+          </div>
         )}
       </div>
 
       {/* Switcher jika orang tua memiliki lebih dari 1 anak */}
       {reports.length > 1 && (
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {reports.map((r, idx) => (
             <button
               key={r.id}
@@ -264,6 +276,8 @@ export default function OrangTuaLaporanPage() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 12,
               }}
             >
               <div>
@@ -330,11 +344,11 @@ export default function OrangTuaLaporanPage() {
               <strong>{currentReport.program} ({currentReport.level})</strong> di BSD After School Club dengan predikat{" "}
               <strong>{currentReport.predikat}</strong>.
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 24, fontSize: 12, color: "var(--color-text-muted)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginTop: 24, fontSize: 12, color: "var(--color-text-muted)" }}>
               <span>No. Registrasi: {currentReport.nomorSertifikat || "BSD/CERT/OFFICIAL"}</span>
               <span>Tanggal Terbit: {currentReport.tglTerbit || new Date().toLocaleDateString("id-ID")}</span>
             </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 24 }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 24, flexWrap: "wrap" }}>
               <button className="btn btn-ghost" onClick={() => setShowSertifikat(false)}>
                 Tutup
               </button>

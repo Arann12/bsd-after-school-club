@@ -3,10 +3,12 @@
 import { AdminSidebar } from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import Breadcrumb from "@/components/ui/Breadcrumb";
+import AnnouncementPopupModal from "@/components/ui/AnnouncementPopupModal";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="app-shell">
+      <AnnouncementPopupModal />
       <AdminSidebar />
       <div className="main-area">
         <Header userRole="Staff Administrasi" />

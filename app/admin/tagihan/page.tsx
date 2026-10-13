@@ -10,6 +10,7 @@ import {
   confirmCashTransaction,
 } from "@/lib/api/finance";
 import { printReceipt } from "@/lib/utils/printReceipt";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 export interface TagihanItem {
   id: string;
@@ -303,7 +304,7 @@ export default function AdminTagihanPage() {
       </div>
 
       {/* Bar Filter & Pencarian */}
-      <div className="card">
+      <div className="card" style={{ overflow: "visible" }}>
         <div className="card-body" style={{ padding: "12px 20px" }}>
           <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
             <div style={{ position: "relative", flex: 1, minWidth: 220 }}>
@@ -318,14 +319,14 @@ export default function AdminTagihanPage() {
                 onChange={(e) => setCari(e.target.value)}
               />
             </div>
-            <select
+            <SearchableSelect
               className="select-control"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              style={{ padding: "9px 12px", fontSize: 13.5 }}
+              style={{ padding: "9px 12px", fontSize: 13.5, minWidth: 160 }}
             >
               {daftarStatus.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
+            </SearchableSelect>
             <span style={{ fontSize: 12.5, color: "var(--color-text-muted)", marginLeft: "auto" }}>
               {terfilter.length} tagihan ditemukan
             </span>
@@ -339,7 +340,7 @@ export default function AdminTagihanPage() {
       ) : (
         <div className="card" style={{ overflow: "hidden" }}>
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
+            <table style={{ width: "100%", minWidth: 700, borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--color-border)", background: "var(--color-bg)" }}>
                   {["No. Invoice", "Siswa", "Program", "Sesi Pertemuan", "Nominal Tagihan", "Metode", "Jatuh Tempo", "Status", "Aksi"].map((h) => (
@@ -563,12 +564,13 @@ export default function AdminTagihanPage() {
                 style={{
                   maxHeight: 180,
                   overflowY: "auto",
+                  overflowX: "auto",
                   border: "1px solid var(--color-border)",
                   borderRadius: 8,
                   background: "#ffffff",
                 }}
               >
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                <table style={{ width: "100%", minWidth: 460, borderCollapse: "collapse", fontSize: 12 }}>
                   <thead style={{ background: "#f8fafc", position: "sticky", top: 0, zIndex: 2, borderBottom: "1px solid var(--color-border-light)" }}>
                     <tr>
                       <th style={{ padding: "8px 10px", textAlign: "left", fontWeight: 700, color: "var(--color-text-muted)" }}>Siswa & Program</th>

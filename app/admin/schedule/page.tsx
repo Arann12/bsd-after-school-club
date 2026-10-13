@@ -9,6 +9,7 @@ import {
   type ClassSchedule, type Classroom
 } from "@/lib/api/academic";
 import { getTeachers, type Teacher } from "@/lib/api/teachers";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 const DAY_NAMES_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -175,7 +176,7 @@ export default function SchedulePage() {
   if (error) return <div style={{ padding: 24, color: "var(--color-danger)" }}>{error}</div>;
 
   return (
-    <div style={{ padding: "16px 20px", maxWidth: 1100, margin: "0 auto" }}>
+    <div style={{ maxWidth: 1100, margin: "0 auto", width: "100%" }}>
       <Toast toast={toast} />
 
       <div className="page-header" style={{ marginBottom: 24 }}>
@@ -189,61 +190,63 @@ export default function SchedulePage() {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-          <thead style={{ background: "#f8fafc", borderBottom: "1px solid var(--color-border-light)" }}>
-            <tr>
-              <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Hari & Jam</th>
-              <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Kelas</th>
-              <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Guru Utama</th>
-              <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Masa Berlaku</th>
-              <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {schedules.length === 0 ? (
-              <tr><td colSpan={5} style={{ textAlign: "center", padding: 24, color: "var(--color-text-muted)" }}>Tidak ada jadwal.</td></tr>
-            ) : (
-              schedules.map((s, i) => (
-                <tr key={s.id} style={{ borderBottom: i < schedules.length - 1 ? "1px solid var(--color-border-light)" : "none" }}>
-                  <td style={{ padding: "14px 16px" }}>
-                    <div style={{ fontWeight: 800, color: "var(--color-text-primary)", fontSize: 14 }}>{DAYS[s.dayOfWeek as keyof typeof DAYS] || s.dayOfWeek}</div>
-                    <div style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>{s.startTime.substring(0, 5)} - {s.endTime.substring(0, 5)}</div>
-                  </td>
-                  <td style={{ padding: "14px 16px", fontWeight: 600, color: "var(--color-text-primary)" }}>{s.classroom?.name}</td>
-                  <td style={{ padding: "14px 16px" }}>
-                    {(() => {
-                      const teacherName = s.teacher?.name || (s.teacher as any)?.user?.name || teachers.find(t => t.id === s.teacherId)?.name;
-                      return (
-                        <span
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 600,
-                            color: teacherName ? "#0369a1" : "#64748b",
-                            background: teacherName ? "#e0f2fe" : "#f1f5f9",
-                            padding: "2px 8px",
-                            borderRadius: 4,
-                          }}
-                        >
-                          {teacherName || "Tanpa Guru"}
-                        </span>
-                      );
-                    })()}
-                  </td>
-                  <td style={{ padding: "14px 16px", fontSize: 12, color: "var(--color-text-muted)" }}>
-                    Mulai: {s.effectiveFrom}
-                    {s.effectiveUntil && <div>S/D: {s.effectiveUntil}</div>}
-                  </td>
-                  <td style={{ padding: "14px 16px" }}>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button className="btn btn-ghost btn-sm" onClick={() => handleOpenModal(s)}>Edit</button>
-                      <button className="btn btn-ghost btn-sm" style={{ color: "var(--color-danger)" }} onClick={() => setScheduleToDelete(s)}>Hapus</button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", textAlign: "left" }}>
+            <thead style={{ background: "#f8fafc", borderBottom: "1px solid var(--color-border-light)" }}>
+              <tr>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Hari & Jam</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Kelas</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Guru Utama</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Masa Berlaku</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {schedules.length === 0 ? (
+                <tr><td colSpan={5} style={{ textAlign: "center", padding: 24, color: "var(--color-text-muted)" }}>Tidak ada jadwal.</td></tr>
+              ) : (
+                schedules.map((s, i) => (
+                  <tr key={s.id} style={{ borderBottom: i < schedules.length - 1 ? "1px solid var(--color-border-light)" : "none" }}>
+                    <td style={{ padding: "14px 16px" }}>
+                      <div style={{ fontWeight: 800, color: "var(--color-text-primary)", fontSize: 14 }}>{DAYS[s.dayOfWeek as keyof typeof DAYS] || s.dayOfWeek}</div>
+                      <div style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>{s.startTime.substring(0, 5)} - {s.endTime.substring(0, 5)}</div>
+                    </td>
+                    <td style={{ padding: "14px 16px", fontWeight: 600, color: "var(--color-text-primary)" }}>{s.classroom?.name}</td>
+                    <td style={{ padding: "14px 16px" }}>
+                      {(() => {
+                        const teacherName = s.teacher?.name || (s.teacher as any)?.user?.name || teachers.find(t => t.id === s.teacherId)?.name;
+                        return (
+                          <span
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: teacherName ? "#0369a1" : "#64748b",
+                              background: teacherName ? "#e0f2fe" : "#f1f5f9",
+                              padding: "2px 8px",
+                              borderRadius: 4,
+                            }}
+                          >
+                            {teacherName || "Tanpa Guru"}
+                          </span>
+                        );
+                      })()}
+                    </td>
+                    <td style={{ padding: "14px 16px", fontSize: 12, color: "var(--color-text-muted)" }}>
+                      Mulai: {s.effectiveFrom}
+                      {s.effectiveUntil && <div>S/D: {s.effectiveUntil}</div>}
+                    </td>
+                    <td style={{ padding: "14px 16px" }}>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => handleOpenModal(s)}>Edit</button>
+                        <button className="btn btn-ghost btn-sm" style={{ color: "var(--color-danger)" }} onClick={() => setScheduleToDelete(s)}>Hapus</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* MODAL FORM TAMBAH/EDIT JADWAL */}
@@ -251,21 +254,21 @@ export default function SchedulePage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Pilih Kelas *</label>
-            <select className="form-input" value={formData.classroom_id} onChange={e => setFormData({ ...formData, classroom_id: e.target.value })}>
+            <SearchableSelect className="form-input" value={formData.classroom_id} onChange={e => setFormData({ ...formData, classroom_id: e.target.value })}>
               <option value="">-- Pilih Kelas --</option>
               {classrooms.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            </SearchableSelect>
           </div>
 
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Pilih Guru *</label>
-            <select className="form-input" value={formData.teacher_id} onChange={e => setFormData({ ...formData, teacher_id: e.target.value })}>
+            <SearchableSelect className="form-input" value={formData.teacher_id} onChange={e => setFormData({ ...formData, teacher_id: e.target.value })}>
               <option value="">-- Pilih Guru --</option>
               {teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-            </select>
+            </SearchableSelect>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Jam Mulai *</label>
               <input type="time" className="form-input" value={formData.start_time} onChange={e => setFormData({ ...formData, start_time: e.target.value })} />
@@ -276,7 +279,7 @@ export default function SchedulePage() {
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Tanggal Efektif Mulai *</label>
               <input
@@ -313,7 +316,7 @@ export default function SchedulePage() {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+          <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
             <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setShowModal(false)} disabled={saving}>Batal</button>
             <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleSave} disabled={saving}>{saving ? "Menyimpan..." : "Simpan Jadwal"}</button>
           </div>
@@ -332,7 +335,7 @@ export default function SchedulePage() {
             <p style={{ fontSize: 13.5, color: "var(--color-text-secondary)", lineHeight: 1.5, margin: 0 }}>
               Yakin ingin menghapus jadwal untuk kelas <strong>{scheduleToDelete.classroom?.name}</strong> pada hari <strong>{DAYS[scheduleToDelete.dayOfWeek as keyof typeof DAYS] || scheduleToDelete.dayOfWeek}</strong> ({scheduleToDelete.startTime?.substring(0, 5)} - {scheduleToDelete.endTime?.substring(0, 5)})?
             </p>
-            <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
+            <div style={{ display: "flex", gap: 10, marginTop: 6, flexWrap: "wrap" }}>
               <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setScheduleToDelete(null)} disabled={deleting}>
                 Batal
               </button>

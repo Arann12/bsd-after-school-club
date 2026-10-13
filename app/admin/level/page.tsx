@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/ui/Modal";
 import { getPrograms, addProgramLevel, updateProgramLevel, deleteProgramLevel, Program, ProgramLevel } from "@/lib/api/academic";
 import { SkeletonCard } from "@/components/ui/Skeleton";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 export interface LevelItemDisplay {
   id: string;
@@ -274,7 +275,7 @@ export default function AdminLevelPage() {
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div>
               <label style={{ display: "block", fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Program Kursus</label>
-              <select
+              <SearchableSelect
                 className="select-control"
                 required
                 value={formData.programId}
@@ -287,7 +288,7 @@ export default function AdminLevelPage() {
                     {p.name}
                   </option>
                 ))}
-              </select>
+              </SearchableSelect>
             </div>
 
             <div>

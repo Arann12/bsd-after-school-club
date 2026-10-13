@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter, usePathname } from "next/navigation";
 import { getPaymentPlans } from "@/lib/api/finance";
 import { getClassSessions } from "@/lib/api/academic";
@@ -68,6 +69,88 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+  const [coords, setCoords] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    listMaxHeight: number;
+  }>({
+    top: 0,
+    left: 0,
+    width: 360,
+    listMaxHeight: 360,
+  });
+
+  const updatePosition = useCallback(() => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    // Tutup dropdown jika tombol ter-scroll keluar layar
+    if (rect.bottom < 0 || rect.top > vh) {
+      setOpen(false);
+      return;
+    }
+
+    // Lebar panel: desktop 360px, mobile beradaptasi (vw - 24px agar ada margin 12px kiri-kanan)
+    const panelWidth = Math.min(360, Math.max(280, vw - 24));
+    const effectiveWidth = Math.min(panelWidth, vw - 24);
+
+    // Default desktop: sejajarkan sisi kanan panel dengan sisi kanan tombol lonceng
+    let left = rect.right - effectiveWidth;
+
+    // Batasi sisi kanan agar tidak menabrak / terpotong viewport (minimal margin 12px)
+    if (left + effectiveWidth > vw - 12) {
+      left = vw - effectiveWidth - 12;
+    }
+
+    // Batasi sisi kiri agar tidak overflow ke kiri (minimal margin 12px)
+    if (left < 12) {
+      left = 12;
+    }
+
+    const top = rect.bottom + 8;
+    const availableHeight = vh - top - 16;
+    // Header panel ~48px, list harus muat dan scroll secara internal
+    const listMaxHeight = Math.max(140, Math.min(360, availableHeight - 54));
+
+    setCoords({
+      top,
+      left,
+      width: effectiveWidth,
+      listMaxHeight,
+    });
+  }, []);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    updatePosition();
+
+    const handleResize = () => updatePosition();
+    const handleScroll = () => updatePosition();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("scroll", handleScroll, true);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("scroll", handleScroll, true);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open, updatePosition]);
 
   const loadNotifications = useCallback(async (force = false) => {
     // Gunakan cache jika masih berlaku (< 30 detik)
@@ -286,6 +369,7 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
   return (
     <div style={{ position: "relative" }}>
       <button
+        ref={buttonRef}
         className="header-icon-btn"
         aria-label="Notifikasi"
         onClick={() => setOpen(!open)}
@@ -298,25 +382,34 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
         {unreadCount > 0 && <span className="badge-dot" />}
       </button>
 
-      {open && (
+      {mounted && open && createPortal(
         <>
-          <div style={{ position: "fixed", inset: 0, zIndex: 55 }} onClick={() => setOpen(false)} />
           <div
             style={{
-              position: "absolute",
-              top: "100%",
-              right: 0,
-              marginTop: 8,
+              position: "fixed",
+              inset: 0,
+              zIndex: 999990,
+            }}
+            onClick={() => setOpen(false)}
+          />
+          <div
+            ref={panelRef}
+            style={{
+              position: "fixed",
+              top: coords.top,
+              left: coords.left,
+              width: coords.width,
+              maxWidth: "calc(100vw - 24px)",
               background: "#ffffff",
               border: "1px solid var(--color-border)",
               borderRadius: "var(--radius-lg)",
-              boxShadow: "var(--shadow-lg)",
-              zIndex: 60,
-              width: 360,
-              maxWidth: "calc(100vw - 24px)",
+              boxShadow: "0 16px 36px -4px rgba(15, 23, 42, 0.18), 0 6px 14px -2px rgba(15, 23, 42, 0.10)",
+              zIndex: 999995,
               overflow: "hidden",
               animation: "fadeIn 0.15s ease-out",
+              boxSizing: "border-box",
             }}
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div
@@ -327,10 +420,11 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
                 justifyContent: "space-between",
                 alignItems: "center",
                 background: "#fafafa",
+                boxSizing: "border-box",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)", whiteSpace: "nowrap" }}>
                   Notifikasi
                 </span>
                 {unreadCount > 0 && (
@@ -342,6 +436,7 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
                       background: "var(--color-primary, #1a5c8a)",
                       borderRadius: 999,
                       padding: "1px 7px",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {unreadCount} Baru
@@ -361,6 +456,7 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
                     color: "var(--color-primary, #1a5c8a)",
                     cursor: "pointer",
                     borderRadius: 4,
+                    whiteSpace: "nowrap",
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
                   onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
@@ -371,7 +467,14 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
             </div>
 
             {/* List */}
-            <div style={{ maxHeight: 360, overflowY: "auto" }}>
+            <div
+              style={{
+                maxHeight: coords.listMaxHeight,
+                overflowY: "auto",
+                overscrollBehavior: "contain",
+                WebkitOverflowScrolling: "touch",
+              }}
+            >
               {loading ? (
                 <div style={{ padding: "28px 16px", textAlign: "center", color: "var(--color-text-muted)", fontSize: 12.5 }}>
                   Memeriksa notifikasi...
@@ -398,6 +501,7 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
                         background: isUnread ? "rgba(26, 92, 138, 0.04)" : "#ffffff",
                         transition: "background 0.15s ease",
                         cursor: "pointer",
+                        boxSizing: "border-box",
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.background = isUnread ? "rgba(26, 92, 138, 0.08)" : "#f8fafc";
@@ -435,6 +539,7 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
                               fontWeight: isUnread ? 700 : 600,
                               color: "var(--color-text-primary)",
                               lineHeight: 1.3,
+                              wordBreak: "break-word",
                             }}
                           >
                             {n.title}
@@ -444,6 +549,7 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
                               fontSize: 10.5,
                               color: "var(--color-text-muted)",
                               whiteSpace: "nowrap",
+                              flexShrink: 0,
                             }}
                           >
                             {formatRelativeTime(n.createdAt)}
@@ -455,6 +561,8 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
                             color: isUnread ? "var(--color-text-secondary, #475569)" : "var(--color-text-muted, #64748b)",
                             marginTop: 3,
                             lineHeight: 1.4,
+                            wordBreak: "break-word",
+                            overflowWrap: "break-word",
                           }}
                         >
                           {n.message}
@@ -466,7 +574,8 @@ export default function NotificationDropdown({ role }: { role?: NotificationRole
               )}
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );

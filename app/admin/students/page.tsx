@@ -4,6 +4,7 @@ import Modal from "@/components/ui/Modal";
 import { getStudents, createStudent, updateStudent, deleteStudent, Student } from "@/lib/api/students";
 import { getParents, Parent, attachStudentToParent } from "@/lib/api/parents";
 import { SkeletonTable } from "@/components/ui/Skeleton";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 export default function AdminSiswaPage() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -164,20 +165,22 @@ export default function AdminSiswaPage() {
           <h1 className="page-title">Kelola Siswa</h1>
           <p className="page-subtitle">Manajemen master data siswa BSD After School Club</p>
         </div>
-        <button className="btn btn-primary" onClick={() => handleOpenModal()}>+ Tambah Siswa</button>
+        <div className="page-header-actions">
+          <button className="btn btn-primary" onClick={() => handleOpenModal()}>+ Tambah Siswa</button>
+        </div>
       </div>
 
       <div className="card" style={{ overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+          <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", textAlign: "left" }}>
             <thead>
               <tr style={{ background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}>
-                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Kode</th>
-                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Nama Siswa</th>
-                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Orang Tua</th>
-                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Asal Sekolah</th>
-                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Status</th>
-                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Aksi</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Kode</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Nama Siswa</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Orang Tua</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Asal Sekolah</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Status</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -236,13 +239,13 @@ export default function AdminSiswaPage() {
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Status Siswa</label>
-              <select className="form-input" value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}>
+              <SearchableSelect className="form-input" value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}>
                 <option value="trial">Trial</option>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
                 <option value="graduated">Graduated</option>
                 <option value="on_leave">On Leave</option>
-              </select>
+              </SearchableSelect>
             </div>
           </div>
 
@@ -264,12 +267,12 @@ export default function AdminSiswaPage() {
 
           <div className="form-group" style={{ marginBottom: 0, padding: 12, background: "#f8fafc", borderRadius: 8, border: "1px dashed #cbd5e1" }}>
             <label className="form-label">{editingStudent ? "Kaitkan dengan Orang Tua Lain (Opsional)" : "Pilih Orang Tua / Wali (Opsional)"}</label>
-            <select className="form-input" value={formData.parent_id} onChange={e => setFormData({ ...formData, parent_id: e.target.value })}>
+            <SearchableSelect className="form-input" value={formData.parent_id} onChange={e => setFormData({ ...formData, parent_id: e.target.value })}>
               <option value="">-- Pilih Orang Tua --</option>
               {parents.map(p => (
                 <option key={p.id} value={p.id}>{p.name} ({p.phone})</option>
               ))}
-            </select>
+            </SearchableSelect>
             <p style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 6, marginBottom: 0 }}>Anda bisa menautkannya belakangan di halaman Orang Tua.</p>
           </div>
 

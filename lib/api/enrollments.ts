@@ -37,12 +37,12 @@ export async function createEnrollment(payload: CreateEnrollmentPayload | any): 
   return data;
 }
 
-export async function approveEnrollment(id: string, reviewedBy: string): Promise<Enrollment> {
-  const { data } = await axiosInstance.patch<ApiResponse<Enrollment>>(`/enrollments/${id}/approve`, { reviewed_by: reviewedBy });
+export async function approveEnrollment(id: string, reviewedBy?: string): Promise<any> {
+  const { data } = await axiosInstance.post(`/enrollments/${id}/approve`, { reviewed_by: reviewedBy });
   return data.data;
 }
 
-export async function rejectEnrollment(id: string, notes: string): Promise<Enrollment> {
-  const { data } = await axiosInstance.patch<ApiResponse<Enrollment>>(`/enrollments/${id}/reject`, { notes });
+export async function rejectEnrollment(id: string, notes?: string): Promise<any> {
+  const { data } = await axiosInstance.post(`/enrollments/${id}/reject`, { notes });
   return data.data;
 }

@@ -5,6 +5,7 @@ import Modal from "@/components/ui/Modal";
 import { getAssessments, createAssessment } from "@/lib/api/assessments";
 import { getStudents, Student } from "@/lib/api/students";
 import { SkeletonCard } from "@/components/ui/Skeleton";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 export interface ProgressItemDisplay {
   id: string;
@@ -97,15 +98,21 @@ export default function GuruProgressPage() {
     setSubmitting(true);
 
     try {
-      await createAssessment({
+      const payload: any = {
         student_id: st.id,
-        enrollment_id: primaryEnrollment?.id || st.id,
-        program_level_id: primaryEnrollment?.program_level_id || st.id,
         assessment_name: indikatorText || "Pencapaian Materi",
-        score: skor,
+        score: Number(skor),
         assessment_date: new Date().toISOString().split("T")[0],
         status: "final",
-      });
+      };
+      if (primaryEnrollment?.id) {
+        payload.enrollment_id = primaryEnrollment.id;
+      }
+      if (primaryEnrollment?.program_level_id) {
+        payload.program_level_id = primaryEnrollment.program_level_id;
+      }
+
+      await createAssessment(payload);
 
       setShowInputModal(false);
       setIndikatorText("");
@@ -129,9 +136,11 @@ export default function GuruProgressPage() {
           <h1 className="page-title">Progress & Penilaian Belajar Siswa</h1>
           <p className="page-subtitle">Pencatatan perkembangan belajar siswa per program & level.</p>
         </div>
-        <button className="btn btn-accent" onClick={() => setShowInputModal(true)}>
-          + Input Progress Belajar Siswa
-        </button>
+        <div className="page-header-actions">
+          <button className="btn btn-accent" onClick={() => setShowInputModal(true)}>
+            + Input Progress Belajar Siswa
+          </button>
+        </div>
       </div>
 
       {/* Notification Toast Inline */}
@@ -146,7 +155,7 @@ export default function GuruProgressPage() {
 
       {/* Rincian Progress Siswa */}
       {loading ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
           <SkeletonCard />
           <SkeletonCard />
         </div>
@@ -155,7 +164,7 @@ export default function GuruProgressPage() {
           Belum ada catatan progress pembelajaran yang diinput. Klik <strong>+ Input Progress Belajar Siswa</strong> untuk mencatat capaian.
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
           {progressList.map((p) => (
             <div key={p.id} className="card" style={{ padding: 22, display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
@@ -206,7 +215,7 @@ export default function GuruProgressPage() {
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div>
               <label style={{ display: "block", fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Pilih Siswa</label>
-              <select
+              <SearchableSelect
                 className="select-control"
                 required
                 value={selectedStudentId}
@@ -218,7 +227,7 @@ export default function GuruProgressPage() {
                     {s.name} ({s.program?.name || "Reguler"})
                   </option>
                 ))}
-              </select>
+              </SearchableSelect>
             </div>
 
             <div>

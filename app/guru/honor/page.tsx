@@ -5,6 +5,7 @@ import Modal from "@/components/ui/Modal";
 import { getClassSessions } from "@/lib/api/academic";
 import { getMyTeacherProfile } from "@/lib/api/teachers";
 import { SkeletonCard, SkeletonTable } from "@/components/ui/Skeleton";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 export interface TeachingSessionLog {
   id: string;
@@ -268,18 +269,18 @@ export default function GuruHonorJamPage() {
             </div>
 
             {/* Select Program */}
-            <select className="select-control" value={filterProgram} onChange={(e) => setFilterProgram(e.target.value)} style={{ fontSize: 12.5, padding: "6px 12px" }}>
+            <SearchableSelect className="select-control" value={filterProgram} onChange={(e) => setFilterProgram(e.target.value)} style={{ fontSize: 12.5, padding: "6px 12px", minWidth: 150 }}>
               <option value="Semua">Semua Program</option>
               {uniquePrograms.map((p) => (
                 <option key={p} value={p}>{p}</option>
               ))}
-            </select>
+            </SearchableSelect>
 
             {/* Select Periode */}
-            <select className="select-control" value={filterPeriode} onChange={(e) => setFilterPeriode(e.target.value)} style={{ fontSize: 12.5, padding: "6px 12px" }}>
+            <SearchableSelect className="select-control" value={filterPeriode} onChange={(e) => setFilterPeriode(e.target.value)} style={{ fontSize: 12.5, padding: "6px 12px", minWidth: 140 }}>
               <option value="Semua">Semua Periode</option>
               <option value="Bulan Ini">Bulan Ini</option>
-            </select>
+            </SearchableSelect>
           </div>
         </div>
 
@@ -290,11 +291,11 @@ export default function GuruHonorJamPage() {
               <SkeletonTable rows={4} />
             </div>
           ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
+            <table style={{ width: "100%", minWidth: 700, borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
               <thead>
                 <tr style={{ background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}>
                   {["ID Sesi Logbook", "Tanggal Sesi", "Jam Mengajar", "Durasi", "Kelas & Program", "Kehadiran Siswa", "Status Logbook", "Aksi"].map((h) => (
-                    <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
+                    <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>
                       {h}
                     </th>
                   ))}

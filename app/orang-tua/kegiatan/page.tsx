@@ -180,7 +180,7 @@ export default function OrangTuaKegiatanPage() {
                 style={{ padding: 22, borderLeft: `4px solid ${k.warna}`, cursor: "pointer" }}
                 onClick={() => setDipilih(k)}
               >
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
                   <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flex: 1 }}>
                     <div
                       style={{

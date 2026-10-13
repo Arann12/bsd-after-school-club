@@ -12,6 +12,7 @@ import {
 import { getTeachers, updateTeacher, Teacher } from "@/lib/api/teachers";
 import { getClassSessions } from "@/lib/api/academic";
 import { formatRupiah } from "@/lib/constants";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 // ─── Constants ────────────────────────────────────────────────
 // Tarif dihitung per SATUAN 30 MENIT mengajar.
@@ -386,12 +387,12 @@ export default function OwnerHonorPage() {
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
           </div>
-          <select className="select-control" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={{ fontSize: 13, padding: "7px 12px", minWidth: 140 }}>
+          <SearchableSelect className="select-control" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={{ fontSize: 13, padding: "7px 12px", minWidth: 140 }}>
             <option value="Semua">Semua Status</option>
             <option value="Belum Dibayar">Belum Dibayar</option>
             <option value="Sudah Dibayar">Sudah Dibayar</option>
             <option value="Sebagian">Sebagian</option>
-          </select>
+          </SearchableSelect>
           <span style={{ fontSize: 12.5, color: "var(--color-text-muted)", marginLeft: "auto", whiteSpace: "nowrap" }}>
             Menampilkan {filteredRows.length} dari {rows.length} guru
           </span>
@@ -401,19 +402,19 @@ export default function OwnerHonorPage() {
       {/* 1. TAMPILAN DESKTOP & TABLET: Tabel Presisi Berkolom Sejajar */}
       <div className="card honor-desktop-table" style={{ overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+          <table style={{ width: "100%", minWidth: 860, borderCollapse: "collapse", textAlign: "left" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid var(--color-border)", background: "var(--color-bg)" }}>
-                <th style={{ width: 48, padding: "12px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center" }}>No</th>
-                <th style={{ minWidth: 200, padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "left" }}>Guru</th>
-                <th style={{ width: 85, padding: "12px 12px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center" }}>Sesi</th>
-                <th style={{ width: 85, padding: "12px 12px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center" }}>Jam</th>
-                <th style={{ width: 110, padding: "12px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "right" }}>Tarif/30mnt</th>
-                <th style={{ width: 135, padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "right" }}>Honor Dasar</th>
-                <th style={{ width: 110, padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "right" }}>Bonus</th>
-                <th style={{ width: 140, padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "right" }}>Total Honor</th>
-                <th style={{ width: 120, padding: "12px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center" }}>Status</th>
-                <th style={{ width: 195, padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center" }}>Aksi</th>
+                <th style={{ width: 48, padding: "12px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center", whiteSpace: "nowrap" }}>No</th>
+                <th style={{ minWidth: 200, padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "left", whiteSpace: "nowrap" }}>Guru</th>
+                <th style={{ width: 85, padding: "12px 12px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center", whiteSpace: "nowrap" }}>Sesi</th>
+                <th style={{ width: 85, padding: "12px 12px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center", whiteSpace: "nowrap" }}>Jam</th>
+                <th style={{ width: 110, padding: "12px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "right", whiteSpace: "nowrap" }}>Tarif/30mnt</th>
+                <th style={{ width: 135, padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "right", whiteSpace: "nowrap" }}>Honor Dasar</th>
+                <th style={{ width: 110, padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "right", whiteSpace: "nowrap" }}>Bonus</th>
+                <th style={{ width: 140, padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "right", whiteSpace: "nowrap" }}>Total Honor</th>
+                <th style={{ width: 120, padding: "12px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center", whiteSpace: "nowrap" }}>Status</th>
+                <th style={{ width: 195, padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center", whiteSpace: "nowrap" }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -645,7 +646,7 @@ export default function OwnerHonorPage() {
             {[
               { label: "Sesi Mengajar Selesai",    value: `${detailRow.jumlahSesi} sesi`,               bold: false, highlight: false },
               { label: "Total Waktu Mengajar",      value: `${detailRow.jamMengajar} jam (${detailRow.jamMengajar * 2} unit × 30 mnt)`, bold: false, highlight: false },
-              { label: "Tarif per 30 Menit",        value: formatRupiah(tarifPerJam),                    bold: false, highlight: false },
+              { label: "Tarif per 30 Menit",        value: formatRupiah(detailRow.tarifPerGuru),         bold: false, highlight: false },
               { label: "Honor Dasar (otomatis)",    value: formatRupiah(detailRow.honorDihitung),         bold: false, highlight: true },
               { label: "Bonus Tambahan",            value: detailRow.bonusAmount > 0 ? `+${formatRupiah(detailRow.bonusAmount)}` : "Tidak ada", bold: false, highlight: false },
               { label: "Total Honor",               value: formatRupiah(detailRow.totalHonor),            bold: true,  highlight: false },

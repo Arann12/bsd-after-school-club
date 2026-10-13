@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/ui/Modal";
-import { 
+import {
   getClassSessions, getClassroomById, submitAttendanceAndLogbook,
   type ClassSession, type Classroom, type SubmitAttendancePayload
 } from "@/lib/api/academic";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 export default function AbsensiPage() {
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split("T")[0]);
@@ -131,20 +132,20 @@ export default function AbsensiPage() {
   };
 
   return (
-    <div style={{ padding: 24, maxWidth: 1000, margin: "0 auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+    <div style={{ maxWidth: 1000, margin: "0 auto", width: "100%" }}>
+      <div className="page-header" style={{ marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>Absensi & Logbook</h1>
-          <p style={{ color: "var(--color-text-secondary)", margin: "4px 0 0 0", fontSize: 14 }}>Isi kehadiran siswa dan catat jurnal kegiatan belajar.</p>
+          <h1 className="page-title">Absensi & Logbook</h1>
+          <p className="page-subtitle">Isi kehadiran siswa dan catat jurnal kegiatan belajar.</p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <label style={{ fontSize: 14, fontWeight: 600 }}>Tanggal Sesi:</label>
-          <input 
-            type="date" 
-            className="form-input" 
-            value={selectedDate} 
-            onChange={(e) => setSelectedDate(e.target.value)} 
-            style={{ width: 150 }}
+        <div className="page-header-actions" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <label style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text-secondary)" }}>Tanggal Sesi:</label>
+          <input
+            type="date"
+            className="form-input"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            style={{ width: "auto" }}
           />
         </div>
       </div>
@@ -161,7 +162,7 @@ export default function AbsensiPage() {
           </p>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
           {sessions.map(s => {
             const isCompleted = s.status === "completed";
             return (
@@ -220,12 +221,12 @@ export default function AbsensiPage() {
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {activeClassroom.students.map(student => (
-                  <div key={student.id} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 2fr", gap: 10, alignItems: "center", background: "#f8fafc", padding: "10px 14px", borderRadius: 8 }}>
+                  <div key={student.id} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, alignItems: "center", background: "#f8fafc", padding: "10px 14px", borderRadius: 8 }}>
                     <div style={{ fontWeight: 600, fontSize: 13 }}>{student.name}</div>
                     <div>
-                      <select 
-                        className="form-input" 
-                        style={{ padding: "4px 8px", fontSize: 12 }}
+                      <SearchableSelect
+                        className="form-input"
+                        style={{ padding: "4px 8px", fontSize: 12, minWidth: 130 }}
                         value={studentsAttendance[student.id]?.status || "present"}
                         onChange={e => handleAttendanceChange(student.id, "status", e.target.value)}
                       >
@@ -233,13 +234,13 @@ export default function AbsensiPage() {
                         <option value="absent">Absen (Tanpa Ket)</option>
                         <option value="late">Terlambat</option>
                         <option value="excused">Izin / Sakit</option>
-                      </select>
+                      </SearchableSelect>
                     </div>
                     <div>
-                      <input 
-                        type="text" 
-                        className="form-input" 
-                        placeholder="Catatan nilai/perilaku..." 
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="Catatan nilai/perilaku..."
                         style={{ padding: "4px 8px", fontSize: 12 }}
                         value={studentsAttendance[student.id]?.notes || ""}
                         onChange={e => handleAttendanceChange(student.id, "notes", e.target.value)}
@@ -254,8 +255,8 @@ export default function AbsensiPage() {
           {/* Bagian Logbook */}
           <div>
             <h4 style={{ margin: "0 0 12px 0", fontSize: 15, color: "var(--color-text-primary)", borderBottom: "1px solid var(--color-border-light)", paddingBottom: 8 }}>Logbook Guru (Jurnal)</h4>
-            
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 12 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label" style={{ fontSize: 12 }}>Jam Masuk Aktual</label>
                 <input type="datetime-local" className="form-input" value={logbookForm.check_in} onChange={e => setLogbookForm({...logbookForm, check_in: e.target.value})} />
@@ -281,7 +282,7 @@ export default function AbsensiPage() {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 10, marginTop: 10, position: "sticky", bottom: -20, background: "#fff", paddingTop: 10, borderTop: "1px solid var(--color-border-light)" }}>
+          <div style={{ display: "flex", gap: 10, marginTop: 10, position: "sticky", bottom: -20, background: "#fff", paddingTop: 10, borderTop: "1px solid var(--color-border-light)", flexWrap: "wrap" }}>
             <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setShowModal(false)} disabled={submitting}>Batal</button>
             <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleSubmit} disabled={submitting || !activeClassroom}>
               {submitting ? "Menyimpan Data..." : "Simpan Absensi & Logbook"}

@@ -8,6 +8,7 @@ import { getMyParentProfile } from "@/lib/api/parents";
 import { SkeletonTable } from "@/components/ui/Skeleton";
 import { printReceipt } from "@/lib/utils/printReceipt";
 import { formatRupiah } from "@/lib/constants";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 interface PanduanItem {
   title?: string;
@@ -805,30 +806,22 @@ export default function PembayaranPage() {
               <label htmlFor="student-selector" style={{ fontSize: 13, fontWeight: 600, color: "#475569", flexShrink: 0 }}>
                 Pilih Siswa:
               </label>
-              <div style={{ position: "relative", width: "100%", minWidth: 200 }}>
-                <select
+              <div style={{ width: "100%", minWidth: 200 }}>
+                <SearchableSelect
                   id="student-selector"
                   value={selectedStudentId}
                   onChange={(e) => handleSelectStudent(e.target.value)}
                   style={{
                     width: "100%",
-                    appearance: "none",
-                    WebkitAppearance: "none",
-                    MozAppearance: "none",
                     background: "#ffffff",
                     border: "1px solid #cbd5e1",
                     borderRadius: 10,
-                    padding: "9px 38px 9px 14px",
+                    padding: "9px 14px",
                     fontSize: 13.5,
                     fontWeight: 600,
                     color: "#1e293b",
-                    cursor: "pointer",
-                    outline: "none",
-                    transition: "all 0.15s ease",
                     boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
                   }}
-                  onFocus={(e) => (e.target.style.borderColor = "#0e7490")}
-                  onBlur={(e) => (e.target.style.borderColor = "#cbd5e1")}
                 >
                   {students.map((s) => {
                     const studentLabel = s.name || s.full_name || "Siswa";
@@ -838,23 +831,7 @@ export default function PembayaranPage() {
                       </option>
                     );
                   })}
-                </select>
-                <div
-                  style={{
-                    position: "absolute",
-                    right: 12,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    pointerEvents: "none",
-                    color: "#64748b",
-                    display: "flex",
-                    alignItems: "center",
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </div>
+                </SearchableSelect>
               </div>
             </div>
           )}
@@ -1009,7 +986,7 @@ export default function PembayaranPage() {
       </div>
 
       {/* ── 3. MIDDLE SECTION: 2 COLUMNS ─────────────────────────────────── */}
-      <div className="pembayaran-main-columns" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
+      <div className="pembayaran-main-columns" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
         {/* LEFT COLUMN: Detail Program & Progress Pertemuan */}
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {/* Card 1: Detail Program */}
@@ -1357,16 +1334,16 @@ export default function PembayaranPage() {
         </div>
 
         <div style={{ background: "#ffffff", borderRadius: 14, border: "1px solid #e2e8f0", boxShadow: "0 1px 3px rgba(0,0,0,0.04)", overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+          <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", textAlign: "left" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
-                <th style={{ padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>ID TRANSAKSI</th>
-                <th style={{ padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>TANGGAL</th>
-                <th style={{ padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>KETERANGAN</th>
-                <th style={{ padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>METODE</th>
-                <th style={{ padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>JUMLAH</th>
-                <th style={{ padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>STATUS</th>
-                <th style={{ padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}></th>
+                <th style={{ padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>ID TRANSAKSI</th>
+                <th style={{ padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>TANGGAL</th>
+                <th style={{ padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>KETERANGAN</th>
+                <th style={{ padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>METODE</th>
+                <th style={{ padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>JUMLAH</th>
+                <th style={{ padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>STATUS</th>
+                <th style={{ padding: "14px 20px", fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap" }}></th>
               </tr>
             </thead>
             <tbody>

@@ -35,7 +35,7 @@ export default function OwnerLaporanPage() {
         <p style={{ fontSize: 14, opacity: 0.85, margin: 0, lineHeight: 1.6, maxWidth: 560 }}>
           Akses seluruh laporan operasional, keuangan, dan kehadiran BSD After School Club dalam satu tempat. Pilih kategori laporan di bawah untuk melihat detail.
         </p>
-        <div style={{ display: "flex", gap: 32, marginTop: 20 }}>
+        <div style={{ display: "flex", gap: 24, flexWrap: "wrap", marginTop: 20 }}>
           {[
             { label: "Siswa Aktif", val: stats.activeStudents },
             { label: "Guru Aktif", val: stats.activeTeachers },

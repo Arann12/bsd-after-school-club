@@ -186,7 +186,7 @@ export default function OwnerPembayaranPage() {
           <div style={{ fontSize: 13, opacity: 0.85, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Total Pemasukan Sistem</div>
           <div style={{ fontSize: 32, fontWeight: 900, marginTop: 4 }}>{formatRupiah(summary.totalIncome)}</div>
         </div>
-        <div style={{ display: "flex", gap: 24 }}>
+        <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
           <div>
             <div style={{ fontSize: 12, opacity: 0.8 }}>Total Honor Guru</div>
             <div style={{ fontSize: 20, fontWeight: 800 }}>{formatRupiah(summary.honorPaid)}</div>

@@ -186,7 +186,7 @@ export default function GuruKelasListPage() {
            <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>Anda belum ditugaskan untuk mengajar di kelas manapun.</div>
          </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(380px,1fr))", gap: 18 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 18 }}>
           {datakelas.map(k => {
             const persen = k.totalPertemuan > 0 ? Math.round((k.pertemuan / k.totalPertemuan) * 100) : 0;
             return (
@@ -220,7 +220,7 @@ export default function GuruKelasListPage() {
                 </div>
 
                 {/* Info Bar */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderTop: "1px solid var(--color-border-light)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, padding: "12px 0", borderTop: "1px solid var(--color-border-light)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--color-text-secondary)", fontWeight: 600 }}>
                     <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
                     {k.siswa} Siswa
@@ -277,7 +277,7 @@ export default function GuruKelasListPage() {
             </div>
 
             {/* Tombol Aksi */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
               <button className="btn btn-ghost" onClick={() => setDipilih(null)}>Tutup</button>
               <Link href={`/guru/kelas/${dipilih?.id}`} className="btn btn-accent" style={{ textDecoration: "none", textAlign: "center", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                 <svg width={13} height={13} viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>

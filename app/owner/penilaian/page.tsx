@@ -172,9 +172,11 @@ export default function OwnerPenilaianSertifikatPage() {
           <h1 className="page-title">Penilaian & Generate Sertifikat</h1>
           <p className="page-subtitle">Input nilai kelulusan siswa dan generate sertifikat resmi BSD After School Club.</p>
         </div>
-        <Link href="/owner/sertifikat" className="btn btn-outline">
-          Lihat Daftar Sertifikat &rarr;
-        </Link>
+        <div className="page-header-actions">
+          <Link href="/owner/sertifikat" className="btn btn-outline">
+            Lihat Daftar Sertifikat &rarr;
+          </Link>
+        </div>
       </div>
 
       {/* Notification Toast */}
@@ -215,11 +217,11 @@ export default function OwnerPenilaianSertifikatPage() {
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
+            <table style={{ width: "100%", minWidth: 700, borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
               <thead>
                 <tr style={{ background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}>
                   {["Nama Siswa", "Program & Level", "Reading", "Writing", "Logic", "Rata-Rata", "Status Sertifikat", "Aksi"].map((h) => (
-                    <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
+                    <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>
                       {h}
                     </th>
                   ))}

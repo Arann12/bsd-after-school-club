@@ -130,7 +130,7 @@ export default function OwnerTarifPage() {
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {guruList.map(g => (
           <div key={g.id} className="card" style={{ padding: 22 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: editingId === g.id ? 18 : 0 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: editingId === g.id ? 18 : 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                 {/* Avatar */}
                 <div style={{ width: 46, height: 46, borderRadius: "50%", background: "linear-gradient(135deg, #1a5c8a, #2a7ab8)", color: "#fff", fontWeight: 900, fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -151,7 +151,7 @@ export default function OwnerTarifPage() {
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                 {savedId === g.id && (
                   <span style={{ background: "#d1fae5", color: "#059669", fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 999 }}>
                     Tarif Tersimpan!

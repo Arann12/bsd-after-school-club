@@ -7,38 +7,37 @@ import type { Invoice, Payment, CashVerification, HonorRecord } from "../types";
 import type { PaginatedResponse, ApiResponse } from "./types";
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  INVOICES (TAGIHAN)
+//  INVOICES (TAGIHAN — ALIAS COMPATIBILITY KE PAYMENT PLANS)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-/** GET /invoices */
+/** GET /invoices — Compatibility wrapper diarahkan ke /payment-plans */
 export async function getInvoices(
   params?: { page?: number; student_id?: string; status?: string; search?: string; per_page?: number }
-): Promise<PaginatedResponse<Invoice>> {
-  const { data } = await axiosInstance.get<PaginatedResponse<Invoice>>("/invoices", { params });
-  return data;
+): Promise<any> {
+  return getPaymentPlans(params);
 }
 
-/** GET /invoices/:id */
-export async function getInvoice(id: string): Promise<Invoice> {
-  const { data } = await axiosInstance.get<ApiResponse<Invoice>>(`/invoices/${id}`);
+/** GET /invoices/:id — Compatibility wrapper diarahkan ke /payment-plans/:id */
+export async function getInvoice(id: string): Promise<any> {
+  const { data } = await axiosInstance.get<ApiResponse<any>>(`/payment-plans/${id}`);
   return data.data;
 }
 
-/** POST /invoices */
-export async function createInvoice(payload: Omit<Invoice, "id" | "createdAt">): Promise<Invoice> {
-  const { data } = await axiosInstance.post<ApiResponse<Invoice>>("/invoices", payload);
+/** POST /invoices — diarahkan ke pembuatan payment plan */
+export async function createInvoice(payload: any): Promise<any> {
+  const { data } = await axiosInstance.post<ApiResponse<any>>("/payment-plans", payload);
   return data.data;
 }
 
-/** PATCH /invoices/:id — update status atau partial update */
-export async function updateInvoice(id: string, payload: Partial<Invoice>): Promise<Invoice> {
-  const { data } = await axiosInstance.patch<ApiResponse<Invoice>>(`/invoices/${id}`, payload);
+/** PATCH /invoices/:id — diarahkan ke update payment plan */
+export async function updateInvoice(id: string, payload: any): Promise<any> {
+  const { data } = await axiosInstance.patch<ApiResponse<any>>(`/payment-plans/${id}`, payload);
   return data.data;
 }
 
-/** DELETE /invoices/:id */
+/** DELETE /invoices/:id — diarahkan ke delete payment plan */
 export async function deleteInvoice(id: string): Promise<void> {
-  await axiosInstance.delete(`/invoices/${id}`);
+  await axiosInstance.delete(`/payment-plans/${id}`);
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

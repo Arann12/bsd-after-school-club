@@ -34,6 +34,7 @@ export default function Modal({ open, onClose, title, maxWidth = 520, children }
     >
       <div
         ref={panelRef}
+        className="modal-panel"
         style={{
           background: "#fff", borderRadius: "var(--radius-xl)",
           maxWidth, width: "100%", padding: 24,

@@ -140,9 +140,26 @@ export default function GuruKelasPage() {
     s => s.sessionDate?.substring(0, 10) === todayStr
   );
 
+  const now = new Date();
+  const dayNamesEn = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const dayNamesId = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+  const todayDayEn = dayNamesEn[now.getDay()];
+  const todayDayId = dayNamesId[now.getDay()];
+
+  const activeSchedules = classroom?.schedules || [];
+  const scheduledDaysEn = activeSchedules.map(s => s.dayOfWeek);
+  const hariSesuaiJadwal = activeSchedules.length === 0 || scheduledDaysEn.some(
+    day => day.toLowerCase() === todayDayEn.toLowerCase()
+  );
+
   const handleStartTodaySession = async () => {
     if (adaSesiHariIni) {
       showToast("Sesi untuk hari ini sudah dibuka.", "warning");
+      return;
+    }
+
+    if (!hariSesuaiJadwal) {
+      showToast(`Hari ini (${todayDayId}) bukan hari jadwal kelas ini. Jadwal reguler: ${scheduledDaysEn.join(", ")}.`, "danger");
       return;
     }
 
@@ -152,12 +169,14 @@ export default function GuruKelasPage() {
         ? Math.max(...availableSessions.map(s => s.sessionNumber || 0)) + 1
         : 1;
 
+      const scheduleForToday = activeSchedules.find(s => s.dayOfWeek.toLowerCase() === todayDayEn.toLowerCase());
+
       const newSession = await createClassSession({
         classroom_id: classId,
         session_number: nextSessionNum,
         session_date: todayStr,
-        start_time: "14:00",
-        end_time: "15:30",
+        start_time: scheduleForToday?.startTime?.substring(0, 5) || "14:00",
+        end_time: scheduleForToday?.endTime?.substring(0, 5) || "15:30",
         status: "scheduled"
       });
 
@@ -276,20 +295,37 @@ export default function GuruKelasPage() {
             )}
           </p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="page-header-actions">
           <span style={{ background: session?.status === "completed" ? "#d1fae5" : "#e0f2fe", color: session?.status === "completed" ? "#059669" : "#0369a1", fontSize: 12, fontWeight: 700, padding: "6px 16px", borderRadius: 999 }}>
             {session?.status === "completed" ? "Selesai" : (session ? "Berlangsung" : "Belum Ada Sesi")}
           </span>
           {!adaSesiHariIni && (
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              onClick={handleStartTodaySession}
-              disabled={sedangMembuatSesi}
-              style={{ fontWeight: 700 }}
-            >
-              {sedangMembuatSesi ? "Memproses..." : "+ Buka Sesi Hari Ini"}
-            </button>
+            hariSesuaiJadwal ? (
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={handleStartTodaySession}
+                disabled={sedangMembuatSesi}
+                style={{ fontWeight: 700 }}
+              >
+                {sedangMembuatSesi ? "Memproses..." : "+ Buka Sesi Hari Ini"}
+              </button>
+            ) : (
+              <span
+                style={{
+                  background: "#f1f5f9",
+                  color: "#64748b",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  padding: "6px 12px",
+                  borderRadius: 8,
+                  border: "1px dashed #cbd5e1"
+                }}
+                title={`Hari ini (${todayDayId}) bukan hari jadwal kelas. Jadwal reguler: ${scheduledDaysEn.join(", ")}`}
+              >
+                Bukan hari jadwal ({todayDayId})
+              </span>
+            )
           )}
         </div>
       </div>
@@ -378,7 +414,7 @@ export default function GuruKelasPage() {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
         {/* Panel Absensi */}
         <div className="card">
           <div className="card-header"><h2 className="card-title">Daftar Kehadiran</h2></div>
@@ -389,7 +425,7 @@ export default function GuruKelasPage() {
               dataSiswa.map((siswa, i) => {
                 const st = kehadiran[siswa.id];
                 return (
-                  <div key={siswa.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: i < dataSiswa.length - 1 ? "1px solid var(--color-border-light)" : "none" }}>
+                  <div key={siswa.id} style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12, padding: "12px 0", borderBottom: i < dataSiswa.length - 1 ? "1px solid var(--color-border-light)" : "none" }}>
                     {/* Avatar */}
                     <div style={{ width: 36, height: 36, borderRadius: "50%", background: st ? warnaStatus[st].bg : "var(--color-bg)", color: st ? warnaStatus[st].color : "var(--color-text-muted)", fontWeight: 800, fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: `2px solid ${st ? warnaStatus[st].color : "var(--color-border)"}`, transition: "all .2s ease" }}>
                       {siswa.name[0]?.toUpperCase()}
@@ -420,7 +456,7 @@ export default function GuruKelasPage() {
             )}
           </div>
           {/* Ringkasan */}
-          <div style={{ padding: "12px 20px", borderTop: "1px solid var(--color-border)", display: "flex", gap: 16 }}>
+          <div style={{ padding: "12px 20px", borderTop: "1px solid var(--color-border)", display: "flex", flexWrap: "wrap", gap: 14 }}>
             {(["present", "excused", "late", "absent"] as StatusKehadiran[]).map(s => (
               <div key={s} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5 }}>
                 <div style={{ width: 10, height: 10, borderRadius: "50%", background: warnaStatus[s].color }} />

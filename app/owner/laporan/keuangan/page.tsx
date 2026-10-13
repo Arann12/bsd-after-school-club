@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { getFinanceDashboard, getPayments } from "@/lib/api/finance";
 import { SkeletonCard, SkeletonTable } from "@/components/ui/Skeleton";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 export default function OwnerLaporanKeuanganPage() {
   const [loading, setLoading] = useState(true);
@@ -78,12 +79,12 @@ export default function OwnerLaporanKeuanganPage() {
           <div style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-secondary)" }}>
             Periode Laporan:
           </div>
-          <div style={{ display: "flex", gap: 10 }}>
-            <select
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <SearchableSelect
               className="select-control"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              style={{ padding: "6px 12px", fontSize: 13 }}
+              style={{ padding: "6px 12px", fontSize: 13, minWidth: 140 }}
             >
               {[
                 { m: 1, name: "Januari" },
@@ -103,17 +104,17 @@ export default function OwnerLaporanKeuanganPage() {
                   {item.name}
                 </option>
               ))}
-            </select>
+            </SearchableSelect>
 
-            <select
+            <SearchableSelect
               className="select-control"
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              style={{ padding: "6px 12px", fontSize: 13 }}
+              style={{ padding: "6px 12px", fontSize: 13, minWidth: 100 }}
             >
               <option value={2026}>2026</option>
               <option value={2025}>2025</option>
-            </select>
+            </SearchableSelect>
           </div>
         </div>
       </div>
@@ -173,11 +174,11 @@ export default function OwnerLaporanKeuanganPage() {
               Belum ada transaksi pembayaran pada periode ini.
             </div>
           ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
+            <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
               <thead>
                 <tr style={{ background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}>
                   {["ID Transaksi", "Waktu Pembayaran", "Nama Siswa", "Metode", "Nominal", "Status"].map((h) => (
-                    <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
+                    <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>
                       {h}
                     </th>
                   ))}

@@ -27,6 +27,7 @@ export interface BackendAnnouncement {
   poster_url?: string | null;
   status: "draft" | "published" | "archived" | string;
   published_at?: string | null;
+  expires_at?: string | null;
   created_at: string;
   updated_at?: string;
   created_by?: string;
@@ -36,7 +37,7 @@ export interface BackendAnnouncement {
 
 /** GET /announcements */
 export async function getAnnouncements(
-  params?: { page?: number; per_page?: number; status?: string; search?: string }
+  params?: { page?: number; per_page?: number; status?: string; search?: string; active_only?: boolean }
 ): Promise<any> {
   const { data } = await axiosInstance.get("/announcements", { params });
   return data;
@@ -55,6 +56,7 @@ export async function createAnnouncement(payload: {
   status?: "draft" | "published" | "archived";
   target_roles?: string[];
   poster?: File | null;
+  expires_at?: string | null;
 } | FormData): Promise<any> {
   let body: any = payload;
   let headers: Record<string, string> = {};
@@ -64,6 +66,7 @@ export async function createAnnouncement(payload: {
     formData.append("title", payload.title);
     formData.append("description", payload.description);
     if (payload.status) formData.append("status", payload.status);
+    if (payload.expires_at) formData.append("expires_at", payload.expires_at);
     if (payload.target_roles) {
       payload.target_roles.forEach((r, idx) => formData.append(`target_roles[${idx}]`, r));
     }

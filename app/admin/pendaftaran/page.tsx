@@ -7,6 +7,7 @@ import { SkeletonTable } from "@/components/ui/Skeleton";
 import { getStudents } from "@/lib/api/students";
 import { getEnrollments, createEnrollment } from "@/lib/api/enrollments";
 import { getClassrooms } from "@/lib/api/academic";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 interface EnrollmentItem {
   id: string;
@@ -324,17 +325,17 @@ export default function PendaftaranPage() {
                 onChange={(e) => setCari(e.target.value)}
               />
             </div>
-            <select
+            <SearchableSelect
               className="select-control"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              style={{ padding: "9px 12px", fontSize: 13.5 }}
+              style={{ padding: "9px 12px", fontSize: 13.5, minWidth: 160 }}
             >
               <option value="Semua">Semua Status</option>
               <option value="active">Aktif</option>
               <option value="completed">Selesai</option>
               <option value="inactive">Nonaktif</option>
-            </select>
+            </SearchableSelect>
             <span style={{ fontSize: 12.5, color: "var(--color-text-muted)", marginLeft: "auto" }}>
               {terfilter.length} data ditemukan
             </span>
@@ -348,7 +349,7 @@ export default function PendaftaranPage() {
       ) : (
         <div className="card" style={{ overflow: "hidden" }}>
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
+            <table style={{ width: "100%", minWidth: 700, borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--color-border)", background: "var(--color-bg)" }}>
                   {["Kode Enrollment", "Nama Siswa", "Program & Kelas", "Mulai Belajar", "Paket Pertemuan", "Skema Bayar", "Status", "Aksi"].map((h) => (
@@ -429,23 +430,7 @@ export default function PendaftaranPage() {
           {/* Pilih Siswa dengan Pencarian */}
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Pilih Siswa</label>
-            <input 
-              type="text" 
-              className="form-input" 
-              placeholder="Ketik untuk mencari nama atau NIS siswa..." 
-              style={{ marginBottom: 8, fontSize: 13 }}
-              onChange={(e) => {
-                const q = e.target.value.toLowerCase();
-                const sel = document.getElementById("student-select") as HTMLSelectElement;
-                if (sel) {
-                  Array.from(sel.options).forEach(opt => {
-                    const match = opt.text.toLowerCase().includes(q);
-                    opt.style.display = match ? "block" : "none";
-                  });
-                }
-              }}
-            />
-            <select
+            <SearchableSelect
               id="student-select"
               className="select-control"
               style={{ width: "100%" }}
@@ -478,13 +463,13 @@ export default function PendaftaranPage() {
                   </option>
                 );
               })}
-            </select>
+            </SearchableSelect>
           </div>
 
           {/* Pilih Kelas */}
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Pilih Kelas & Program</label>
-            <select
+            <SearchableSelect
               className="select-control"
               style={{ width: "100%" }}
               value={selectedClassroomId}
@@ -498,7 +483,7 @@ export default function PendaftaranPage() {
                   </option>
                 );
               })}
-            </select>
+            </SearchableSelect>
             {kelasDipilih && (
               <div style={{ fontSize: 11.5, color: "var(--color-text-muted)", marginTop: 4 }}>
                 Kelas: <strong>{kelasDipilih.name}</strong> (Kapasitas: {kelasDipilih.capacity || 20})
@@ -529,15 +514,18 @@ export default function PendaftaranPage() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Paket Pertemuan</label>
-              <select
+              <SearchableSelect
                 className="select-control"
                 style={{ width: "100%" }}
                 value={totalSessions}
                 onChange={(e) => handleSessionsChange(Number(e.target.value))}
               >
-                <option value={8}>8 Pertemuan (45 menit/sesi)</option>
-                <option value={12}>12 Pertemuan (30 menit/sesi)</option>
-              </select>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
+                  <option key={n} value={n}>
+                    {n} Pertemuan
+                  </option>
+                ))}
+              </SearchableSelect>
             </div>
 
             <div className="form-group" style={{ marginBottom: 0 }}>
@@ -555,7 +543,7 @@ export default function PendaftaranPage() {
           {/* Skema Pembayaran */}
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>Skema Pembayaran</label>
-            <select
+            <SearchableSelect
               className="select-control"
               style={{ width: "100%" }}
               value={paymentScheme}
@@ -563,7 +551,7 @@ export default function PendaftaranPage() {
             >
               <option value="package">Lunas di Muka (1 Tagihan Total Paket)</option>
               <option value="per_session">Bayar per Pertemuan (Tagihan per Sesi)</option>
-            </select>
+            </SearchableSelect>
           </div>
 
           {/* Total Nominal Tagihan */}

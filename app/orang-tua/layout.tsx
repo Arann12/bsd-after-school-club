@@ -5,6 +5,7 @@ import { OrangTuaSidebar } from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import { getLocalUser } from "@/lib/api/auth";
+import AnnouncementPopupModal from "@/components/ui/AnnouncementPopupModal";
 
 export default function OrangTuaLayout({ children }: { children: React.ReactNode }) {
   const [userName, setUserName] = useState("Orang Tua");
@@ -16,6 +17,7 @@ export default function OrangTuaLayout({ children }: { children: React.ReactNode
 
   return (
     <div className="app-shell">
+      <AnnouncementPopupModal />
       <OrangTuaSidebar />
       <div className="main-area">
         <Header

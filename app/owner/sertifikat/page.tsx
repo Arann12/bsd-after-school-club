@@ -166,7 +166,7 @@ export default function SertifikatPage() {
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
+            <table style={{ width: "100%", minWidth: 700, borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
               <thead>
                 <tr style={{ background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}>
                   {["No. Sertifikat", "Nama Siswa", "Program & Level", "Tanggal Lulus", "Nilai & Predikat", "Status", "Cetak & Pratinjau"].map((h) => (
@@ -252,7 +252,7 @@ export default function SertifikatPage() {
             }}
           >
             {/* Certificate Content */}
-            <div style={{ padding: "48px 56px", position: "relative", minHeight: 460 }}>
+            <div style={{ padding: "clamp(24px, 6vw, 48px) clamp(20px, 6vw, 56px)", position: "relative", minHeight: 460 }}>
               {/* Corner Decorations */}
               <div style={{ position: "absolute", top: 0, left: 0, width: 100, height: 100, background: "linear-gradient(135deg, #1e3a8a 0%, #1e3a8a 50%, transparent 50%)", borderTopLeftRadius: 12 }} />
               <div style={{ position: "absolute", top: 0, right: 0, width: 90, height: 90, background: "linear-gradient(-135deg, #ea580c 0%, #ea580c 50%, transparent 50%)", borderTopRightRadius: 12 }} />
@@ -261,12 +261,12 @@ export default function SertifikatPage() {
 
               {/* Main Content */}
               <div style={{ textAlign: "left", position: "relative", zIndex: 1 }}>
-                <h1 style={{ fontSize: 38, fontFamily: "Georgia, serif", fontWeight: 700, color: "#1e3a8a", letterSpacing: "0.08em", marginBottom: 20 }}>
+                <h1 style={{ fontSize: "clamp(24px, 5vw, 38px)", fontFamily: "Georgia, serif", fontWeight: 700, color: "#1e3a8a", letterSpacing: "0.08em", marginBottom: 20 }}>
                   SERTIFIKAT KELULUSAN
                 </h1>
 
                 <p style={{ fontSize: 13.5, color: "#334155", marginBottom: 4 }}>Diberikan Kepada :</p>
-                <h2 style={{ fontSize: 28, fontFamily: "Georgia, serif", fontWeight: 700, color: "#0f172a", marginBottom: 16, paddingBottom: 10, borderBottom: "2px solid #1e293b" }}>
+                <h2 style={{ fontSize: "clamp(20px, 4vw, 28px)", fontFamily: "Georgia, serif", fontWeight: 700, color: "#0f172a", marginBottom: 16, paddingBottom: 10, borderBottom: "2px solid #1e293b" }}>
                   {selectedCert.namaSiswa}
                 </h2>
 
@@ -274,7 +274,7 @@ export default function SertifikatPage() {
                   Telah berhasil menyelesaikan program pembelajaran <strong>{getProgramFullName(selectedCert.program, selectedCert.level)}</strong> di BSD After School Club {predikatDesc[selectedCert.predikat] || `dengan nilai akhir ${selectedCert.nilaiAkhir}.`}
                 </p>
 
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 32, paddingTop: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16, marginTop: 32, paddingTop: 16 }}>
                   <div>
                     <div style={{ fontSize: 11.5, color: "#64748b" }}>Nomor Registrasi:</div>
                     <div style={{ fontSize: 13, fontFamily: "monospace", fontWeight: 700, color: "#1e3a8a" }}>{selectedCert.nomorSertifikat}</div>
@@ -293,7 +293,7 @@ export default function SertifikatPage() {
             </div>
 
             {/* Modal Actions */}
-            <div style={{ padding: "14px 24px", background: "#f8fafc", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ padding: "14px 24px", background: "#f8fafc", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
               <span style={{ fontSize: 12, color: "#64748b" }}>Dokumen resmi terverifikasi sistem BSD After School Club</span>
               <div style={{ display: "flex", gap: 10 }}>
                 <button className="btn btn-ghost" onClick={() => setSelectedCert(null)}>

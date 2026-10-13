@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/ui/Modal";
 import { getTeachers, createTeacher, updateTeacher, deleteTeacher, Teacher } from "@/lib/api/teachers";
 import { SkeletonTable } from "@/components/ui/Skeleton";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 export default function AdminGuruPage() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -147,20 +148,22 @@ export default function AdminGuruPage() {
           <h1 className="page-title">Kelola Guru / Staff</h1>
           <p className="page-subtitle">Manajemen master data akun guru BSD After School Club</p>
         </div>
-        <button className="btn btn-primary" onClick={() => handleOpenModal()}>+ Tambah Guru</button>
+        <div className="page-header-actions">
+          <button className="btn btn-primary" onClick={() => handleOpenModal()}>+ Tambah Guru</button>
+        </div>
       </div>
 
       <div className="card" style={{ overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+          <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", textAlign: "left" }}>
             <thead>
               <tr style={{ background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}>
-                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Kode</th>
-                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Nama</th>
-                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Kontak</th>
-                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Informasi Bank</th>
-                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Status</th>
-                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Aksi</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Kode</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Nama</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Kontak</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Informasi Bank</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Status</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -258,14 +261,14 @@ export default function AdminGuruPage() {
           {editingTeacher && (
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Status Keaktifan Akun</label>
-              <select
+              <SearchableSelect
                 className="form-input"
                 value={formData.is_active ? "1" : "0"}
                 onChange={e => setFormData({ ...formData, is_active: e.target.value === "1" })}
               >
                 <option value="1">Aktif</option>
                 <option value="0">Nonaktif</option>
-              </select>
+              </SearchableSelect>
             </div>
           )}
 

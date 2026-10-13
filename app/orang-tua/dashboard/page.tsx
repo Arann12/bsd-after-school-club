@@ -191,7 +191,7 @@ export default function OrangTuaDashboardPage() {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {children.map((child, idx) => (
-              <div key={child.id} style={{ padding: "16px 20px", background: "var(--color-bg)", borderRadius: 12, border: "1px solid var(--color-border)", display: "flex", gap: 16, alignItems: "center" }}>
+              <div key={child.id} style={{ padding: "16px 20px", background: "var(--color-bg)", borderRadius: 12, border: "1px solid var(--color-border)", display: "flex", flexWrap: "wrap", gap: 16, alignItems: "center" }}>
                 <div style={{ width: 48, height: 48, borderRadius: "50%", background: idx === 0 ? "var(--color-primary)" : "#7c3aed", color: "#fff", fontWeight: 800, fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   {child.name.charAt(0).toUpperCase()}
                 </div>

@@ -231,7 +231,7 @@ export default function OrangTuaProgressPage() {
 
       {/* Child Banner */}
       {selectedChild && (
-        <div className="card" style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: 16, background: "linear-gradient(135deg, #1e3a8a, #2563eb)", color: "#fff" }}>
+        <div className="card" style={{ padding: "16px 20px", display: "flex", alignItems: "center", flexWrap: "wrap", gap: 16, background: "linear-gradient(135deg, #1e3a8a, #2563eb)", color: "#fff" }}>
           <div style={{ width: 46, height: 46, borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 18 }}>
             {selectedChild.name.charAt(0).toUpperCase()}
           </div>
@@ -281,7 +281,7 @@ export default function OrangTuaProgressPage() {
           </div>
 
           {/* Per-Class Cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
             {progressData.map(prog => (
               <div key={prog.enrollmentId} className="card" style={{ padding: 22, display: "flex", flexDirection: "column", gap: 16 }}>
 
@@ -326,7 +326,7 @@ export default function OrangTuaProgressPage() {
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                       {prog.assessments.slice(0, 3).map(a => (
-                        <div key={a.id} style={{ background: "var(--color-bg)", borderRadius: 10, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div key={a.id} style={{ background: "var(--color-bg)", borderRadius: 10, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
                           <div>
                             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)" }}>
                               {a.assessment_type}

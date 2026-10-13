@@ -230,7 +230,9 @@ export default function OrangTuaJadwalPage() {
           <h1 className="page-title">Jadwal Kelas Anak</h1>
           <p className="page-subtitle">Jadwal sesi kelas yang diikuti anak Anda berdasarkan pendaftaran.</p>
         </div>
-        <button className="btn btn-outline" onClick={() => selectedChild && loadSessions(selectedChild)}>Segarkan</button>
+        <div className="page-header-actions">
+          <button className="btn btn-outline" onClick={() => selectedChild && loadSessions(selectedChild)}>Segarkan</button>
+        </div>
       </div>
 
       {/* Child Selector */}
@@ -290,7 +292,7 @@ export default function OrangTuaJadwalPage() {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {hariIni.map(s => (
-                  <div key={s.id} style={{ background: "rgba(255,255,255,0.15)", borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", gap: 16, backdropFilter: "blur(4px)", border: "1px solid rgba(255,255,255,0.15)" }}>
+                  <div key={s.id} style={{ background: "rgba(255,255,255,0.15)", borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", flexWrap: "wrap", gap: 16, backdropFilter: "blur(4px)", border: "1px solid rgba(255,255,255,0.15)" }}>
                     <div style={{ minWidth: 72, textAlign: "center" }}>
                       <div style={{ fontSize: 18, fontWeight: 900 }}>{s.startTime}</div>
                       <div style={{ fontSize: 11, opacity: 0.8 }}>{s.endTime}</div>
@@ -341,7 +343,7 @@ export default function OrangTuaJadwalPage() {
               {filtered.map(s => {
                 const ss = statusStyle(s.status);
                 return (
-                  <div key={s.id} className="sesi-card card" style={{ padding: "18px 22px", display: "flex", alignItems: "center", gap: 16, borderLeft: `4px solid ${ss.border}` }}>
+                  <div key={s.id} className="sesi-card card" style={{ padding: "18px 22px", display: "flex", alignItems: "center", flexWrap: "wrap", gap: 16, borderLeft: `4px solid ${ss.border}` }}>
                     {/* Time */}
                     <div style={{ minWidth: 76, textAlign: "center", background: `${ss.bg}`, borderRadius: 10, padding: "8px 6px", flexShrink: 0 }}>
                       <div style={{ fontSize: 17, fontWeight: 900, color: ss.color, lineHeight: 1.1 }}>{s.startTime}</div>

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import NotificationDropdown from "@/components/ui/NotificationDropdown";
-import { getLocalUser, getLocalToken, getMe, logout, setAuthCookies } from "@/lib/api/auth";
+import { getLocalUser, getLocalToken, getMe, logout, setAuthCookies, clearAuthCookies } from "@/lib/api/auth";
 
 interface HeaderProps {
   userName?: string;
@@ -109,6 +109,22 @@ export default function Header({
     document.querySelector(".sidebar")?.classList.remove("open");
   }, [pathname]);
 
+  // Close menus on outside click
+  useEffect(() => {
+    if (!userMenuOpen && !dropdownOpen) return;
+    const handleOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (userMenuOpen && !target.closest("#header-user-container")) {
+        setUserMenuOpen(false);
+      }
+      if (dropdownOpen && !target.closest("#child-selector-container")) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [userMenuOpen, dropdownOpen]);
+
   // Compute initials
   const computeInitial = () => {
     if (propUserInitial) return propUserInitial;
@@ -157,6 +173,7 @@ export default function Header({
       if (typeof window !== "undefined") {
         localStorage.removeItem("auth_token");
         localStorage.removeItem("auth_user");
+        clearAuthCookies();
         window.location.href = "/";
       }
     }
@@ -184,7 +201,7 @@ export default function Header({
             {greetingText}
           </span>
           {showChildSelector && (
-            <div style={{ position: "relative" }}>
+            <div id="child-selector-container" style={{ position: "relative" }}>
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 style={{
@@ -256,6 +273,7 @@ export default function Header({
                     boxShadow: "var(--shadow-md)",
                     zIndex: 50,
                     minWidth: 180,
+                    maxWidth: "calc(100vw - 24px)",
                     overflow: "hidden",
                   }}
                 >
@@ -328,7 +346,7 @@ export default function Header({
         )}
 
         {/* User Info / Profile Button */}
-        <div style={{ position: "relative" }}>
+        <div id="header-user-container" style={{ position: "relative" }}>
           <button
             onClick={() => setUserMenuOpen(!userMenuOpen)}
             className="header-user"
@@ -402,6 +420,7 @@ export default function Header({
                 boxShadow: "var(--shadow-lg)",
                 zIndex: 60,
                 width: 220,
+                maxWidth: "calc(100vw - 24px)",
                 overflow: "hidden",
                 animation: "fadeIn 0.15s ease-out",
               }}

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/ui/Modal";
 import { getInventory, createInventoryItem, updateInventoryItem, deleteInventoryItem } from "@/lib/api/operational";
 import { SkeletonTable } from "@/components/ui/Skeleton";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 export interface ItemInventaris {
   id: string;
@@ -160,9 +161,11 @@ export default function AdminInventarisPage() {
           <h1 className="page-title">Inventaris & Barang</h1>
           <p className="page-subtitle">Pencatatan, detail barang, dan pengelolaan perlengkapan modul & fasilitas kelas.</p>
         </div>
-        <button className="btn btn-accent" onClick={handleOpenAdd}>
-          + Tambah Barang
-        </button>
+        <div className="page-header-actions">
+          <button className="btn btn-accent" onClick={handleOpenAdd}>
+            + Tambah Barang
+          </button>
+        </div>
       </div>
 
       {/* Bar Pencarian */}
@@ -190,11 +193,11 @@ export default function AdminInventarisPage() {
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+            <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", textAlign: "left" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--color-border)", background: "var(--color-bg)" }}>
                   {["Kode Barang", "Nama Barang", "Kategori", "Jumlah", "Kondisi", "Lokasi Storage", "Aksi"].map((h) => (
-                    <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
+                    <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>
                       {h}
                     </th>
                   ))}
@@ -340,7 +343,7 @@ export default function AdminInventarisPage() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div>
                 <label style={{ display: "block", fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Kategori</label>
-                <select
+                <SearchableSelect
                   className="select-control"
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -351,7 +354,7 @@ export default function AdminInventarisPage() {
                   <option value="ATK">ATK</option>
                   <option value="Fasilitas Kelas">Fasilitas Kelas</option>
                   <option value="Elektronik">Elektronik</option>
-                </select>
+                </SearchableSelect>
               </div>
 
               <div>
@@ -383,7 +386,7 @@ export default function AdminInventarisPage() {
 
               <div>
                 <label style={{ display: "block", fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Kondisi</label>
-                <select
+                <SearchableSelect
                   className="select-control"
                   value={formData.condition}
                   onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
@@ -392,7 +395,7 @@ export default function AdminInventarisPage() {
                   <option value="Baik">Baik</option>
                   <option value="Perlu Perbaikan">Perlu Perbaikan</option>
                   <option value="Rusak">Rusak</option>
-                </select>
+                </SearchableSelect>
               </div>
             </div>
 

@@ -4,6 +4,7 @@ import Modal from "@/components/ui/Modal";
 import { getParents, createParent, updateParent, deleteParent, Parent, attachStudentToParent, detachStudentFromParent } from "@/lib/api/parents";
 import { getStudents, Student } from "@/lib/api/students";
 import { SkeletonTable } from "@/components/ui/Skeleton";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 export default function AdminOrangTuaPage() {
   const [parents, setParents] = useState<Parent[]>([]);
@@ -204,20 +205,22 @@ export default function AdminOrangTuaPage() {
           <h1 className="page-title">Kelola Orang Tua / Wali</h1>
           <p className="page-subtitle">Manajemen master data akun orang tua BSD After School Club</p>
         </div>
-        <button className="btn btn-primary" onClick={() => handleOpenModal()}>+ Tambah Orang Tua</button>
+        <div className="page-header-actions">
+          <button className="btn btn-primary" onClick={() => handleOpenModal()}>+ Tambah Orang Tua</button>
+        </div>
       </div>
 
       <div className="card" style={{ overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+          <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", textAlign: "left" }}>
             <thead>
               <tr style={{ background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}>
-                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Kode</th>
-                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Nama</th>
-                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Kontak</th>
-                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Anak Terkait</th>
-                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Status Akun</th>
-                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>Aksi</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Kode</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Nama</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Kontak</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Anak Terkait</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Status Akun</th>
+                <th style={{ padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -313,25 +316,25 @@ export default function AdminOrangTuaPage() {
           {editingParent && (
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Status Keaktifan Akun</label>
-              <select
+              <SearchableSelect
                 className="form-input"
                 value={formData.is_active ? "1" : "0"}
                 onChange={e => setFormData({ ...formData, is_active: e.target.value === "1" })}
               >
                 <option value="1">Aktif</option>
                 <option value="0">Nonaktif</option>
-              </select>
+              </SearchableSelect>
             </div>
           )}
 
           <div className="form-group" style={{ marginBottom: 0, padding: 12, background: "#f8fafc", borderRadius: 8, border: "1px dashed #cbd5e1" }}>
             <label className="form-label">{editingParent ? "Kaitkan dengan Anak Tambahan (Opsional)" : "Pilih Anak / Siswa (Opsional)"}</label>
-            <select className="form-input" value={formData.student_id} onChange={e => setFormData({ ...formData, student_id: e.target.value })}>
+            <SearchableSelect className="form-input" value={formData.student_id} onChange={e => setFormData({ ...formData, student_id: e.target.value })}>
               <option value="">-- Pilih Siswa --</option>
               {allStudents.map(s => (
                 <option key={s.id} value={s.id}>{s.name} ({s.studentCode})</option>
               ))}
-            </select>
+            </SearchableSelect>
             <p style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 6, marginBottom: 0 }}>Anda bisa menautkannya belakangan lewat menu Detail Orang Tua.</p>
           </div>
 
@@ -388,12 +391,12 @@ export default function AdminOrangTuaPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Pilih Siswa</label>
-              <select className="form-input" value={attachForm.student_id} onChange={e => setAttachForm({ ...attachForm, student_id: e.target.value })}>
+              <SearchableSelect className="form-input" value={attachForm.student_id} onChange={e => setAttachForm({ ...attachForm, student_id: e.target.value })}>
                 <option value="">-- Pilih Siswa --</option>
                 {allStudents.map(s => (
                   <option key={s.id} value={s.id}>{s.name} ({s.studentCode})</option>
                 ))}
-              </select>
+              </SearchableSelect>
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Hubungan</label>

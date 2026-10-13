@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Modal from "@/components/ui/Modal";
 import { getUsers, createUser, updateUser, deleteUser, UserItem } from "@/lib/api/users";
 import { SkeletonCard, SkeletonTable } from "@/components/ui/Skeleton";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
 export default function OwnerKelolaAkunAdminPage() {
   const [listAdmin, setListAdmin] = useState<UserItem[]>([]);
@@ -154,15 +155,17 @@ export default function OwnerKelolaAkunAdminPage() {
             Buat, lihat, dan kelola akun staf administrasi yang memiliki akses ke panel operasional.
           </p>
         </div>
-        <button
-          className="btn btn-accent"
-          onClick={() => {
-            setErrorMessage("");
-            setShowTambahModal(true);
-          }}
-        >
-          + Tambah Admin Baru
-        </button>
+        <div className="page-header-actions">
+          <button
+            className="btn btn-accent"
+            onClick={() => {
+              setErrorMessage("");
+              setShowTambahModal(true);
+            }}
+          >
+            + Tambah Admin Baru
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -220,7 +223,7 @@ export default function OwnerKelolaAkunAdminPage() {
           <SkeletonTable rows={4} />
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+            <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", textAlign: "left" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--color-border)", background: "var(--color-bg)" }}>
                   {["Kode", "Nama Admin", "Email / No. WA", "Status", "Terdaftar", "Aksi"].map((h) => (
@@ -526,14 +529,14 @@ export default function OwnerKelolaAkunAdminPage() {
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Status Akun</label>
-                <select
+                <SearchableSelect
                   className="form-input"
                   value={editTarget.is_active ? "1" : "0"}
                   onChange={(e) => setEditTarget({ ...editTarget, is_active: e.target.value === "1" })}
                 >
                   <option value="1">Aktif</option>
                   <option value="0">Nonaktif</option>
-                </select>
+                </SearchableSelect>
               </div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginTop: 8 }}>

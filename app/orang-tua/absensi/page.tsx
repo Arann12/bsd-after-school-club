@@ -238,7 +238,7 @@ export default function OrangTuaAbsensiPage() {
               </div>
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
               {classGroups.map(g => (
                 <div key={g.classroomId} className="card cls-card" onClick={() => setSelectedClass(g)}
                   style={{ padding: 22, display: "flex", flexDirection: "column", gap: 14 }}>
@@ -307,49 +307,51 @@ export default function OrangTuaAbsensiPage() {
 
           {/* Calendar */}
           <div className="card" style={{ padding: 20, overflowX: "auto" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, textAlign: "center", marginBottom: 10 }}>
-              {["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"].map(h => (
-                <div key={h} style={{ fontSize: 11, fontWeight: 800, color: "var(--color-text-muted)", textTransform: "uppercase", padding: 4 }}>{h}</div>
-              ))}
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 }}>
-              {/* Empty offset cells */}
-              {Array.from({ length: firstDay }).map((_, i) => (
-                <div key={`empty-${i}`} className="cal-day" style={{ opacity: 0, pointerEvents: "none" }} />
-              ))}
-              {Array.from({ length: daysInMonth }).map((_, i) => {
-                const dayNum = i + 1;
-                const dateStr = `${calYear}-${String(calMonthIdx + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
-                const rec = recordsByDate[dateStr];
-                const sc = rec ? statusColor(rec.status) : null;
-                return (
-                  <div key={dateStr} className="cal-day"
-                    onClick={() => rec && setSelectedRecord(rec)}
-                    style={{
-                      cursor: rec ? "pointer" : "default",
-                      borderColor: rec ? sc!.color : "var(--color-border-light)",
-                      background: rec ? `${sc!.bg}` : "#fff",
-                    }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: "var(--color-text-primary)", display: "flex", justifyContent: "space-between" }}>
-                      <span>{dayNum}</span>
-                      {rec && (
-                        <span style={{ fontSize: 9, fontWeight: 800, padding: "1px 5px", borderRadius: 999, background: sc!.color, color: "#fff" }}>
-                          {rec.statusLabel}
-                        </span>
-                      )}
-                    </div>
-                    {rec && (
-                      <div style={{ marginTop: 5 }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: "#1e293b", lineHeight: 1.2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                          {rec.material !== "-" ? rec.material : rec.classroomName}
-                        </div>
-                        <div style={{ fontSize: 10, color: "var(--color-primary)", fontWeight: 700, marginTop: 3 }}>Buka →</div>
+            <div style={{ minWidth: 540 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, textAlign: "center", marginBottom: 10 }}>
+                {["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"].map(h => (
+                  <div key={h} style={{ fontSize: 11, fontWeight: 800, color: "var(--color-text-muted)", textTransform: "uppercase", padding: 4 }}>{h}</div>
+                ))}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 }}>
+                {/* Empty offset cells */}
+                {Array.from({ length: firstDay }).map((_, i) => (
+                  <div key={`empty-${i}`} className="cal-day" style={{ opacity: 0, pointerEvents: "none" }} />
+                ))}
+                {Array.from({ length: daysInMonth }).map((_, i) => {
+                  const dayNum = i + 1;
+                  const dateStr = `${calYear}-${String(calMonthIdx + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
+                  const rec = recordsByDate[dateStr];
+                  const sc = rec ? statusColor(rec.status) : null;
+                  return (
+                    <div key={dateStr} className="cal-day"
+                      onClick={() => rec && setSelectedRecord(rec)}
+                      style={{
+                        cursor: rec ? "pointer" : "default",
+                        borderColor: rec ? sc!.color : "var(--color-border-light)",
+                        background: rec ? `${sc!.bg}` : "#fff",
+                      }}>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: "var(--color-text-primary)", display: "flex", justifyContent: "space-between" }}>
+                        <span>{dayNum}</span>
+                        {rec && (
+                          <span style={{ fontSize: 9, fontWeight: 800, padding: "1px 5px", borderRadius: 999, background: sc!.color, color: "#fff" }}>
+                            {rec.statusLabel}
+                          </span>
+                        )}
                       </div>
-                    )}
-                    {!rec && <div style={{ fontSize: 10, color: "#e2e8f0", marginTop: 10, fontStyle: "italic" }}>–</div>}
-                  </div>
-                );
-              })}
+                      {rec && (
+                        <div style={{ marginTop: 5 }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: "#1e293b", lineHeight: 1.2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                            {rec.material !== "-" ? rec.material : rec.classroomName}
+                          </div>
+                          <div style={{ fontSize: 10, color: "var(--color-primary)", fontWeight: 700, marginTop: 3 }}>Buka →</div>
+                        </div>
+                      )}
+                      {!rec && <div style={{ fontSize: 10, color: "#e2e8f0", marginTop: 10, fontStyle: "italic" }}>–</div>}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -378,44 +380,46 @@ export default function OrangTuaAbsensiPage() {
             {selectedClass.records.length === 0 ? (
               <div style={{ padding: "32px 24px", textAlign: "center", color: "var(--color-text-muted)", fontSize: 13 }}>Belum ada data absensi</div>
             ) : (
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
-                <thead>
-                  <tr style={{ background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}>
-                    {["Sesi", "Tanggal", "Jam", "Status", "Materi", "Catatan Guru", ""].map(h => (
-                      <th key={h} style={{ padding: "10px 14px", fontSize: 11, color: "var(--color-text-muted)", textTransform: "uppercase" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedClass.records.map((r, idx) => {
-                    const sc = statusColor(r.status);
-                    return (
-                      <tr key={r.id} style={{ borderBottom: idx < selectedClass.records.length - 1 ? "1px solid var(--color-border-light)" : "none" }}>
-                        <td style={{ padding: "12px 14px", fontWeight: 700, color: "var(--color-text-muted)" }}>#{r.sessionNumber}</td>
-                        <td style={{ padding: "12px 14px", fontWeight: 700, whiteSpace: "nowrap" }}>{r.sessionDateDisplay}</td>
-                        <td style={{ padding: "12px 14px", color: "var(--color-text-secondary)", whiteSpace: "nowrap" }}>{r.startTime}–{r.endTime}</td>
-                        <td style={{ padding: "12px 14px" }}>
-                          <span style={{ background: sc.bg, color: sc.color, fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 999 }}>
-                            {r.statusLabel}
-                          </span>
-                        </td>
-                        <td style={{ padding: "12px 14px", fontWeight: 600, color: "var(--color-text-primary)", maxWidth: 200 }}>
-                          {r.material !== "-" ? r.material : <span style={{ color: "var(--color-text-muted)", fontStyle: "italic" }}>Tidak ada materi</span>}
-                        </td>
-                        <td style={{ padding: "12px 14px", color: "var(--color-text-secondary)", lineHeight: 1.5, maxWidth: 220 }}>
-                          {r.teacherNotes || <span style={{ color: "var(--color-text-muted)", fontStyle: "italic" }}>–</span>}
-                        </td>
-                        <td style={{ padding: "12px 14px" }}>
-                          <button onClick={() => setSelectedRecord(r)}
-                            style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, background: "#f0f9ff", border: "1px solid #bae6fd", color: "#0284c7", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-                            Detail
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", minWidth: 640, borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}>
+                      {["Sesi", "Tanggal", "Jam", "Status", "Materi", "Catatan Guru", ""].map(h => (
+                        <th key={h} style={{ padding: "10px 14px", fontSize: 11, color: "var(--color-text-muted)", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedClass.records.map((r, idx) => {
+                      const sc = statusColor(r.status);
+                      return (
+                        <tr key={r.id} style={{ borderBottom: idx < selectedClass.records.length - 1 ? "1px solid var(--color-border-light)" : "none" }}>
+                          <td style={{ padding: "12px 14px", fontWeight: 700, color: "var(--color-text-muted)" }}>#{r.sessionNumber}</td>
+                          <td style={{ padding: "12px 14px", fontWeight: 700, whiteSpace: "nowrap" }}>{r.sessionDateDisplay}</td>
+                          <td style={{ padding: "12px 14px", color: "var(--color-text-secondary)", whiteSpace: "nowrap" }}>{r.startTime}–{r.endTime}</td>
+                          <td style={{ padding: "12px 14px" }}>
+                            <span style={{ background: sc.bg, color: sc.color, fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 999 }}>
+                              {r.statusLabel}
+                            </span>
+                          </td>
+                          <td style={{ padding: "12px 14px", fontWeight: 600, color: "var(--color-text-primary)", maxWidth: 200 }}>
+                            {r.material !== "-" ? r.material : <span style={{ color: "var(--color-text-muted)", fontStyle: "italic" }}>Tidak ada materi</span>}
+                          </td>
+                          <td style={{ padding: "12px 14px", color: "var(--color-text-secondary)", lineHeight: 1.5, maxWidth: 220 }}>
+                            {r.teacherNotes || <span style={{ color: "var(--color-text-muted)", fontStyle: "italic" }}>–</span>}
+                          </td>
+                          <td style={{ padding: "12px 14px" }}>
+                            <button onClick={() => setSelectedRecord(r)}
+                              style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, background: "#f0f9ff", border: "1px solid #bae6fd", color: "#0284c7", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                              Detail
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Logo from "@/components/ui/Logo";
+import { logout, clearAuthCookies } from "@/lib/api/auth";
 
 /* ------------------------------------------------------------------ */
 /* Icon Components (inline SVG, zero dependency)                       */
@@ -267,6 +268,7 @@ export const adminNav: NavSection[] = [
     items: [
       { label: "Tagihan & Kasir", href: "/admin/tagihan", icon: "Invoice" },
       { label: "Pembayaran", href: "/admin/pembayaran", icon: "CreditCard" },
+      { label: "Laporan", href: "/admin/laporan", icon: "BarChart2" },
     ],
   },
   {
@@ -402,6 +404,55 @@ function SidebarBase({
           </div>
         ))}
       </nav>
+
+      {/* Sidebar Footer with Profil & Logout */}
+      <div style={{ padding: "12px 14px", borderTop: "1px solid var(--color-border-light)", display: "flex", flexDirection: "column", gap: 4, marginTop: "auto" }}>
+        <Link
+          href={
+            pathname.startsWith("/admin") ? "/admin/profil" :
+            pathname.startsWith("/guru") ? "/guru/profil" :
+            pathname.startsWith("/orang-tua") ? "/orang-tua/profil" : "/owner/profil"
+          }
+          className={`sidebar-nav-item${pathname.endsWith("/profil") ? " active" : ""}`}
+          onClick={() => document.querySelector(".sidebar")?.classList.remove("open")}
+        >
+          <Icons.User />
+          <span>Lihat Profil</span>
+        </Link>
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              await logout();
+            } catch {
+              // ignore
+            } finally {
+              if (typeof window !== "undefined") {
+                localStorage.removeItem("auth_token");
+                localStorage.removeItem("auth_user");
+                clearAuthCookies();
+                window.location.href = "/";
+              }
+            }
+          }}
+          className="sidebar-nav-item"
+          style={{
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            border: "none",
+            background: "transparent",
+            cursor: "pointer",
+            textAlign: "left",
+            color: "var(--color-danger, #dc2626)",
+            font: "inherit",
+          }}
+        >
+          <Icons.LogOut />
+          <span>Keluar</span>
+        </button>
+      </div>
     </aside>
   );
 }
