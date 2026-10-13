@@ -9,18 +9,21 @@ import {
   updatePayroll,
   Payroll,
 } from "@/lib/api/payrolls";
-import { getTeachers, Teacher } from "@/lib/api/teachers";
+import { getTeachers, updateTeacher, Teacher } from "@/lib/api/teachers";
 import { getClassSessions } from "@/lib/api/academic";
 import { formatRupiah } from "@/lib/constants";
 
 // ─── Constants ────────────────────────────────────────────────
-const TARIF_PER_JAM = 75_000;
+// Tarif dihitung per SATUAN 30 MENIT mengajar.
+// Contoh: 1 sesi 30 mnt = 1 unit × Rp 37.500; 1 sesi 60 mnt = 2 unit × Rp 37.500
+const TARIF_PER_30_MENIT = 37_500;
 
 // ─── Types ────────────────────────────────────────────────────
 interface TeacherHonorRow {
   teacher: Teacher;
-  jamMengajar: number;
+  jamMengajar: number;    // total jam (desimal, kelipatan 0.5)
   jumlahSesi: number;
+  tarifPerGuru: number;   // tarif per 30 mnt KHUSUS guru ini
   honorDihitung: number;
   bonusAmount: number;
   totalHonor: number;
@@ -48,13 +51,18 @@ function statusBadgeStyle(s: string) {
   return STATUS_STYLE[s] ?? STATUS_STYLE["Belum Dibayar"];
 }
 
-// ─── Helper: compute teaching hours ──────────────────────────
+// ─── Helper: hitung durasi dalam satuan 30 menit ─────────────
+// Mengembalikan angka JAM (desimal, kelipatan 0.5)
+// 30 mnt → 0.5 jam | 60 mnt → 1.0 jam | 90 mnt → 1.5 jam
 function durasiJam(startTime?: string, endTime?: string): number {
-  if (!startTime || !endTime) return 2;
+  if (!startTime || !endTime) return 0.5; // default: 1 sesi = 30 menit
   const [sh, sm] = startTime.split(":").map(Number);
   const [eh, em] = endTime.split(":").map(Number);
   const diffMin = (eh * 60 + em) - (sh * 60 + sm);
-  return diffMin > 0 ? Math.max(1, Math.round(diffMin / 60)) : 2;
+  if (diffMin <= 0) return 0.5;
+  // Bulatkan ke kelipatan 30 menit terdekat, minimum 1 unit (0.5 jam)
+  const units = Math.max(1, Math.round(diffMin / 30));
+  return units * 0.5;
 }
 
 // ─── Period helper ────────────────────────────────────────────
@@ -85,7 +93,14 @@ export default function OwnerHonorPage() {
 
   const [filterStatus, setFilterStatus] = useState("Semua");
   const [cari, setCari]                 = useState("");
-  const [tarifPerJam, setTarifPerJam]   = useState(TARIF_PER_JAM);
+  // Tarif default global (dipakai jika guru belum punya tarif sendiri)
+  const [tarifDefault, setTarifDefault] = useState(TARIF_PER_30_MENIT);
+
+  // State untuk modal atur tarif per guru
+  const [showTarifModal, setShowTarifModal] = useState(false);
+  const [tarifTarget, setTarifTarget]       = useState<TeacherHonorRow | null>(null);
+  const [tarifInput, setTarifInput]         = useState(TARIF_PER_30_MENIT);
+  const [savingTarif, setSavingTarif]       = useState(false);
 
   const [toast, setToast] = useState<string | null>(null);
   const showToast = (msg: string) => {
@@ -113,9 +128,20 @@ export default function OwnerHonorPage() {
             (s.status === "completed" || s.teacherLogbook != null)
         );
 
-        const jamMengajar   = guruSessions.reduce((acc, s) => acc + durasiJam(s.startTime, s.endTime), 0);
-        const jumlahSesi    = guruSessions.length;
-        const honorDihitung = jamMengajar * tarifPerJam;
+        const jamMengajar = guruSessions.reduce((acc, s) => acc + durasiJam(s.startTime, s.endTime), 0);
+        const jumlahSesi  = guruSessions.length;
+
+        // ── Tarif per guru ──────────────────────────────────────
+        // Gunakan hourlyRate guru jika ada (dari backend hourly_rates),
+        // jika tidak ada gunakan tarif default global.
+        // hourlyRate dari backend adalah per JAM → konversi ke per 30 mnt (÷2)
+        const tarifPerGuru = teacher.hourlyRate > 0
+          ? teacher.hourlyRate / 2   // per jam → per 30 mnt
+          : tarifDefault;
+
+        // unit = jamMengajar × 2 (karena jamMengajar sudah dalam kelipatan 0.5 jam)
+        const totalUnit     = jamMengajar * 2;
+        const honorDihitung = totalUnit * tarifPerGuru;
 
         const guruPayrolls  = payrolls.filter((p) => p.teacherId === teacher.id);
         const latestPayroll = guruPayrolls.length > 0
@@ -126,7 +152,7 @@ export default function OwnerHonorPage() {
         const totalHonor  = honorDihitung + bonusAmount;
         const status      = normalizeStatus(latestPayroll?.status ?? "pending");
 
-        return { teacher, jamMengajar, jumlahSesi, honorDihitung, bonusAmount, totalHonor, payroll: latestPayroll, status };
+        return { teacher, jamMengajar, jumlahSesi, tarifPerGuru, honorDihitung, bonusAmount, totalHonor, payroll: latestPayroll, status };
       });
 
       setRows(mapped);
@@ -136,7 +162,7 @@ export default function OwnerHonorPage() {
     } finally {
       setLoading(false);
     }
-  }, [tarifPerJam]);
+  }, [tarifDefault]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
@@ -203,6 +229,26 @@ export default function OwnerHonorPage() {
     setBonusCatatan("");
   };
 
+  // Simpan tarif per guru ke backend (PUT /teachers/{id})
+  const handleSaveTarif = async () => {
+    if (!tarifTarget) return;
+    setSavingTarif(true);
+    try {
+      // Backend menyimpan hourly_rate dalam PER JAM → konversi dari per 30 mnt × 2
+      const hourlyRatePerJam = tarifInput * 2;
+      await updateTeacher(tarifTarget.teacher.id, {
+        hourly_rate: hourlyRatePerJam,
+      });
+      showToast(`Tarif ${tarifTarget.teacher.name} berhasil disimpan: ${formatRupiah(tarifInput)} / 30 mnt.`);
+      setShowTarifModal(false);
+      fetchAll(); // reload agar kalkulasi honor ikut update
+    } catch {
+      showToast("Gagal menyimpan tarif. Coba lagi.");
+    } finally {
+      setSavingTarif(false);
+    }
+  };
+
   if (loading) return <SkeletonTable rows={6} cols={8} />;
 
   return (
@@ -242,8 +288,8 @@ export default function OwnerHonorPage() {
         <div>
           <h1 className="page-title">Honor Guru dan Staff</h1>
           <p className="page-subtitle">
-            Kalkulasi otomatis dari sesi mengajar selesai — Periode {period.label}.
-            Tarif aktif: {formatRupiah(tarifPerJam)} / jam.
+            Kalkulasi otomatis berdasarkan sesi selesai — Periode {period.label}.
+            Tarif dihitung per 30 menit mengajar (bisa diatur per guru).
           </p>
         </div>
         <div className="page-header-actions" style={{ flexWrap: "wrap", gap: 8 }}>
@@ -276,12 +322,12 @@ export default function OwnerHonorPage() {
         </div>
       )}
 
-      {/* Tarif Adjuster */}
+      {/* Tarif Adjuster — Default Global + Keterangan Per Guru */}
       <div className="card" style={{ padding: "14px 20px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-secondary)" }}>
-              Tarif Honor per Jam Mengajar:
+              Tarif Default (jika guru belum diatur):
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-muted)" }}>Rp</span>
@@ -289,16 +335,21 @@ export default function OwnerHonorPage() {
                 type="number"
                 className="form-input"
                 style={{ width: 130, fontSize: 13, padding: "6px 10px" }}
-                value={tarifPerJam}
-                step={5000}
-                min={10000}
-                onChange={(e) => setTarifPerJam(Number(e.target.value))}
+                value={tarifDefault}
+                step={5_000}
+                min={5_000}
+                onChange={(e) => setTarifDefault(Number(e.target.value))}
               />
-              <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>/ jam</span>
+              <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>/ 30 mnt</span>
             </div>
           </div>
-          <div style={{ fontSize: 12, fontWeight: 600, background: "#eff6ff", color: "#1d4ed8", padding: "4px 12px", borderRadius: 999, border: "1px solid #bfdbfe", whiteSpace: "nowrap" }}>
-            Honor = Jam Selesai x Tarif per Jam
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ fontSize: 12, fontWeight: 600, background: "#f0fdf4", color: "#15803d", padding: "4px 12px", borderRadius: 999, border: "1px solid #bbf7d0", whiteSpace: "nowrap" }}>
+              Tarif per guru diatur via tombol Tarif di tabel
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 600, background: "#eff6ff", color: "#1d4ed8", padding: "4px 12px", borderRadius: 999, border: "1px solid #bfdbfe", whiteSpace: "nowrap" }}>
+              Honor = (Durasi ÷ 30 mnt) × Tarif per Guru
+            </div>
           </div>
         </div>
       </div>
@@ -309,7 +360,7 @@ export default function OwnerHonorPage() {
           { label: "Total Honor Bulan Ini",  value: formatRupiah(totalHonorAll),  warna: "#1d4ed8" },
           { label: "Sudah Dicairkan",         value: formatRupiah(totalSudahCair), warna: "#059669" },
           { label: "Belum Dicairkan",         value: formatRupiah(totalBelumCair), warna: "#b45309" },
-          { label: "Total Jam Mengajar",      value: `${totalJam} Jam`,            warna: "#7c3aed" },
+          { label: "Total Jam Mengajar",      value: `${totalJam} Jam`,             warna: "#7c3aed" },
           { label: "Jumlah Guru Terdaftar",   value: `${rows.length} Guru`,        warna: "#0369a1" },
         ].map((k) => (
           <div key={k.label} className="stat-card" style={{ gap: 6, padding: "14px 16px" }}>
@@ -357,11 +408,12 @@ export default function OwnerHonorPage() {
                 <th style={{ minWidth: 200, padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "left" }}>Guru</th>
                 <th style={{ width: 85, padding: "12px 12px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center" }}>Sesi</th>
                 <th style={{ width: 85, padding: "12px 12px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center" }}>Jam</th>
+                <th style={{ width: 110, padding: "12px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "right" }}>Tarif/30mnt</th>
                 <th style={{ width: 135, padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "right" }}>Honor Dasar</th>
                 <th style={{ width: 110, padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "right" }}>Bonus</th>
                 <th style={{ width: 140, padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "right" }}>Total Honor</th>
                 <th style={{ width: 120, padding: "12px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center" }}>Status</th>
-                <th style={{ width: 165, padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center" }}>Aksi</th>
+                <th style={{ width: 195, padding: "12px 16px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center" }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -404,9 +456,17 @@ export default function OwnerHonorPage() {
                       <td style={{ padding: "14px 12px", fontSize: 13.5, fontWeight: 800, color: "var(--color-text-primary)", textAlign: "center", whiteSpace: "nowrap" }}>
                         {row.jamMengajar} jam
                       </td>
+                      <td style={{ padding: "14px 12px", textAlign: "right", whiteSpace: "nowrap" }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: row.teacher.hourlyRate > 0 ? "#15803d" : "#94a3b8" }}>
+                          {formatRupiah(row.tarifPerGuru)}
+                        </div>
+                        <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>
+                          {row.teacher.hourlyRate > 0 ? "Tarif khusus" : "Default"}
+                        </div>
+                      </td>
                       <td style={{ padding: "14px 16px", textAlign: "right" }}>
                         <div style={{ fontSize: 13.5, fontWeight: 700, color: "#1a202c", whiteSpace: "nowrap" }}>{formatRupiah(row.honorDihitung)}</div>
-                        <div style={{ fontSize: 10.5, color: "#94a3b8", marginTop: 1, whiteSpace: "nowrap" }}>{row.jamMengajar} jam x {formatRupiah(tarifPerJam)}</div>
+                        <div style={{ fontSize: 10.5, color: "#94a3b8", marginTop: 1, whiteSpace: "nowrap" }}>{row.jamMengajar * 2} unit × {formatRupiah(row.tarifPerGuru)}</div>
                       </td>
                       <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: row.bonusAmount > 0 ? 800 : 400, color: row.bonusAmount > 0 ? "#059669" : "var(--color-text-muted)", textAlign: "right", whiteSpace: "nowrap" }}>
                         {row.bonusAmount > 0 ? `+${formatRupiah(row.bonusAmount)}` : "—"}
@@ -421,6 +481,13 @@ export default function OwnerHonorPage() {
                         <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
                           <button className="btn btn-ghost btn-sm" style={{ fontSize: 11.5, padding: "4px 8px", whiteSpace: "nowrap" }} onClick={() => setDetailRow(row)}>
                             Rincian
+                          </button>
+                          <button
+                            className="btn btn-outline btn-sm"
+                            style={{ fontSize: 11.5, padding: "4px 8px", whiteSpace: "nowrap", borderColor: "#15803d", color: "#15803d" }}
+                            onClick={() => { setTarifTarget(row); setTarifInput(row.tarifPerGuru); setShowTarifModal(true); }}
+                          >
+                            Tarif
                           </button>
                           {!row.payroll && row.jamMengajar > 0 && (
                             <button className="btn btn-primary btn-sm" disabled={isGenerating} onClick={() => handleGeneratePayroll(row)} style={{ fontSize: 11.5, padding: "4px 8px", opacity: isGenerating ? 0.6 : 1, whiteSpace: "nowrap" }}>
@@ -576,12 +643,12 @@ export default function OwnerHonorPage() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
             {[
-              { label: "Sesi Mengajar Selesai", value: `${detailRow.jumlahSesi} sesi`, bold: false, highlight: false },
-              { label: "Total Jam Mengajar",    value: `${detailRow.jamMengajar} jam`,  bold: false, highlight: false },
-              { label: "Tarif per Jam",         value: formatRupiah(tarifPerJam),       bold: false, highlight: false },
-              { label: "Honor Dasar (otomatis)", value: formatRupiah(detailRow.honorDihitung), bold: false, highlight: true },
-              { label: "Bonus Tambahan",         value: detailRow.bonusAmount > 0 ? `+${formatRupiah(detailRow.bonusAmount)}` : "Tidak ada", bold: false, highlight: false },
-              { label: "Total Honor",            value: formatRupiah(detailRow.totalHonor), bold: true, highlight: false },
+              { label: "Sesi Mengajar Selesai",    value: `${detailRow.jumlahSesi} sesi`,               bold: false, highlight: false },
+              { label: "Total Waktu Mengajar",      value: `${detailRow.jamMengajar} jam (${detailRow.jamMengajar * 2} unit × 30 mnt)`, bold: false, highlight: false },
+              { label: "Tarif per 30 Menit",        value: formatRupiah(tarifPerJam),                    bold: false, highlight: false },
+              { label: "Honor Dasar (otomatis)",    value: formatRupiah(detailRow.honorDihitung),         bold: false, highlight: true },
+              { label: "Bonus Tambahan",            value: detailRow.bonusAmount > 0 ? `+${formatRupiah(detailRow.bonusAmount)}` : "Tidak ada", bold: false, highlight: false },
+              { label: "Total Honor",               value: formatRupiah(detailRow.totalHonor),            bold: true,  highlight: false },
             ].map((item) => (
               <div key={item.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: item.bold ? "var(--color-primary-bg)" : "var(--color-bg)", borderRadius: 10, border: `1px solid ${item.bold ? "var(--color-primary)" : "var(--color-border)"}`, flexWrap: "wrap", gap: 6 }}>
                 <span style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>{item.label}</span>
@@ -636,6 +703,82 @@ export default function OwnerHonorPage() {
             <button className="btn btn-accent" onClick={handleSaveBonus}>Simpan Bonus</button>
           </div>
         </div>
+      </Modal>
+
+      {/* MODAL: Atur Tarif per Guru */}
+      <Modal
+        open={showTarifModal && !!tarifTarget}
+        onClose={() => setShowTarifModal(false)}
+        title={tarifTarget ? `Atur Tarif — ${tarifTarget.teacher.name}` : "Atur Tarif"}
+        maxWidth={460}
+      >
+        {tarifTarget && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Info guru */}
+            <div style={{ background: "var(--color-bg)", border: "1px solid var(--color-border)", borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg, #1a5c8a, #2a7ab8)", color: "#fff", fontWeight: 800, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                {tarifTarget.teacher.name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: "var(--color-text-primary)" }}>{tarifTarget.teacher.name}</div>
+                <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 2 }}>
+                  Kode: <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{tarifTarget.teacher.teacherCode}</span>
+                  {tarifTarget.teacher.hourlyRate > 0
+                    ? <span style={{ marginLeft: 8, color: "#15803d", fontWeight: 600 }}>Tarif khusus aktif</span>
+                    : <span style={{ marginLeft: 8, color: "#94a3b8" }}>Menggunakan tarif default</span>
+                  }
+                </div>
+              </div>
+            </div>
+
+            {/* Input tarif baru */}
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" style={{ fontSize: 12, fontWeight: 700 }}>
+                Tarif Baru per 30 Menit Mengajar (Rp)
+              </label>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-muted)" }}>Rp</span>
+                <input
+                  className="form-input"
+                  type="number"
+                  value={tarifInput}
+                  step={5_000}
+                  min={5_000}
+                  onChange={(e) => setTarifInput(Number(e.target.value))}
+                  style={{ flex: 1 }}
+                />
+                <span style={{ fontSize: 12, color: "var(--color-text-muted)", whiteSpace: "nowrap" }}>/ 30 mnt</span>
+              </div>
+              <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 6 }}>
+                Setara {formatRupiah(tarifInput * 2)} / jam
+              </div>
+            </div>
+
+            {/* Preview perubahan honor */}
+            {tarifTarget.jamMengajar > 0 && (
+              <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "12px 16px" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#15803d", textTransform: "uppercase", marginBottom: 8 }}>Preview Honor dengan Tarif Baru</div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                  <span style={{ color: "#64748b" }}>{tarifTarget.jamMengajar * 2} unit × {formatRupiah(tarifInput)}</span>
+                  <span style={{ fontWeight: 800, color: "#15803d" }}>{formatRupiah(tarifTarget.jamMengajar * 2 * tarifInput)}</span>
+                </div>
+                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>
+                  Sebelumnya: {formatRupiah(tarifTarget.honorDihitung)} (tarif {formatRupiah(tarifTarget.tarifPerGuru)})
+                </div>
+              </div>
+            )}
+
+            {/* Tombol aksi */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}>
+              <button className="btn btn-ghost" onClick={() => setShowTarifModal(false)} disabled={savingTarif}>
+                Batal
+              </button>
+              <button className="btn btn-primary" onClick={handleSaveTarif} disabled={savingTarif}>
+                {savingTarif ? "Menyimpan..." : "Simpan Tarif"}
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
