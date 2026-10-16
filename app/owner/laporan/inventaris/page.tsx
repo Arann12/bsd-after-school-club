@@ -1,200 +1,230 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
-import { getInventory } from "@/lib/api/operational";
+import Modal from "@/components/ui/Modal";
+import {
+  getInventory,
+  createInventoryItem,
+  updateInventoryItem,
+  deleteInventoryItem,
+} from "@/lib/api/operational";
 import { formatRupiah } from "@/lib/constants";
 import { SkeletonCard, SkeletonTable } from "@/components/ui/Skeleton";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 
-export default function OwnerLaporanInventarisPage() {
-  const [items, setItems] = useState<any[]>([]);
+interface ItemInventaris {
+  id: string;
+  inventory_code: string;
+  nama: string;
+  kategori: string;
+  jumlah: number;
+  kondisi: string;
+  lokasi: string;
+  hargaSatuan: number;
+  tglPengadaan: string;
+}
+
+function isGood(k: string) {
+  const c = (k || "").toLowerCase();
+  return c === "baik" || c === "good";
+}
+
+export default function InventarisLaporanPage() {
+  const [items, setItems]     = useState<ItemInventaris[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cari, setCari]       = useState("");
+  const [filterKondisi, setFilterKondisi] = useState("Semua");
+  const [selectedItem, setSelectedItem]   = useState<ItemInventaris | null>(null);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [editingItem, setEditingItem]     = useState<ItemInventaris | null>(null);
+  const [formData, setFormData] = useState({
+    name: "", category: "Buku / Modul", quantity: 1, purchase_price: 0,
+    purchase_date: new Date().toISOString().split("T")[0],
+    condition: "Baik", location: "Ruang Kelas 1",
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [toastMsg, setToastMsg] = useState("");
 
-  const fetchInventoryReport = useCallback(async () => {
+  const showToast = (msg: string) => { setToastMsg(msg); setTimeout(() => setToastMsg(""), 3500); };
+
+  const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await getInventory({ per_page: 200 });
-      const raw = Array.isArray(res?.data?.data)
-        ? res.data.data
-        : Array.isArray(res?.data)
-        ? res.data
-        : [];
-      setItems(raw);
-    } catch (err) {
-      console.warn("Gagal memuat data inventaris:", err);
-    } finally {
-      setLoading(false);
-    }
+      const res = await getInventory({ per_page: 300 });
+      const raw: any[] = Array.isArray(res?.data) ? res.data : Array.isArray(res?.data?.data) ? res.data.data : [];
+      setItems(raw.map((item: any) => ({
+        id:             item.id,
+        inventory_code: item.inventory_code || ("INV-" + String(item.id || "").substring(0, 4).toUpperCase()),
+        nama:           item.name || item.nama || "Barang",
+        kategori:       item.category || item.kategori || "Umum",
+        jumlah:         Number(item.quantity || item.jumlah || 0),
+        kondisi:        item.condition || item.kondisi || "Baik",
+        lokasi:         item.location || item.lokasi || "Gudang",
+        hargaSatuan:    Number(item.purchase_price || item.harga_satuan || 0),
+        tglPengadaan:   item.purchase_date || item.tgl_pengadaan || "-",
+      })));
+    } catch { /* silent */ } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => {
-    fetchInventoryReport();
-  }, [fetchInventoryReport]);
+  useEffect(() => { fetchItems(); }, [fetchItems]);
 
-  const totalUnits = items.reduce((acc, i) => acc + Number(i.quantity || 1), 0);
-  const goodUnits = items
-    .filter((i) => {
-      const cond = (i.condition || "").toLowerCase();
-      return cond === "baik" || cond === "good";
-    })
-    .reduce((acc, i) => acc + Number(i.quantity || 1), 0);
-  const repairUnits = items
-    .filter((i) => {
-      const cond = (i.condition || "").toLowerCase();
-      return cond !== "baik" && cond !== "good";
-    })
-    .reduce((acc, i) => acc + Number(i.quantity || 1), 0);
-  const totalAssetValue = items.reduce(
-    (acc, i) => acc + Number(i.purchase_price || 0) * Number(i.quantity || 1),
-    0
-  );
+  const totalUnits      = items.reduce((a, i) => a + i.jumlah, 0);
+  const goodUnits       = items.filter(i => isGood(i.kondisi)).reduce((a, i) => a + i.jumlah, 0);
+  const repairUnits     = totalUnits - goodUnits;
+  const totalAssetValue = items.reduce((a, i) => a + i.hargaSatuan * i.jumlah, 0);
+  const goodPct         = totalUnits > 0 ? Math.round((goodUnits / totalUnits) * 100) : 0;
+  const repairPct       = totalUnits > 0 ? Math.round((repairUnits / totalUnits) * 100) : 0;
 
-  const goodPercent = totalUnits > 0 ? Math.round((goodUnits / totalUnits) * 100) : 0;
-  const repairPercent = totalUnits > 0 ? Math.round((repairUnits / totalUnits) * 100) : 0;
+  const terfilter = items.filter(i => {
+    const q = cari.toLowerCase();
+    return (i.nama.toLowerCase().includes(q) || i.kategori.toLowerCase().includes(q) ||
+      i.inventory_code.toLowerCase().includes(q) || i.lokasi.toLowerCase().includes(q)) &&
+      (filterKondisi === "Semua" || i.kondisi.toLowerCase() === filterKondisi.toLowerCase());
+  });
+
+  const openAdd = () => {
+    setEditingItem(null);
+    setFormData({ name:"", category:"Buku / Modul", quantity:1, purchase_price:0,
+      purchase_date: new Date().toISOString().split("T")[0], condition:"Baik", location:"Ruang Kelas 1" });
+    setShowFormModal(true);
+  };
+
+  const openEdit = (item: ItemInventaris) => {
+    setEditingItem(item);
+    setFormData({ name:item.nama, category:item.kategori, quantity:item.jumlah,
+      purchase_price:item.hargaSatuan,
+      purchase_date: item.tglPengadaan !== "-" ? item.tglPengadaan : new Date().toISOString().split("T")[0],
+      condition:item.kondisi, location:item.lokasi });
+    setSelectedItem(null); setShowFormModal(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); setSubmitting(true);
+    try {
+      const payload = { name:formData.name, category:formData.category, quantity:formData.quantity,
+        purchase_price:formData.purchase_price, purchase_date:formData.purchase_date,
+        condition:formData.condition, location:formData.location } as any;
+      if (editingItem) { await updateInventoryItem(editingItem.id, payload); showToast("Barang berhasil diperbarui."); }
+      else { await createInventoryItem(payload); showToast("Barang berhasil ditambahkan."); }
+      setShowFormModal(false); await fetchItems();
+    } catch { showToast("Gagal menyimpan barang."); } finally { setSubmitting(false); }
+  };
+
+  const handleDelete = async (id: string, nama: string) => {
+    if (!confirm("Hapus barang ini dari inventaris?")) return;
+    try { await deleteInventoryItem(id); setSelectedItem(null); showToast(nama + " dihapus."); await fetchItems(); }
+    catch { showToast("Gagal menghapus barang."); }
+  };
+
+  const statCards = [
+    { label:"Total Nilai Aset",         value:formatRupiah(totalAssetValue),                                      color:"#1d4ed8" },
+    { label:"Total Item Barang",         value:String(items.length) + " Item / " + String(totalUnits) + " Unit",  color:"#0f172a" },
+    { label:"Kondisi Baik",              value:String(goodUnits) + " Unit (" + String(goodPct) + "%)",            color:"#059669" },
+    { label:"Perlu Perbaikan / Rusak",   value:String(repairUnits) + " Unit (" + String(repairPct) + "%)",        color:"#b45309" },
+  ];
+
+  const tabelHeaders = ["Kode","Nama Barang","Kategori","Jumlah","Kondisi","Lokasi","Harga Satuan","Total Nilai","Aksi"];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* Header */}
+    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+      {toastMsg && (
+        <div style={{ position:"fixed", top:20, right:20, zIndex:9999, background:"#0f172a", color:"#fff",
+          padding:"12px 20px", borderRadius:10, fontSize:13.5, fontWeight:600,
+          boxShadow:"0 4px 24px rgba(0,0,0,0.18)", maxWidth:360 }}>{toastMsg}</div>
+      )}
+
       <div className="page-header">
         <div>
-          <h1 className="page-title">Laporan Inventaris &amp; Aset (Owner)</h1>
-          <p className="page-subtitle">
-            Laporan kondisi fasilitas, alat peraga, dan aset BSD After School Club langsung dari database.
-          </p>
+          <h1 className="page-title">Inventaris &amp; Laporan Aset</h1>
+          <p className="page-subtitle">Pengelolaan dan laporan fasilitas, alat peraga, serta aset BSD After School Club.</p>
         </div>
         <div className="page-header-actions">
-          <button className="btn btn-outline" onClick={() => window.print()}>
-            Cetak PDF Laporan
-          </button>
-          <Link href="/owner/inventaris" className="btn btn-accent">
-            Ke Daftar Inventaris &rarr;
-          </Link>
+          <button className="btn btn-outline btn-sm" onClick={() => window.print()}>Cetak PDF</button>
+          <button className="btn btn-accent" onClick={openAdd}>+ Tambah Barang</button>
         </div>
       </div>
 
-      {/* Grid Stats Summary */}
       {loading ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
-          <SkeletonCard />
-          <SkeletonCard />
-          <SkeletonCard />
-          <SkeletonCard />
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))", gap:14 }}>
+          <SkeletonCard/><SkeletonCard/><SkeletonCard/><SkeletonCard/>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
-          {[
-            { label: "Total Nilai Aset Terdata", value: formatRupiah(totalAssetValue), color: "#1d4ed8" },
-            { label: "Total Item Barang", value: `${totalUnits} Unit`, color: "#0f172a" },
-            { label: "Barang Kondisi Baik", value: `${goodUnits} Unit (${goodPercent}%)`, color: "#059669" },
-            { label: "Perlu Perbaikan / Rusak", value: `${repairUnits} Unit (${repairPercent}%)`, color: "#b45309" },
-          ].map((s) => (
-            <div key={s.label} className="stat-card" style={{ gap: 8 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))", gap:14 }}>
+          {statCards.map(s => (
+            <div key={s.label} className="stat-card" style={{ gap:6, padding:"14px 18px" }}>
               <span className="stat-card-label">{s.label}</span>
-              <div style={{ fontSize: 20, fontWeight: 800, color: s.color }}>{s.value}</div>
+              <div style={{ fontSize:18, fontWeight:800, color:s.color }}>{s.value}</div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Tabel Rekap Inventaris */}
-      <div className="card" style={{ overflow: "hidden" }}>
-        <div
-          style={{
-            padding: "16px 20px",
-            borderBottom: "1px solid var(--color-border)",
-            background: "var(--color-bg)",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 8,
-          }}
-        >
-          <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: 0 }}>
-            Rincian Aset &amp; Fasilitas Pembelajaran
-          </h3>
-          <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
-            Total {items.length} item terdata
+      <div className="card">
+        <div style={{ padding:"12px 20px", display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
+          <input className="search-input" style={{ flex:1, minWidth:200 }}
+            placeholder="Cari nama barang, kode, kategori, atau lokasi..."
+            value={cari} onChange={e => setCari(e.target.value)} />
+          <select className="select-control" style={{ width:175, fontSize:13 }}
+            value={filterKondisi} onChange={e => setFilterKondisi(e.target.value)}>
+            <option value="Semua">Semua Kondisi</option>
+            <option value="Baik">Baik</option>
+            <option value="Perlu Perbaikan">Perlu Perbaikan</option>
+            <option value="Rusak">Rusak</option>
+          </select>
+          <span style={{ fontSize:12.5, color:"var(--color-text-muted)", whiteSpace:"nowrap" }}>
+            {terfilter.length} dari {items.length} item
           </span>
         </div>
+      </div>
 
-        {loading ? (
-          <SkeletonTable rows={5} />
-        ) : items.length === 0 ? (
-          <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--color-text-muted)" }}>
-            Belum ada data barang inventaris yang tersimpan.
+      <div className="card" style={{ overflow:"hidden" }}>
+        <div style={{ padding:"14px 20px", borderBottom:"1px solid var(--color-border)",
+          display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <h3 style={{ fontSize:15, fontWeight:800, margin:0 }}>Rincian Aset &amp; Fasilitas</h3>
+          <span style={{ fontSize:12, color:"var(--color-text-muted)" }}>Total {items.length} jenis barang</span>
+        </div>
+        {loading ? <div style={{ padding:24 }}><SkeletonTable rows={6}/></div>
+        : terfilter.length === 0 ? (
+          <div style={{ padding:"48px 20px", textAlign:"center", color:"var(--color-text-muted)" }}>
+            {cari || filterKondisi !== "Semua" ? "Tidak ada barang yang sesuai pencarian." : "Belum ada barang inventaris. Klik + Tambah Barang."}
           </div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", minWidth: 700, borderCollapse: "collapse", textAlign: "left" }}>
+          <div style={{ overflowX:"auto" }}>
+            <table style={{ width:"100%", minWidth:820, borderCollapse:"collapse", textAlign:"left" }}>
               <thead>
-                <tr style={{ borderBottom: "1px solid var(--color-border)" }}>
-                  {["Kode", "Nama Barang", "Kategori", "Jumlah", "Kondisi", "Lokasi", "Harga Satuan", "Total Nilai"].map((h) => (
-                    <th
-                      key={h}
-                      style={{
-                        padding: "12px 16px",
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: "var(--color-text-muted)",
-                        textTransform: "uppercase",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {h}
-                    </th>
+                <tr style={{ borderBottom:"1px solid var(--color-border)" }}>
+                  {tabelHeaders.map(h => (
+                    <th key={h} style={{ padding:"12px 14px", fontSize:11, fontWeight:700,
+                      color:"var(--color-text-muted)", textTransform:"uppercase", whiteSpace:"nowrap" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {items.map((row, idx) => {
-                  const qty = Number(row.quantity || 1);
-                  const price = Number(row.purchase_price || 0);
-                  const subtotal = qty * price;
-                  const cond = (row.condition || "").toLowerCase();
-                  const isGood = cond === "baik" || cond === "good";
-
+                {terfilter.map((item, idx) => {
+                  const subtotal = item.jumlah * item.hargaSatuan;
+                  const good  = isGood(item.kondisi);
+                  const rusak = item.kondisi === "Rusak";
                   return (
-                    <tr
-                      key={row.id || idx}
-                      style={{
-                        borderBottom: idx < items.length - 1 ? "1px solid var(--color-border-light)" : "none",
-                      }}
-                    >
-                      <td style={{ padding: "14px 16px", fontFamily: "monospace", fontSize: 12, color: "var(--color-text-muted)", fontWeight: 600 }}>
-                        {row.inventory_code || "-"}
+                    <tr key={item.id}
+                      style={{ borderBottom:idx<terfilter.length-1?"1px solid var(--color-border-light)":"none", cursor:"pointer" }}
+                      onClick={() => setSelectedItem(item)}>
+                      <td style={{ padding:"13px 14px", fontFamily:"monospace", fontSize:12, color:"var(--color-text-muted)", fontWeight:600 }}>{item.inventory_code}</td>
+                      <td style={{ padding:"13px 14px", fontWeight:700, fontSize:13.5 }}>{item.nama}</td>
+                      <td style={{ padding:"13px 14px", fontSize:13, color:"var(--color-text-secondary)" }}>{item.kategori}</td>
+                      <td style={{ padding:"13px 14px", fontSize:13.5, fontWeight:800, color:"var(--color-primary)" }}>{item.jumlah} unit</td>
+                      <td style={{ padding:"13px 14px" }}>
+                        <span style={{ background:good?"#d1fae5":rusak?"#fee2e2":"#fef3c7",
+                          color:good?"#059669":rusak?"#dc2626":"#b45309",
+                          fontSize:11.5, fontWeight:700, padding:"3px 10px", borderRadius:999 }}>{item.kondisi}</span>
                       </td>
-                      <td style={{ padding: "14px 16px", fontWeight: 700, fontSize: 13, color: "var(--color-text-primary)" }}>
-                        {row.name || "-"}
-                      </td>
-                      <td style={{ padding: "14px 16px", fontSize: 13, color: "var(--color-text-secondary)" }}>
-                        {row.category || "-"}
-                      </td>
-                      <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 700 }}>
-                        {qty} Unit
-                      </td>
-                      <td style={{ padding: "14px 16px" }}>
-                        <span
-                          style={{
-                            background: isGood ? "#d1fae5" : "#fef3c7",
-                            color: isGood ? "#059669" : "#b45309",
-                            fontSize: 11.5,
-                            fontWeight: 700,
-                            padding: "2px 8px",
-                            borderRadius: 999,
-                          }}
-                        >
-                          {row.condition || "Baik"}
-                        </span>
-                      </td>
-                      <td style={{ padding: "14px 16px", fontSize: 12.5, color: "var(--color-text-muted)" }}>
-                        {row.location || "-"}
-                      </td>
-                      <td style={{ padding: "14px 16px", fontSize: 13, color: "var(--color-text-secondary)" }}>
-                        {formatRupiah(price)}
-                      </td>
-                      <td style={{ padding: "14px 16px", fontWeight: 700, color: "#1d4ed8", fontSize: 13 }}>
-                        {formatRupiah(subtotal)}
+                      <td style={{ padding:"13px 14px", fontSize:12.5, color:"var(--color-text-muted)" }}>{item.lokasi}</td>
+                      <td style={{ padding:"13px 14px", fontSize:13 }}>{formatRupiah(item.hargaSatuan)}</td>
+                      <td style={{ padding:"13px 14px", fontWeight:700, color:"#1d4ed8", fontSize:13 }}>{formatRupiah(subtotal)}</td>
+                      <td style={{ padding:"13px 14px" }} onClick={e => e.stopPropagation()}>
+                        <div style={{ display:"flex", gap:6 }}>
+                          <button className="btn btn-ghost btn-sm" style={{ fontSize:11.5 }} onClick={() => openEdit(item)}>Edit</button>
+                          <button className="btn btn-danger btn-sm" style={{ fontSize:11.5 }} onClick={() => handleDelete(item.id, item.nama)}>Hapus</button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -204,6 +234,115 @@ export default function OwnerLaporanInventarisPage() {
           </div>
         )}
       </div>
+
+      {selectedItem && (
+        <Modal open onClose={() => setSelectedItem(null)} title="Detail Barang Inventaris" maxWidth={540}>
+          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+            <div>
+              <span style={{ background:"var(--color-primary-bg)", color:"var(--color-primary)",
+                fontSize:11, fontWeight:800, padding:"2px 8px", borderRadius:999 }}>{selectedItem.inventory_code}</span>
+              <h2 style={{ fontSize:18, fontWeight:800, margin:"6px 0 0" }}>{selectedItem.nama}</h2>
+            </div>
+            <div style={{ borderRadius:12, padding:"14px 18px", display:"grid",
+              gridTemplateColumns:"1fr 1fr 1fr", gap:10, border:"1px solid var(--color-border)" }}>
+              <div><div style={{ fontSize:10, fontWeight:700, color:"var(--color-text-muted)", textTransform:"uppercase" }}>Jumlah Stok</div>
+                <div style={{ fontSize:16, fontWeight:800, color:"var(--color-primary)", marginTop:2 }}>{selectedItem.jumlah} Unit</div></div>
+              <div><div style={{ fontSize:10, fontWeight:700, color:"var(--color-text-muted)", textTransform:"uppercase" }}>Harga Satuan</div>
+                <div style={{ fontSize:14, fontWeight:800, color:"#059669", marginTop:2 }}>{formatRupiah(selectedItem.hargaSatuan)}</div></div>
+              <div><div style={{ fontSize:10, fontWeight:700, color:"var(--color-text-muted)", textTransform:"uppercase" }}>Total Nilai</div>
+                <div style={{ fontSize:14, fontWeight:800, color:"#2563eb", marginTop:2 }}>{formatRupiah(selectedItem.jumlah*selectedItem.hargaSatuan)}</div></div>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(190px, 1fr))", gap:10 }}>
+              {[{l:"Kategori",v:selectedItem.kategori},{l:"Lokasi",v:selectedItem.lokasi},
+                {l:"Kondisi",v:selectedItem.kondisi},{l:"Tanggal Pengadaan",v:selectedItem.tglPengadaan}].map(({l,v}) => (
+                <div key={l} style={{ background:"#f8fafc", padding:"10px 12px", borderRadius:8, border:"1px solid #e2e8f0" }}>
+                  <div style={{ fontSize:11, color:"#64748b", fontWeight:700 }}>{l}</div>
+                  <div style={{ fontSize:13, fontWeight:700, color:"#0f172a" }}>{v}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display:"flex", justifyContent:"space-between", gap:10, marginTop:8 }}>
+              <button className="btn btn-danger btn-sm" onClick={() => handleDelete(selectedItem.id, selectedItem.nama)}>Hapus Barang</button>
+              <div style={{ display:"flex", gap:8 }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => setSelectedItem(null)}>Tutup</button>
+                <button className="btn btn-accent btn-sm" onClick={() => openEdit(selectedItem)}>Edit Barang</button>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {showFormModal && (
+        <Modal open onClose={() => setShowFormModal(false)}
+          title={editingItem ? "Edit Barang" : "Tambah Barang Inventaris"} maxWidth={500}>
+          <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:14 }}>
+            <div>
+              <label style={{ display:"block", fontSize:12.5, fontWeight:700, marginBottom:4 }}>Nama Barang</label>
+              <input type="text" required className="form-input" value={formData.name}
+                onChange={e => setFormData({...formData, name:e.target.value})}
+                placeholder="Contoh: Modul Calistung Level 1" />
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+              <div>
+                <label style={{ display:"block", fontSize:12.5, fontWeight:700, marginBottom:4 }}>Kategori</label>
+                <SearchableSelect className="select-control" value={formData.category}
+                  onChange={e => setFormData({...formData, category:e.target.value})} style={{ width:"100%" }}>
+                  <option value="Buku / Modul">Buku / Modul</option>
+                  <option value="Alat Peraga">Alat Peraga</option>
+                  <option value="ATK">ATK</option>
+                  <option value="Fasilitas Kelas">Fasilitas Kelas</option>
+                  <option value="Elektronik">Elektronik</option>
+                  <option value="Lainnya">Lainnya</option>
+                </SearchableSelect>
+              </div>
+              <div>
+                <label style={{ display:"block", fontSize:12.5, fontWeight:700, marginBottom:4 }}>Jumlah Unit</label>
+                <input type="number" min={0} required className="form-input" value={formData.quantity}
+                  onChange={e => setFormData({...formData, quantity:parseInt(e.target.value)||0})} />
+              </div>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+              <div>
+                <label style={{ display:"block", fontSize:12.5, fontWeight:700, marginBottom:4 }}>Harga Satuan (Rp)</label>
+                <input type="number" min={0} className="form-input" value={formData.purchase_price}
+                  onChange={e => setFormData({...formData, purchase_price:parseFloat(e.target.value)||0})} />
+              </div>
+              <div>
+                <label style={{ display:"block", fontSize:12.5, fontWeight:700, marginBottom:4 }}>Kondisi</label>
+                <SearchableSelect className="select-control" value={formData.condition}
+                  onChange={e => setFormData({...formData, condition:e.target.value})} style={{ width:"100%" }}>
+                  <option value="Baik">Baik</option>
+                  <option value="Perlu Perbaikan">Perlu Perbaikan</option>
+                  <option value="Rusak">Rusak</option>
+                </SearchableSelect>
+              </div>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+              <div>
+                <label style={{ display:"block", fontSize:12.5, fontWeight:700, marginBottom:4 }}>Lokasi Penyimpanan</label>
+                <input type="text" className="form-input" value={formData.location}
+                  onChange={e => setFormData({...formData, location:e.target.value})} placeholder="Contoh: Rak B2" />
+              </div>
+              <div>
+                <label style={{ display:"block", fontSize:12.5, fontWeight:700, marginBottom:4 }}>Tanggal Pengadaan</label>
+                <input type="date" className="form-input" value={formData.purchase_date}
+                  onChange={e => setFormData({...formData, purchase_date:e.target.value})} />
+              </div>
+            </div>
+            {formData.quantity > 0 && formData.purchase_price > 0 && (
+              <div style={{ background:"#eff6ff", border:"1px solid #bfdbfe", borderRadius:8, padding:"10px 14px", fontSize:12.5 }}>
+                Total Nilai: <strong>{formatRupiah(formData.quantity * formData.purchase_price)}</strong>
+              </div>
+            )}
+            <div style={{ display:"flex", justifyContent:"flex-end", gap:10, marginTop:6 }}>
+              <button type="button" className="btn btn-ghost" onClick={() => setShowFormModal(false)}>Batal</button>
+              <button type="submit" className="btn btn-primary" disabled={submitting}>
+                {submitting ? "Menyimpan..." : editingItem ? "Simpan Perubahan" : "Tambah Barang"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 }

@@ -214,7 +214,6 @@ export const ownerNav: NavSection[] = [
   {
     section: "OPERATIONAL",
     items: [
-      { label: "Inventaris", href: "/owner/inventaris", icon: "Box" },
       { label: "Pengumuman", href: "/owner/pengumuman", icon: "Bell" },
     ],
   },
@@ -223,7 +222,7 @@ export const ownerNav: NavSection[] = [
     items: [
       { label: "Laporan Keuangan", href: "/owner/laporan/keuangan", icon: "BarChart2" },
       { label: "Laporan Kehadiran", href: "/owner/laporan/kehadiran", icon: "ClipboardCheck" },
-      { label: "Laporan Inventaris", href: "/owner/laporan/inventaris", icon: "FileText" },
+      { label: "Inventaris & Laporan", href: "/owner/laporan/inventaris", icon: "Box" },
     ],
   },
   {
@@ -273,7 +272,6 @@ export const adminNav: NavSection[] = [
   {
     section: "OPERATIONAL",
     items: [
-      { label: "Inventaris", href: "/admin/inventaris", icon: "Box" },
       { label: "Pengumuman", href: "/admin/pengumuman", icon: "Bell" },
     ],
   },
