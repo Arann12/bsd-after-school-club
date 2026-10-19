@@ -20,7 +20,10 @@ export default function AbsensiPage() {
 
   // Filter States - Tab Agenda
   const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
-  const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+  const currentMonthPrefix = useMemo(() => todayStr.substring(0, 7), [todayStr]); // YYYY-MM
+
+  const [dateFilterMode, setDateFilterMode] = useState<"today" | "month" | "all" | "custom">("today");
+  const [customDate, setCustomDate] = useState<string>(todayStr);
   const [filterClassId, setFilterClassId] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -75,7 +78,7 @@ export default function AbsensiPage() {
     setLoading(true);
     try {
       const [sessionsRes, classroomsRes, teachersRes, studentsRes] = await Promise.allSettled([
-        getClassSessions({ per_page: 300 }),
+        getClassSessions({ per_page: 500 }),
         getClassrooms({ per_page: 100 }),
         getTeachers({ per_page: 100 }),
         getStudents({ per_page: 250 }),
@@ -105,20 +108,39 @@ export default function AbsensiPage() {
     fetchData();
   }, [fetchData]);
 
-  // Ringkasan Angka
+  // Klasifikasi Metrik Sesi & Kehadiran (Akurat & Tidak Menyesatkan)
   const metrics = useMemo(() => {
+    let completedSessions = 0;
+    let pendingPastSessions = 0; // Sesi lampau yang belum diabsen (Backlog)
+    let pendingTodaySessions = 0; // Sesi hari ini yang belum diabsen
+    let futureScheduledSessions = 0; // Sesi masa depan
+
     let totalPresent = 0;
     let totalLate = 0;
     let totalExcused = 0;
     let totalAbsent = 0;
     let totalMinutes = 0;
-    let completedSessions = 0;
 
     sessions.forEach((s) => {
-      if (s.status === "completed") completedSessions++;
+      const sDate = s.sessionDate?.split("T")[0] || "";
+      const isCompleted = s.status === "completed" || s.teacherLogbook != null;
+
+      if (isCompleted) {
+        completedSessions++;
+      } else {
+        if (sDate < todayStr) {
+          pendingPastSessions++;
+        } else if (sDate === todayStr) {
+          pendingTodaySessions++;
+        } else {
+          futureScheduledSessions++;
+        }
+      }
+
       if (s.teacherLogbook?.teaching_minutes) {
         totalMinutes += Number(s.teacherLogbook.teaching_minutes) || 0;
       }
+
       if (Array.isArray(s.studentAttendances)) {
         s.studentAttendances.forEach((att: any) => {
           const st = att.attendance_status || att.attendanceStatus;
@@ -130,37 +152,62 @@ export default function AbsensiPage() {
       }
     });
 
-    const totalRecorded = totalPresent + totalLate + totalExcused + totalAbsent;
-    const rate = totalRecorded > 0 ? Math.round(((totalPresent + totalLate) / totalRecorded) * 100) : 0;
+    const totalPresensiFisik = totalPresent + totalLate + totalExcused + totalAbsent;
+    const rate = totalPresensiFisik > 0
+      ? Math.round(((totalPresent + totalLate) / totalPresensiFisik) * 100)
+      : 100;
+
     const hours = (totalMinutes / 60).toFixed(1);
 
     return {
       rate,
-      totalRecorded,
-      completedSessions,
-      totalSessions: sessions.length,
-      hours,
+      totalPresensiFisik,
       totalPresent,
       totalLate,
       totalExcused,
       totalAbsent,
+      completedSessions,
+      pendingPastSessions,
+      pendingTodaySessions,
+      futureScheduledSessions,
+      totalSessions: sessions.length,
+      hours,
     };
-  }, [sessions]);
+  }, [sessions, todayStr]);
 
-  // Filter Agenda
+  // Filter Agenda Sesi
   const filteredSessions = useMemo(() => {
     return sessions.filter((s) => {
-      if (selectedDate && selectedDate !== "all") {
-        const sDate = s.sessionDate?.split("T")[0];
-        if (sDate !== selectedDate) return false;
+      const sDate = s.sessionDate?.split("T")[0] || "";
+      const isCompleted = s.status === "completed" || s.teacherLogbook != null;
+
+      // Filter Tanggal
+      if (dateFilterMode === "today") {
+        if (sDate !== todayStr) return false;
+      } else if (dateFilterMode === "month") {
+        if (!sDate.startsWith(currentMonthPrefix)) return false;
+      } else if (dateFilterMode === "custom") {
+        if (sDate !== customDate) return false;
       }
+
+      // Filter Kelas
       if (filterClassId !== "all") {
         const cid = s.classroomId || s.classroom?.id;
         if (cid !== filterClassId) return false;
       }
-      if (filterStatus === "completed" && s.status !== "completed") return false;
-      if (filterStatus === "pending" && s.status === "completed") return false;
 
+      // Filter Status
+      if (filterStatus === "completed" && !isCompleted) return false;
+      if (filterStatus === "pending") {
+        // Perlu Diabsen (Hari ini atau sudah lewat)
+        if (isCompleted || sDate > todayStr) return false;
+      }
+      if (filterStatus === "future") {
+        // Masa Depan
+        if (isCompleted || sDate <= todayStr) return false;
+      }
+
+      // Filter Pencarian
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const cName = s.classroom?.name?.toLowerCase() || "";
@@ -168,11 +215,12 @@ export default function AbsensiPage() {
         const mat = s.teacherLogbook?.material?.toLowerCase() || "";
         if (!cName.includes(q) && !tName.includes(q) && !mat.includes(q)) return false;
       }
+
       return true;
     });
-  }, [sessions, selectedDate, filterClassId, filterStatus, searchQuery]);
+  }, [sessions, dateFilterMode, customDate, todayStr, currentMonthPrefix, filterClassId, filterStatus, searchQuery]);
 
-  // Rekapitulasi Siswa
+  // Rekapitulasi Partisipasi per Siswa
   const studentRecapList = useMemo(() => {
     const recapMap = new Map<
       string,
@@ -359,7 +407,7 @@ export default function AbsensiPage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18, maxWidth: 1200, margin: "0 auto", width: "100%" }}>
-      {/* Toast */}
+      {/* Toast Notification */}
       {toast && (
         <div
           style={{
@@ -380,11 +428,11 @@ export default function AbsensiPage() {
         </div>
       )}
 
-      {/* HEADER */}
+      {/* HEADER UTAMA */}
       <div className="page-header" style={{ marginBottom: 0 }}>
         <div>
-          <h1 className="page-title">Absensi & Logbook Guru</h1>
-          <p className="page-subtitle">Pencatatan kehadiran siswa dan verifikasi jurnal mengajar per kelas.</p>
+          <h1 className="page-title">Absensi &amp; Logbook Guru</h1>
+          <p className="page-subtitle">Pencatatan kehadiran murid dan verifikasi jurnal mengajar per sesi kelas.</p>
         </div>
         <div className="page-header-actions" style={{ display: "flex", gap: 8 }}>
           <button className="btn btn-outline" onClick={() => window.print()} style={{ fontSize: 13 }}>
@@ -396,66 +444,96 @@ export default function AbsensiPage() {
         </div>
       </div>
 
-      {/* 4 KARTU METRIK UTAMA */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+      {/* 4 KARTU METRIK UTAMA (DETAIL & AKURAT) */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 12 }}>
+        {/* Kartu 1: Kehadiran Siswa */}
         <div className="stat-card" style={{ padding: "14px 18px" }}>
-          <span className="stat-card-label" style={{ fontSize: 11.5, fontWeight: 700 }}>Rata-rata Kehadiran</span>
+          <span className="stat-card-label" style={{ fontSize: 11.5, fontWeight: 700 }}>Tingkat Kehadiran Murid</span>
           <div className="stat-card-value" style={{ fontSize: 24, color: "#059669", fontWeight: 800 }}>
             {loading ? "..." : `${metrics.rate}%`}
           </div>
           <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>
-            {metrics.totalRecorded} presensi tercatat
+            Dari total {metrics.totalPresensiFisik} presensi tercatat
           </div>
         </div>
 
+        {/* Kartu 2: Sesi Selesai vs Mendatang */}
         <div className="stat-card" style={{ padding: "14px 18px" }}>
           <span className="stat-card-label" style={{ fontSize: 11.5, fontWeight: 700 }}>Sesi Selesai</span>
           <div className="stat-card-value" style={{ fontSize: 24, color: "#1d4ed8", fontWeight: 800 }}>
-            {loading ? "..." : `${metrics.completedSessions}`}
-            <span style={{ fontSize: 14, color: "var(--color-text-muted)", fontWeight: 500 }}> / {metrics.totalSessions} sesi</span>
+            {loading ? "..." : metrics.completedSessions}
+            <span style={{ fontSize: 13, color: "var(--color-text-muted)", fontWeight: 500 }}> / {metrics.totalSessions} total jadwal</span>
           </div>
           <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>
-            {metrics.totalSessions - metrics.completedSessions} belum diabsen
+            {metrics.futureScheduledSessions} jadwal sesi mendatang
           </div>
         </div>
 
+        {/* Kartu 3: Perlu Diabsen (Backlog/Hari Ini) */}
+        <div className="stat-card" style={{ padding: "14px 18px" }}>
+          <span className="stat-card-label" style={{ fontSize: 11.5, fontWeight: 700 }}>Perlu Diabsen (Hari Ini / Lewat)</span>
+          <div className="stat-card-value" style={{ fontSize: 24, color: metrics.pendingPastSessions + metrics.pendingTodaySessions > 0 ? "#b45309" : "#059669", fontWeight: 800 }}>
+            {loading ? "..." : metrics.pendingPastSessions + metrics.pendingTodaySessions}
+            <span style={{ fontSize: 13, color: "var(--color-text-muted)", fontWeight: 500 }}> sesi</span>
+          </div>
+          <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>
+            {metrics.pendingTodaySessions} sesi hari ini • {metrics.pendingPastSessions} sesi terlewat
+          </div>
+        </div>
+
+        {/* Kartu 4: Jam Mengajar Guru */}
         <div className="stat-card" style={{ padding: "14px 18px" }}>
           <span className="stat-card-label" style={{ fontSize: 11.5, fontWeight: 700 }}>Total Jam Mengajar</span>
           <div className="stat-card-value" style={{ fontSize: 24, color: "#7c3aed", fontWeight: 800 }}>
             {loading ? "..." : `${metrics.hours} Jam`}
           </div>
           <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>
-            Akumulasi logbook guru
-          </div>
-        </div>
-
-        <div className="stat-card" style={{ padding: "14px 18px" }}>
-          <span className="stat-card-label" style={{ fontSize: 11.5, fontWeight: 700 }}>Presensi Tercatat</span>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#dcfce7", color: "#166534" }}>
-              Hadir: {metrics.totalPresent}
-            </span>
-            <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#fef3c7", color: "#92400e" }}>
-              Telat: {metrics.totalLate}
-            </span>
-            <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#e0f2fe", color: "#0369a1" }}>
-              Izin: {metrics.totalExcused}
-            </span>
-            <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#fee2e2", color: "#991b1b" }}>
-              Alpa: {metrics.totalAbsent}
-            </span>
+            Tervalidasi dari logbook guru
           </div>
         </div>
       </div>
 
-      {/* TAB PILIHAN */}
+      {/* RINCIAN FISIK PRESENSI MURID */}
+      <div
+        className="card"
+        style={{
+          padding: "10px 16px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 10,
+          background: "#f8fafc",
+          border: "1px solid var(--color-border-light)",
+        }}
+      >
+        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text-secondary)" }}>
+          Rincian Presensi Murid Terdata:
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 11.5, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: "#dcfce7", color: "#166534" }}>
+            Hadir: {metrics.totalPresent}
+          </span>
+          <span style={{ fontSize: 11.5, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: "#fef3c7", color: "#92400e" }}>
+            Telat: {metrics.totalLate}
+          </span>
+          <span style={{ fontSize: 11.5, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: "#e0f2fe", color: "#0369a1" }}>
+            Izin / Sakit: {metrics.totalExcused}
+          </span>
+          <span style={{ fontSize: 11.5, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: "#fee2e2", color: "#991b1b" }}>
+            Alpa: {metrics.totalAbsent}
+          </span>
+        </div>
+      </div>
+
+      {/* DUA TAB UTAMA */}
       <div style={{ display: "flex", gap: 8, borderBottom: "1px solid var(--color-border-light)", paddingBottom: 8 }}>
         <button
           onClick={() => setActiveTab("agenda")}
           className={`btn ${activeTab === "agenda" ? "btn-primary" : "btn-ghost"}`}
           style={{ padding: "7px 16px", borderRadius: 8, fontSize: 13, fontWeight: 700 }}
         >
-          Sesi & Logbook Harian ({sessions.length})
+          Sesi &amp; Logbook Harian ({filteredSessions.length})
         </button>
         <button
           onClick={() => setActiveTab("rekap")}
@@ -466,10 +544,10 @@ export default function AbsensiPage() {
         </button>
       </div>
 
-      {/* TAB 1: SESI & LOGBOOK HARIAN */}
+      {/* TAB 1: AGENDA SESI & LOGBOOK */}
       {activeTab === "agenda" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {/* Filter Bar */}
+          {/* Filter Bar Lengkap */}
           <div
             className="card"
             style={{
@@ -481,34 +559,48 @@ export default function AbsensiPage() {
               justifyContent: "space-between",
             }}
           >
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-              <input
-                type="date"
-                className="form-input"
-                style={{ width: 140, padding: "5px 8px", fontSize: 12.5 }}
-                value={selectedDate === "all" ? "" : selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value || "all")}
-              />
+            {/* Filter Tanggal */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
               <button
                 type="button"
-                className={`btn btn-sm ${selectedDate === todayStr ? "btn-primary" : "btn-outline"}`}
-                style={{ fontSize: 11.5, padding: "4px 8px" }}
-                onClick={() => setSelectedDate(todayStr)}
+                className={`btn btn-sm ${dateFilterMode === "today" ? "btn-primary" : "btn-outline"}`}
+                style={{ fontSize: 12, padding: "4px 10px" }}
+                onClick={() => setDateFilterMode("today")}
               >
                 Hari Ini
               </button>
               <button
                 type="button"
-                className={`btn btn-sm ${selectedDate === "all" ? "btn-primary" : "btn-outline"}`}
-                style={{ fontSize: 11.5, padding: "4px 8px" }}
-                onClick={() => setSelectedDate("all")}
+                className={`btn btn-sm ${dateFilterMode === "month" ? "btn-primary" : "btn-outline"}`}
+                style={{ fontSize: 12, padding: "4px 10px" }}
+                onClick={() => setDateFilterMode("month")}
               >
-                Semua
+                Bulan Ini
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${dateFilterMode === "all" ? "btn-primary" : "btn-outline"}`}
+                style={{ fontSize: 12, padding: "4px 10px" }}
+                onClick={() => setDateFilterMode("all")}
+              >
+                Semua Jadwal
               </button>
 
+              <input
+                type="date"
+                className="form-input"
+                style={{ width: 140, padding: "4px 8px", fontSize: 12 }}
+                value={customDate}
+                onChange={(e) => {
+                  setCustomDate(e.target.value);
+                  setDateFilterMode("custom");
+                }}
+              />
+
+              {/* Filter Kelas */}
               <select
                 className="form-input"
-                style={{ width: "auto", minWidth: 140, padding: "5px 8px", fontSize: 12.5 }}
+                style={{ width: "auto", minWidth: 140, padding: "4px 8px", fontSize: 12 }}
                 value={filterClassId}
                 onChange={(e) => setFilterClassId(e.target.value)}
               >
@@ -520,19 +612,22 @@ export default function AbsensiPage() {
                 ))}
               </select>
 
+              {/* Filter Status Sesi */}
               <select
                 className="form-input"
-                style={{ width: "auto", padding: "5px 8px", fontSize: 12.5 }}
+                style={{ width: "auto", padding: "4px 8px", fontSize: 12 }}
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
               >
                 <option value="all">Semua Status</option>
-                <option value="completed">Sudah Diisi</option>
-                <option value="pending">Belum Diisi</option>
+                <option value="completed">Sudah Selesai</option>
+                <option value="pending">Perlu Diabsen (Hari Ini / Lewat)</option>
+                <option value="future">Jadwal Mendatang</option>
               </select>
             </div>
 
-            <div style={{ minWidth: 180, maxWidth: 260, flex: 1 }}>
+            {/* Pencarian */}
+            <div style={{ minWidth: 200, maxWidth: 280, flex: 1 }}>
               <input
                 type="text"
                 placeholder="Cari kelas / guru / materi..."
@@ -547,36 +642,36 @@ export default function AbsensiPage() {
           {/* Tabel Sesi & Logbook */}
           {loading ? (
             <div className="card" style={{ padding: 24 }}>
-              <SkeletonTable rows={4} cols={5} />
+              <SkeletonTable rows={5} cols={6} />
             </div>
           ) : filteredSessions.length === 0 ? (
             <div className="card" style={{ padding: 36, textAlign: "center", color: "var(--color-text-muted)" }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text-primary)" }}>
-                Tidak Ada Jadwal Sesi
+                Tidak Ada Jadwal Sesi Ditemukan
               </div>
               <p style={{ fontSize: 12.5, margin: "4px 0 12px" }}>
-                Tidak ditemukan sesi pada tanggal atau kriteria filter yang dipilih.
+                Tidak ada sesi kelas pada filter yang dipilih.
               </p>
               <button
                 className="btn btn-outline btn-sm"
                 onClick={() => {
-                  setSelectedDate("all");
+                  setDateFilterMode("all");
                   setFilterClassId("all");
                   setFilterStatus("all");
                   setSearchQuery("");
                 }}
               >
-                Tampilkan Semua Sesi
+                Tampilkan Semua Jadwal
               </button>
             </div>
           ) : (
             <div className="card" style={{ padding: 0, overflow: "hidden" }}>
               <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", minWidth: 800, borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
+                <table style={{ width: "100%", minWidth: 840, borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
                   <thead style={{ background: "#f8fafc", borderBottom: "1px solid var(--color-border-light)" }}>
                     <tr>
                       <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
-                        Tanggal & Jam
+                        Tanggal &amp; Jam
                       </th>
                       <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
                         Kelas
@@ -585,22 +680,26 @@ export default function AbsensiPage() {
                         Guru
                       </th>
                       <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
-                        Materi Logbook
+                        Jurnal Logbook Guru
                       </th>
                       <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
                         Presensi Siswa
                       </th>
-                      <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
+                      <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center" }}>
                         Status
                       </th>
-                      <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
+                      <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center" }}>
                         Aksi
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredSessions.map((s, idx) => {
-                      const isCompleted = s.status === "completed";
+                      const sDate = s.sessionDate?.split("T")[0] || "";
+                      const isCompleted = s.status === "completed" || s.teacherLogbook != null;
+                      const isPast = sDate < todayStr;
+                      const isToday = sDate === todayStr;
+
                       const tName = s.teacher?.name || (s.teacher as any)?.user?.name || "–";
                       const logbook = s.teacherLogbook;
                       const attendances = s.studentAttendances || [];
@@ -608,20 +707,30 @@ export default function AbsensiPage() {
                         (a: any) => a.attendance_status === "present" || a.attendanceStatus === "present"
                       ).length;
 
+                      // Label Status Sesi yang Logis & Akurat
+                      let statusBadge = { text: "Terjadwal", bg: "#f1f5f9", color: "#64748b" };
+                      if (isCompleted) {
+                        statusBadge = { text: "Selesai", bg: "#dcfce7", color: "#166534" };
+                      } else if (isToday) {
+                        statusBadge = { text: "Hari Ini", bg: "#fef3c7", color: "#92400e" };
+                      } else if (isPast) {
+                        statusBadge = { text: "Belum Diabsen", bg: "#fee2e2", color: "#991b1b" };
+                      }
+
                       return (
                         <tr
                           key={s.id}
                           style={{
                             borderBottom: idx < filteredSessions.length - 1 ? "1px solid var(--color-border-light)" : "none",
-                            background: isCompleted ? "#fff" : "#fafafa",
+                            background: isCompleted ? "#fff" : isToday ? "#fffbeb" : "#fafafa",
                           }}
                         >
                           <td style={{ padding: "12px 14px", whiteSpace: "nowrap" }}>
                             <div style={{ fontWeight: 800, color: "var(--color-text-primary)", fontSize: 13 }}>
-                              {s.sessionDate?.split("T")[0]}
+                              {sDate}
                             </div>
                             <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>
-                              {s.startTime?.substring(0, 5)} - {s.endTime?.substring(0, 5)} (Ke-{s.sessionNumber})
+                              {s.startTime?.substring(0, 5)} - {s.endTime?.substring(0, 5)} (Pertemuan ke-{s.sessionNumber})
                             </div>
                           </td>
 
@@ -645,12 +754,12 @@ export default function AbsensiPage() {
                                   {logbook.material}
                                 </div>
                                 <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>
-                                  {logbook.teaching_minutes || 60} menit
+                                  {logbook.teaching_minutes || 60} menit mengajar
                                 </div>
                               </div>
                             ) : (
                               <span style={{ fontSize: 11.5, color: "#94a3b8", fontStyle: "italic" }}>
-                                Belum diisi
+                                Belum ada jurnal
                               </span>
                             )}
                           </td>
@@ -665,28 +774,28 @@ export default function AbsensiPage() {
                             )}
                           </td>
 
-                          <td style={{ padding: "12px 14px" }}>
+                          <td style={{ padding: "12px 14px", textAlign: "center" }}>
                             <span
                               style={{
                                 fontSize: 11,
                                 fontWeight: 800,
-                                padding: "2px 8px",
+                                padding: "3px 8px",
                                 borderRadius: 4,
-                                background: isCompleted ? "#dcfce7" : "#fef3c7",
-                                color: isCompleted ? "#166534" : "#92400e",
+                                background: statusBadge.bg,
+                                color: statusBadge.color,
                               }}
                             >
-                              {isCompleted ? "Selesai" : "Belum Absen"}
+                              {statusBadge.text}
                             </span>
                           </td>
 
-                          <td style={{ padding: "12px 14px" }}>
+                          <td style={{ padding: "12px 14px", textAlign: "center" }}>
                             <button
                               className={`btn btn-sm ${isCompleted ? "btn-outline" : "btn-primary"}`}
                               style={{ fontSize: 11.5, padding: "4px 10px" }}
                               onClick={() => handleOpenForm(s)}
                             >
-                              {isCompleted ? "Edit" : "Input"}
+                              {isCompleted ? "Edit" : "Input Absen"}
                             </button>
                           </td>
                         </tr>
@@ -743,10 +852,10 @@ export default function AbsensiPage() {
             </div>
           </div>
 
-          {/* Tabel Rekap */}
+          {/* Tabel Rekap Siswa */}
           <div className="card" style={{ padding: 0, overflow: "hidden" }}>
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", minWidth: 700, borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
+              <table style={{ width: "100%", minWidth: 720, borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
                 <thead style={{ background: "#f8fafc", borderBottom: "1px solid var(--color-border-light)" }}>
                   <tr>
                     <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
@@ -759,7 +868,7 @@ export default function AbsensiPage() {
                       Kelas
                     </th>
                     <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center" }}>
-                      Total Sesi
+                      Pertemuan Berjalan
                     </th>
                     <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center" }}>
                       Hadir
@@ -768,7 +877,7 @@ export default function AbsensiPage() {
                       Telat
                     </th>
                     <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center" }}>
-                      Izin
+                      Izin / Sakit
                     </th>
                     <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center" }}>
                       Alpa
@@ -840,7 +949,7 @@ export default function AbsensiPage() {
         </div>
       )}
 
-      {/* MODAL INPUT / EDIT ABSENSI */}
+      {/* MODAL INPUT / EDIT ABSENSI & LOGBOOK */}
       <Modal
         open={showModal}
         onClose={() => setShowModal(false)}
@@ -855,7 +964,7 @@ export default function AbsensiPage() {
           {/* Checklist Siswa */}
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: "var(--color-text-primary)" }}>
-              Daftar Presensi Siswa
+              Daftar Presensi Murid
             </div>
             {loadingClassroom ? (
               <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Memuat murid...</div>
@@ -902,7 +1011,7 @@ export default function AbsensiPage() {
             )}
           </div>
 
-          {/* Jurnal Logbook */}
+          {/* Jurnal Logbook Guru */}
           <div style={{ borderTop: "1px solid var(--color-border-light)", paddingTop: 12 }}>
             <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: "var(--color-text-primary)" }}>
               Jurnal Mengajar Guru
