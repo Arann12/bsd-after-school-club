@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { getAcademicDashboard, type AcademicDashboardData } from "@/lib/api/academic";
 import { getFinanceDashboard, getIncomeReport, getOutstandingReport } from "@/lib/api/finance";
+import { exportToExcel } from "@/lib/utils/exportExcel";
 
 interface IncomeItem {
   id: string;
@@ -94,6 +95,54 @@ export default function AdminLaporanPage() {
   const summary = academicData?.summary;
   const attendance = academicData?.attendance_today;
 
+  const handleExportExcel = () => {
+    const dateStr = new Date().toISOString().split("T")[0];
+    if (tab === "pendapatan") {
+      if (incomeList.length === 0) {
+        alert("Tidak ada data pendapatan untuk diekspor.");
+        return;
+      }
+      const data = incomeList.map((row, idx) => ({
+        "No": idx + 1,
+        "Kode Transaksi": row.payment_code,
+        "Nama Siswa": row.student?.full_name || "-",
+        "Program": row.enrollment?.program?.name || "-",
+        "Metode Pembayaran": (row.payment_method || "-").toUpperCase(),
+        "Nominal (Rp)": row.total_amount || 0,
+        "Tanggal Lunas": formatTanggal(row.paid_at),
+      }));
+      exportToExcel(data, `Laporan_Penerimaan_Kasir_${dateStr}.xlsx`, "Penerimaan Kasir");
+    } else if (tab === "tunggakan") {
+      if (outstandingList.length === 0) {
+        alert("Tidak ada data tunggakan untuk diekspor.");
+        return;
+      }
+      const data = outstandingList.map((row, idx) => ({
+        "No": idx + 1,
+        "Kode Siswa": row.enrollment?.student?.student_code || "-",
+        "Nama Siswa": row.enrollment?.student?.full_name || "-",
+        "Program": row.enrollment?.program?.name || "-",
+        "Sesi": `Sesi #${row.session_number}`,
+        "Nominal Tagihan (Rp)": row.amount || 0,
+        "Jatuh Tempo": formatTanggal(row.due_date),
+        "Status": "Belum Lunas",
+      }));
+      exportToExcel(data, `Laporan_Piutang_Tunggakan_${dateStr}.xlsx`, "Piutang & Tunggakan");
+    } else {
+      const data = [
+        { "Indikator": "Siswa Aktif", "Nilai": summary?.active_students ?? 0 },
+        { "Indikator": "Total Terdaftar", "Nilai": summary?.total_students ?? 0 },
+        { "Indikator": "Guru & Pengajar", "Nilai": summary?.active_teachers ?? 0 },
+        { "Indikator": "Kelas Berjalan", "Nilai": summary?.active_classrooms ?? 0 },
+        { "Indikator": "Kehadiran Hadir", "Nilai": attendance?.present ?? 0 },
+        { "Indikator": "Kehadiran Terlambat", "Nilai": attendance?.late ?? 0 },
+        { "Indikator": "Kehadiran Izin/Sakit", "Nilai": attendance?.excused ?? 0 },
+        { "Indikator": "Kehadiran Alpa", "Nilai": attendance?.absent ?? 0 },
+      ];
+      exportToExcel(data, `Ringkasan_Operasional_${dateStr}.xlsx`, "Ringkasan Operasional");
+    }
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24, paddingBottom: 40 }}>
       {/* Header Banner */}
@@ -144,6 +193,34 @@ export default function AdminLaporanPage() {
               <rect x="6" y="14" width="12" height="8" />
             </svg>
             Cetak / Ekspor PDF
+          </button>
+          <button
+            type="button"
+            onClick={handleExportExcel}
+            style={{
+              padding: "9px 16px",
+              background: "#ffffff",
+              color: "#059669",
+              border: "none",
+              borderRadius: "var(--radius-md, 8px)",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              boxShadow: "var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.05))",
+            }}
+            title="Download file Excel (.xlsx)"
+          >
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="8" y1="13" x2="16" y2="13" />
+              <line x1="8" y1="17" x2="16" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+            Ekspor Excel
           </button>
           <button
             type="button"

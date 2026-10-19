@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getFinanceDashboard, getPayments } from "@/lib/api/finance";
 import { SkeletonCard, SkeletonTable } from "@/components/ui/Skeleton";
 import SearchableSelect from "@/components/ui/SearchableSelect";
+import { exportToExcel } from "@/lib/utils/exportExcel";
 
 export default function OwnerLaporanKeuanganPage() {
   const [loading, setLoading] = useState(true);
@@ -53,6 +54,50 @@ export default function OwnerLaporanKeuanganPage() {
   const netIncome = Number(summary.net_operating_income || totalIncome - totalPayroll);
   const overdueAmount = Number(summary.total_overdue_amount || 0);
 
+  const handleExportExcel = () => {
+    if (transactions.length === 0) {
+      alert("Tidak ada data transaksi pembayaran untuk diekspor pada periode ini.");
+      return;
+    }
+
+    const excelData = transactions.map((t, idx) => {
+      const studentName =
+        t.payment_plan?.enrollment?.student?.full_name ||
+        t.payment_plan?.enrollment?.student?.name ||
+        t.enrollment?.student?.full_name ||
+        "Siswa Bimbel";
+      const paidDate = t.paid_at || t.created_at;
+      const formattedDate = paidDate
+        ? new Date(paidDate).toLocaleDateString("id-ID", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "-";
+
+      return {
+        "No": idx + 1,
+        "ID Transaksi": t.payment_code || t.id?.substring(0, 8).toUpperCase(),
+        "Waktu Pembayaran": formattedDate,
+        "Nama Siswa": studentName,
+        "Metode Pembayaran": (t.payment_method || "Digital").toUpperCase(),
+        "Nominal (Rp)": Math.round(Number(t.total_amount || t.amount || 0)),
+        "Status": t.payment_status === "paid" ? "Lunas" : t.payment_status || "Pending",
+      };
+    });
+
+    const monthNames = [
+      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+      "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+    ];
+    const monthLabel = monthNames[selectedMonth - 1] || selectedMonth;
+    const fileName = `Laporan_Keuangan_${monthLabel}_${selectedYear}.xlsx`;
+
+    exportToExcel(excelData, fileName, `Keuangan ${monthLabel} ${selectedYear}`);
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Header Halaman */}
@@ -63,7 +108,29 @@ export default function OwnerLaporanKeuanganPage() {
             Ringkasan pendapatan, transaksi pembayaran digital & tunai, serta evaluasi operasional bimbel.
           </p>
         </div>
-        <div className="page-header-actions">
+        <div className="page-header-actions" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={handleExportExcel}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              borderColor: "#059669",
+              color: "#059669",
+            }}
+            title="Download file Excel .xlsx"
+          >
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="8" y1="13" x2="16" y2="13" />
+              <line x1="8" y1="17" x2="16" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+            <span>Ekspor Excel</span>
+          </button>
           <button className="btn btn-outline" onClick={() => window.print()} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
             <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
