@@ -75,31 +75,6 @@ export default function OwnerLaporanPage() {
           </div>
         </Link>
 
-        {/* Laporan Kehadiran */}
-        <Link href="/owner/laporan/kehadiran" style={{ textDecoration: "none" }}>
-          <div style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", padding: "28px 24px", boxShadow: "var(--shadow-sm)", cursor: "pointer", transition: "all 0.15s ease", height: "100%", display: "flex", flexDirection: "column" }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-3px)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 24px rgba(0,0,0,0.1)"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "none"; (e.currentTarget as HTMLElement).style.boxShadow = "var(--shadow-sm)"; }}
-          >
-            <div style={{ width: 48, height: 48, borderRadius: "var(--radius-md)", background: "#d1fae5", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-              <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
-                <rect x="9" y="3" width="6" height="4" rx="1" /><path d="m9 12 2 2 4-4" />
-              </svg>
-            </div>
-            <h3 style={{ fontSize: 17, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 8px" }}>Laporan Kehadiran</h3>
-            <p style={{ fontSize: 13, color: "var(--color-text-secondary)", margin: 0, lineHeight: 1.6, flex: 1 }}>
-              Rekap kehadiran siswa &amp; guru, per kelas, grafik harian, dan alert siswa bermasalah.
-            </p>
-            <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 6, fontSize: 13.5, fontWeight: 700, color: "var(--color-primary)" }}>
-              Buka Laporan
-              <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
-              </svg>
-            </div>
-          </div>
-        </Link>
-
         {/* Laporan Inventaris */}
         <Link href="/owner/laporan/inventaris" style={{ textDecoration: "none" }}>
           <div style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", padding: "28px 24px", boxShadow: "var(--shadow-sm)", cursor: "pointer", transition: "all 0.15s ease", height: "100%", display: "flex", flexDirection: "column" }}

@@ -1,105 +1,331 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Modal from "@/components/ui/Modal";
+import { SkeletonTable } from "@/components/ui/Skeleton";
 import {
-  getClassSessions, getClassroomById, submitAttendanceAndLogbook,
-  type ClassSession, type Classroom, type SubmitAttendancePayload
+  getClassSessions,
+  getClassroomById,
+  getClassrooms,
+  submitAttendanceAndLogbook,
+  type ClassSession,
+  type Classroom,
+  type SubmitAttendancePayload,
 } from "@/lib/api/academic";
-import SearchableSelect from "@/components/ui/SearchableSelect";
+import { getStudents, type Student } from "@/lib/api/students";
+import { getTeachers, type Teacher } from "@/lib/api/teachers";
 
 export default function AbsensiPage() {
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split("T")[0]);
-  
-  const [sessions, setSessions] = useState<ClassSession[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"agenda" | "rekap">("agenda");
 
-  // Form State
-  const [showModal, setShowModal] = useState(false);
+  // Filter States - Tab Agenda
+  const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
+  const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+  const [filterClassId, setFilterClassId] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+
+  // Filter States - Tab Rekap
+  const [searchStudent, setSearchStudent] = useState<string>("");
+  const [rekapClassFilter, setRekapClassFilter] = useState<string>("all");
+
+  // Core Data States
+  const [sessions, setSessions] = useState<ClassSession[]>([]);
+  const [classrooms, setClassrooms] = useState<Classroom[]>([]);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  // Modal Form State
+  const [showModal, setShowModal] = useState<boolean>(false);
   const [activeSession, setActiveSession] = useState<ClassSession | null>(null);
   const [activeClassroom, setActiveClassroom] = useState<Classroom | null>(null);
-  
+  const [loadingClassroom, setLoadingClassroom] = useState<boolean>(false);
+
   const [studentsAttendance, setStudentsAttendance] = useState<Record<string, { status: string; notes: string }>>({});
   const [logbookForm, setLogbookForm] = useState({
     check_in: "",
     check_out: "",
     teaching_minutes: 60,
     material: "",
-    notes: ""
+    notes: "",
   });
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, setSubmitting] = useState<boolean>(false);
 
-  const fetchSessions = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  // Toast State
+  const [toast, setToast] = useState<{ msg: string; type: "success" | "danger" } | null>(null);
+  const showToast = (msg: string, type: "success" | "danger" = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const calculateMinutes = (start: string, end: string) => {
     try {
-      const res = await getClassSessions(); // Backend doesn't filter yet, filter on client
-      const filtered = res.filter(s => s.sessionDate === selectedDate);
-      // Sort by start time
-      filtered.sort((a, b) => a.startTime.localeCompare(b.startTime));
-      setSessions(filtered);
-    } catch (err: any) {
-      console.error(err);
-      setError("Gagal memuat jadwal sesi.");
+      const [h1, m1] = start.split(":").map(Number);
+      const [h2, m2] = end.split(":").map(Number);
+      const diff = h2 * 60 + m2 - (h1 * 60 + m1);
+      return diff > 0 ? diff : 60;
+    } catch {
+      return 60;
+    }
+  };
+
+  // Fetch Data
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [sessionsRes, classroomsRes, teachersRes, studentsRes] = await Promise.allSettled([
+        getClassSessions({ per_page: 300 }),
+        getClassrooms({ per_page: 100 }),
+        getTeachers({ per_page: 100 }),
+        getStudents({ per_page: 250 }),
+      ]);
+
+      if (sessionsRes.status === "fulfilled") {
+        setSessions(sessionsRes.value || []);
+      }
+      if (classroomsRes.status === "fulfilled") {
+        setClassrooms(classroomsRes.value?.data || []);
+      }
+      if (teachersRes.status === "fulfilled") {
+        setTeachers(teachersRes.value?.data || []);
+      }
+      if (studentsRes.status === "fulfilled") {
+        setStudents(studentsRes.value?.data || []);
+      }
+    } catch (err) {
+      console.error("Gagal mengambil data:", err);
+      showToast("Gagal memuat data absensi.", "danger");
     } finally {
       setLoading(false);
     }
-  }, [selectedDate]);
+  }, []);
 
   useEffect(() => {
-    fetchSessions();
-  }, [fetchSessions]);
+    fetchData();
+  }, [fetchData]);
 
+  // Ringkasan Angka
+  const metrics = useMemo(() => {
+    let totalPresent = 0;
+    let totalLate = 0;
+    let totalExcused = 0;
+    let totalAbsent = 0;
+    let totalMinutes = 0;
+    let completedSessions = 0;
+
+    sessions.forEach((s) => {
+      if (s.status === "completed") completedSessions++;
+      if (s.teacherLogbook?.teaching_minutes) {
+        totalMinutes += Number(s.teacherLogbook.teaching_minutes) || 0;
+      }
+      if (Array.isArray(s.studentAttendances)) {
+        s.studentAttendances.forEach((att: any) => {
+          const st = att.attendance_status || att.attendanceStatus;
+          if (st === "present") totalPresent++;
+          else if (st === "late") totalLate++;
+          else if (st === "excused") totalExcused++;
+          else if (st === "absent") totalAbsent++;
+        });
+      }
+    });
+
+    const totalRecorded = totalPresent + totalLate + totalExcused + totalAbsent;
+    const rate = totalRecorded > 0 ? Math.round(((totalPresent + totalLate) / totalRecorded) * 100) : 0;
+    const hours = (totalMinutes / 60).toFixed(1);
+
+    return {
+      rate,
+      totalRecorded,
+      completedSessions,
+      totalSessions: sessions.length,
+      hours,
+      totalPresent,
+      totalLate,
+      totalExcused,
+      totalAbsent,
+    };
+  }, [sessions]);
+
+  // Filter Agenda
+  const filteredSessions = useMemo(() => {
+    return sessions.filter((s) => {
+      if (selectedDate && selectedDate !== "all") {
+        const sDate = s.sessionDate?.split("T")[0];
+        if (sDate !== selectedDate) return false;
+      }
+      if (filterClassId !== "all") {
+        const cid = s.classroomId || s.classroom?.id;
+        if (cid !== filterClassId) return false;
+      }
+      if (filterStatus === "completed" && s.status !== "completed") return false;
+      if (filterStatus === "pending" && s.status === "completed") return false;
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const cName = s.classroom?.name?.toLowerCase() || "";
+        const tName = s.teacher?.name?.toLowerCase() || (s.teacher as any)?.user?.name?.toLowerCase() || "";
+        const mat = s.teacherLogbook?.material?.toLowerCase() || "";
+        if (!cName.includes(q) && !tName.includes(q) && !mat.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [sessions, selectedDate, filterClassId, filterStatus, searchQuery]);
+
+  // Rekapitulasi Siswa
+  const studentRecapList = useMemo(() => {
+    const recapMap = new Map<
+      string,
+      {
+        id: string;
+        name: string;
+        code: string;
+        className: string;
+        total: number;
+        present: number;
+        late: number;
+        excused: number;
+        absent: number;
+      }
+    >();
+
+    students.forEach((st) => {
+      const cName = st.enrollments?.[0]?.classroom?.name || st.program?.name || "Reguler";
+      recapMap.set(st.id, {
+        id: st.id,
+        name: st.name,
+        code: st.studentCode || st.nis || "-",
+        className: cName,
+        total: 0,
+        present: 0,
+        late: 0,
+        excused: 0,
+        absent: 0,
+      });
+    });
+
+    sessions.forEach((s) => {
+      if (Array.isArray(s.studentAttendances)) {
+        s.studentAttendances.forEach((att: any) => {
+          const sid = att.student_id || att.studentId || att.student?.id;
+          if (!sid) return;
+
+          let entry = recapMap.get(sid);
+          if (!entry) {
+            entry = {
+              id: sid,
+              name: att.student?.name || att.student?.full_name || "Siswa",
+              code: att.student?.student_code || att.student?.studentCode || "-",
+              className: s.classroom?.name || "Reguler",
+              total: 0,
+              present: 0,
+              late: 0,
+              excused: 0,
+              absent: 0,
+            };
+            recapMap.set(sid, entry);
+          }
+
+          const st = att.attendance_status || att.attendanceStatus;
+          entry.total++;
+          if (st === "present") entry.present++;
+          else if (st === "late") entry.late++;
+          else if (st === "excused") entry.excused++;
+          else if (st === "absent") entry.absent++;
+        });
+      }
+    });
+
+    return Array.from(recapMap.values())
+      .map((r) => {
+        const rate = r.total > 0 ? Math.round(((r.present + r.late) / r.total) * 100) : 100;
+        return { ...r, rate };
+      })
+      .filter((item) => {
+        if (searchStudent.trim()) {
+          const q = searchStudent.toLowerCase();
+          if (!item.name.toLowerCase().includes(q) && !item.code.toLowerCase().includes(q)) return false;
+        }
+        if (rekapClassFilter !== "all") {
+          if (!item.className.toLowerCase().includes(rekapClassFilter.toLowerCase())) return false;
+        }
+        return true;
+      });
+  }, [students, sessions, searchStudent, rekapClassFilter]);
+
+  // Buka Modal Form
   const handleOpenForm = async (session: ClassSession) => {
     setActiveSession(session);
     setActiveClassroom(null);
     setStudentsAttendance({});
+
+    const existingLog = session.teacherLogbook;
+    const sessionDateOnly = session.sessionDate?.split("T")[0] || todayStr;
+    const defaultCheckIn = `${sessionDateOnly}T${session.startTime?.substring(0, 5) || "14:00"}`;
+    const defaultCheckOut = `${sessionDateOnly}T${session.endTime?.substring(0, 5) || "15:30"}`;
+
     setLogbookForm({
-      check_in: `${session.sessionDate}T${session.startTime}`,
-      check_out: `${session.sessionDate}T${session.endTime}`,
-      teaching_minutes: calculateMinutes(session.startTime, session.endTime),
-      material: "",
-      notes: ""
+      check_in: existingLog?.check_in ? existingLog.check_in.replace(" ", "T").substring(0, 16) : defaultCheckIn,
+      check_out: existingLog?.check_out ? existingLog.check_out.replace(" ", "T").substring(0, 16) : defaultCheckOut,
+      teaching_minutes: existingLog?.teaching_minutes || calculateMinutes(session.startTime, session.endTime),
+      material: existingLog?.material || "",
+      notes: existingLog?.notes || "",
     });
+
     setShowModal(true);
+    setLoadingClassroom(true);
 
     try {
-      const classroom = await getClassroomById(session.classroomId);
-      setActiveClassroom(classroom);
-      
-      // Initialize attendance state for all enrolled students
-      const initAtt: Record<string, { status: string; notes: string }> = {};
-      classroom.students.forEach(s => {
-        initAtt[s.id] = { status: "present", notes: "" };
-      });
-      setStudentsAttendance(initAtt);
+      const cId = session.classroomId || session.classroom?.id;
+      if (cId) {
+        const classroom = await getClassroomById(cId);
+        setActiveClassroom(classroom);
+
+        const initAtt: Record<string, { status: string; notes: string }> = {};
+        const existingAttList = session.studentAttendances || [];
+
+        classroom.students.forEach((st) => {
+          const found = existingAttList.find((ea: any) => (ea.student_id || ea.studentId) === st.id);
+          initAtt[st.id] = {
+            status: found?.attendance_status || found?.attendanceStatus || "present",
+            notes: found?.notes || "",
+          };
+        });
+
+        existingAttList.forEach((ea: any) => {
+          const sid = ea.student_id || ea.studentId;
+          if (sid && !initAtt[sid]) {
+            initAtt[sid] = {
+              status: ea.attendance_status || ea.attendanceStatus || "present",
+              notes: ea.notes || "",
+            };
+          }
+        });
+
+        setStudentsAttendance(initAtt);
+      }
     } catch (err) {
-      alert("Gagal memuat data siswa untuk kelas ini.");
+      console.warn("Gagal memuat murid kelas:", err);
+    } finally {
+      setLoadingClassroom(false);
     }
   };
 
-  const calculateMinutes = (start: string, end: string) => {
-    const [h1, m1] = start.split(":").map(Number);
-    const [h2, m2] = end.split(":").map(Number);
-    let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
-    return diff > 0 ? diff : 60;
-  };
-
   const handleAttendanceChange = (studentId: string, field: "status" | "notes", value: string) => {
-    setStudentsAttendance(prev => ({
+    setStudentsAttendance((prev) => ({
       ...prev,
       [studentId]: {
         ...prev[studentId],
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
   const handleSubmit = async () => {
     if (!activeSession) return;
-    if (!logbookForm.check_in || !logbookForm.check_out || !logbookForm.material) {
-      return alert("Mohon lengkapi logbook: Jam Masuk, Jam Keluar, dan Materi.");
+    if (!logbookForm.check_in || !logbookForm.check_out || !logbookForm.material.trim()) {
+      showToast("Lengkapi jam masuk, keluar, dan materi pelajaran.", "danger");
+      return;
     }
 
     setSubmitting(true);
@@ -108,190 +334,649 @@ export default function AbsensiPage() {
         students: Object.entries(studentsAttendance).map(([id, data]) => ({
           student_id: id,
           attendance_status: data.status as "present" | "absent" | "late" | "excused",
-          notes: data.notes || undefined
+          notes: data.notes || undefined,
         })),
         logbook: {
           check_in: logbookForm.check_in.includes("T") ? logbookForm.check_in.replace("T", " ") : logbookForm.check_in,
           check_out: logbookForm.check_out.includes("T") ? logbookForm.check_out.replace("T", " ") : logbookForm.check_out,
-          teaching_minutes: logbookForm.teaching_minutes,
-          material: logbookForm.material,
-          notes: logbookForm.notes || undefined
-        }
+          teaching_minutes: Number(logbookForm.teaching_minutes) || 60,
+          material: logbookForm.material.trim(),
+          notes: logbookForm.notes?.trim() || undefined,
+        },
       };
 
       await submitAttendanceAndLogbook(activeSession.id, payload);
-      alert("Absensi dan Logbook berhasil disimpan!");
+      showToast("Absensi dan logbook berhasil disimpan.", "success");
       setShowModal(false);
-      fetchSessions();
+      fetchData();
     } catch (err: any) {
       console.error(err);
-      alert("Gagal menyimpan data: " + (err.response?.data?.message || err.message));
+      showToast(err.response?.data?.message || err.message || "Gagal menyimpan data.", "danger");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: 1000, margin: "0 auto", width: "100%" }}>
-      <div className="page-header" style={{ marginBottom: 20 }}>
-        <div>
-          <h1 className="page-title">Absensi & Logbook</h1>
-          <p className="page-subtitle">Isi kehadiran siswa dan catat jurnal kegiatan belajar.</p>
-        </div>
-        <div className="page-header-actions" style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <label style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text-secondary)" }}>Tanggal Sesi:</label>
-          <input
-            type="date"
-            className="form-input"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            style={{ width: "auto" }}
-          />
-        </div>
-      </div>
-
-      {loading ? (
-        <div style={{ textAlign: "center", padding: 40, color: "var(--color-text-muted)" }}>Memuat sesi...</div>
-      ) : error ? (
-        <div style={{ color: "var(--color-danger)", padding: 20 }}>{error}</div>
-      ) : sessions.length === 0 ? (
-        <div style={{ textAlign: "center", padding: 60, background: "#f8fafc", borderRadius: 12, border: "1px dashed var(--color-border-light)" }}>
-          <div style={{ fontSize: 16, fontWeight: 600, color: "var(--color-text-primary)" }}>Tidak ada jadwal sesi</div>
-          <p style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 4 }}>
-            Pastikan tanggal yang dipilih benar, atau pastikan Admin sudah men-generate sesi pada Jadwal Rutin.
-          </p>
-        </div>
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-          {sessions.map(s => {
-            const isCompleted = s.status === "completed";
-            return (
-              <div key={s.id} style={{ 
-                background: "#fff", 
-                border: `1px solid ${isCompleted ? "#86efac" : "var(--color-border-light)"}`, 
-                borderRadius: 12, 
-                padding: 20,
-                boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
-                position: "relative"
-              }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-                  <span style={{ 
-                    fontSize: 11, 
-                    fontWeight: 700, 
-                    padding: "4px 8px", 
-                    borderRadius: 20, 
-                    background: isCompleted ? "#dcfce7" : "#e0e7ff", 
-                    color: isCompleted ? "#166534" : "#3730a3" 
-                  }}>
-                    {isCompleted ? "SELESAI" : "TERJADWAL"}
-                  </span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)" }}>
-                    {s.startTime.substring(0, 5)} - {s.endTime.substring(0, 5)}
-                  </span>
-                </div>
-                
-                <h3 style={{ margin: "0 0 4px 0", fontSize: 16, color: "var(--color-text-primary)" }}>{s.classroom?.name}</h3>
-                <p style={{ margin: 0, fontSize: 13, color: "var(--color-text-secondary)" }}>Guru: {s.teacher?.name || (s.teacher as any)?.user?.name || "Tidak ada guru"}</p>
-                <p style={{ margin: "4px 0 16px 0", fontSize: 12, color: "var(--color-text-muted)" }}>Sesi ke-{s.sessionNumber}</p>
-                
-                <button 
-                  className={`btn ${isCompleted ? 'btn-ghost' : 'btn-primary'}`} 
-                  style={{ width: "100%", border: isCompleted ? "1px solid #bbf7d0" : undefined }}
-                  onClick={() => handleOpenForm(s)}
-                >
-                  {isCompleted ? "Lihat/Edit Jurnal" : "Isi Absen & Logbook"}
-                </button>
-              </div>
-            );
-          })}
+    <div style={{ display: "flex", flexDirection: "column", gap: 18, maxWidth: 1200, margin: "0 auto", width: "100%" }}>
+      {/* Toast */}
+      {toast && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            zIndex: 9999,
+            background: toast.type === "success" ? "#065f46" : "#991b1b",
+            color: "#fff",
+            padding: "10px 18px",
+            borderRadius: 8,
+            boxShadow: "0 8px 20px rgba(0,0,0,0.18)",
+            fontSize: 13,
+            fontWeight: 700,
+          }}
+        >
+          {toast.msg}
         </div>
       )}
 
-      {/* MODAL ABSENSI & LOGBOOK */}
-      <Modal open={showModal} onClose={() => setShowModal(false)} title={`Sesi: ${activeSession?.classroom?.name || ""}`} maxWidth={700}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 20, maxHeight: "80vh", overflowY: "auto", paddingRight: 8 }}>
-          
-          {/* Bagian Absensi */}
-          <div>
-            <h4 style={{ margin: "0 0 12px 0", fontSize: 15, color: "var(--color-text-primary)", borderBottom: "1px solid var(--color-border-light)", paddingBottom: 8 }}>Daftar Hadir Siswa</h4>
-            {!activeClassroom ? (
-              <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>Memuat daftar siswa...</div>
-            ) : activeClassroom.students.length === 0 ? (
-              <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>Tidak ada siswa aktif di kelas ini.</div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {activeClassroom.students.map(student => (
-                  <div key={student.id} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, alignItems: "center", background: "#f8fafc", padding: "10px 14px", borderRadius: 8 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13 }}>{student.name}</div>
-                    <div>
-                      <SearchableSelect
-                        className="form-input"
-                        style={{ padding: "4px 8px", fontSize: 12, minWidth: 130 }}
-                        value={studentsAttendance[student.id]?.status || "present"}
-                        onChange={e => handleAttendanceChange(student.id, "status", e.target.value)}
+      {/* HEADER */}
+      <div className="page-header" style={{ marginBottom: 0 }}>
+        <div>
+          <h1 className="page-title">Absensi & Logbook Guru</h1>
+          <p className="page-subtitle">Pencatatan kehadiran siswa dan verifikasi jurnal mengajar per kelas.</p>
+        </div>
+        <div className="page-header-actions" style={{ display: "flex", gap: 8 }}>
+          <button className="btn btn-outline" onClick={() => window.print()} style={{ fontSize: 13 }}>
+            Cetak Rekap
+          </button>
+          <button className="btn btn-primary" onClick={fetchData} disabled={loading} style={{ fontSize: 13 }}>
+            {loading ? "Memuat..." : "Refresh"}
+          </button>
+        </div>
+      </div>
+
+      {/* 4 KARTU METRIK UTAMA */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+        <div className="stat-card" style={{ padding: "14px 18px" }}>
+          <span className="stat-card-label" style={{ fontSize: 11.5, fontWeight: 700 }}>Rata-rata Kehadiran</span>
+          <div className="stat-card-value" style={{ fontSize: 24, color: "#059669", fontWeight: 800 }}>
+            {loading ? "..." : `${metrics.rate}%`}
+          </div>
+          <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>
+            {metrics.totalRecorded} presensi tercatat
+          </div>
+        </div>
+
+        <div className="stat-card" style={{ padding: "14px 18px" }}>
+          <span className="stat-card-label" style={{ fontSize: 11.5, fontWeight: 700 }}>Sesi Selesai</span>
+          <div className="stat-card-value" style={{ fontSize: 24, color: "#1d4ed8", fontWeight: 800 }}>
+            {loading ? "..." : `${metrics.completedSessions}`}
+            <span style={{ fontSize: 14, color: "var(--color-text-muted)", fontWeight: 500 }}> / {metrics.totalSessions} sesi</span>
+          </div>
+          <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>
+            {metrics.totalSessions - metrics.completedSessions} belum diabsen
+          </div>
+        </div>
+
+        <div className="stat-card" style={{ padding: "14px 18px" }}>
+          <span className="stat-card-label" style={{ fontSize: 11.5, fontWeight: 700 }}>Total Jam Mengajar</span>
+          <div className="stat-card-value" style={{ fontSize: 24, color: "#7c3aed", fontWeight: 800 }}>
+            {loading ? "..." : `${metrics.hours} Jam`}
+          </div>
+          <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>
+            Akumulasi logbook guru
+          </div>
+        </div>
+
+        <div className="stat-card" style={{ padding: "14px 18px" }}>
+          <span className="stat-card-label" style={{ fontSize: 11.5, fontWeight: 700 }}>Presensi Tercatat</span>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#dcfce7", color: "#166534" }}>
+              Hadir: {metrics.totalPresent}
+            </span>
+            <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#fef3c7", color: "#92400e" }}>
+              Telat: {metrics.totalLate}
+            </span>
+            <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#e0f2fe", color: "#0369a1" }}>
+              Izin: {metrics.totalExcused}
+            </span>
+            <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 6px", borderRadius: 4, background: "#fee2e2", color: "#991b1b" }}>
+              Alpa: {metrics.totalAbsent}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* TAB PILIHAN */}
+      <div style={{ display: "flex", gap: 8, borderBottom: "1px solid var(--color-border-light)", paddingBottom: 8 }}>
+        <button
+          onClick={() => setActiveTab("agenda")}
+          className={`btn ${activeTab === "agenda" ? "btn-primary" : "btn-ghost"}`}
+          style={{ padding: "7px 16px", borderRadius: 8, fontSize: 13, fontWeight: 700 }}
+        >
+          Sesi & Logbook Harian ({sessions.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("rekap")}
+          className={`btn ${activeTab === "rekap" ? "btn-primary" : "btn-ghost"}`}
+          style={{ padding: "7px 16px", borderRadius: 8, fontSize: 13, fontWeight: 700 }}
+        >
+          Rekap Kehadiran Siswa ({studentRecapList.length})
+        </button>
+      </div>
+
+      {/* TAB 1: SESI & LOGBOOK HARIAN */}
+      {activeTab === "agenda" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {/* Filter Bar */}
+          <div
+            className="card"
+            style={{
+              padding: "12px 16px",
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 10,
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+              <input
+                type="date"
+                className="form-input"
+                style={{ width: 140, padding: "5px 8px", fontSize: 12.5 }}
+                value={selectedDate === "all" ? "" : selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value || "all")}
+              />
+              <button
+                type="button"
+                className={`btn btn-sm ${selectedDate === todayStr ? "btn-primary" : "btn-outline"}`}
+                style={{ fontSize: 11.5, padding: "4px 8px" }}
+                onClick={() => setSelectedDate(todayStr)}
+              >
+                Hari Ini
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${selectedDate === "all" ? "btn-primary" : "btn-outline"}`}
+                style={{ fontSize: 11.5, padding: "4px 8px" }}
+                onClick={() => setSelectedDate("all")}
+              >
+                Semua
+              </button>
+
+              <select
+                className="form-input"
+                style={{ width: "auto", minWidth: 140, padding: "5px 8px", fontSize: 12.5 }}
+                value={filterClassId}
+                onChange={(e) => setFilterClassId(e.target.value)}
+              >
+                <option value="all">Semua Kelas</option>
+                {classrooms.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                className="form-input"
+                style={{ width: "auto", padding: "5px 8px", fontSize: 12.5 }}
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+              >
+                <option value="all">Semua Status</option>
+                <option value="completed">Sudah Diisi</option>
+                <option value="pending">Belum Diisi</option>
+              </select>
+            </div>
+
+            <div style={{ minWidth: 180, maxWidth: 260, flex: 1 }}>
+              <input
+                type="text"
+                placeholder="Cari kelas / guru / materi..."
+                className="form-input"
+                style={{ padding: "5px 10px", fontSize: 12.5 }}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Tabel Sesi & Logbook */}
+          {loading ? (
+            <div className="card" style={{ padding: 24 }}>
+              <SkeletonTable rows={4} cols={5} />
+            </div>
+          ) : filteredSessions.length === 0 ? (
+            <div className="card" style={{ padding: 36, textAlign: "center", color: "var(--color-text-muted)" }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text-primary)" }}>
+                Tidak Ada Jadwal Sesi
+              </div>
+              <p style={{ fontSize: 12.5, margin: "4px 0 12px" }}>
+                Tidak ditemukan sesi pada tanggal atau kriteria filter yang dipilih.
+              </p>
+              <button
+                className="btn btn-outline btn-sm"
+                onClick={() => {
+                  setSelectedDate("all");
+                  setFilterClassId("all");
+                  setFilterStatus("all");
+                  setSearchQuery("");
+                }}
+              >
+                Tampilkan Semua Sesi
+              </button>
+            </div>
+          ) : (
+            <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", minWidth: 800, borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
+                  <thead style={{ background: "#f8fafc", borderBottom: "1px solid var(--color-border-light)" }}>
+                    <tr>
+                      <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
+                        Tanggal & Jam
+                      </th>
+                      <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
+                        Kelas
+                      </th>
+                      <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
+                        Guru
+                      </th>
+                      <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
+                        Materi Logbook
+                      </th>
+                      <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
+                        Presensi Siswa
+                      </th>
+                      <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
+                        Status
+                      </th>
+                      <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
+                        Aksi
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredSessions.map((s, idx) => {
+                      const isCompleted = s.status === "completed";
+                      const tName = s.teacher?.name || (s.teacher as any)?.user?.name || "–";
+                      const logbook = s.teacherLogbook;
+                      const attendances = s.studentAttendances || [];
+                      const presentCount = attendances.filter(
+                        (a: any) => a.attendance_status === "present" || a.attendanceStatus === "present"
+                      ).length;
+
+                      return (
+                        <tr
+                          key={s.id}
+                          style={{
+                            borderBottom: idx < filteredSessions.length - 1 ? "1px solid var(--color-border-light)" : "none",
+                            background: isCompleted ? "#fff" : "#fafafa",
+                          }}
+                        >
+                          <td style={{ padding: "12px 14px", whiteSpace: "nowrap" }}>
+                            <div style={{ fontWeight: 800, color: "var(--color-text-primary)", fontSize: 13 }}>
+                              {s.sessionDate?.split("T")[0]}
+                            </div>
+                            <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>
+                              {s.startTime?.substring(0, 5)} - {s.endTime?.substring(0, 5)} (Ke-{s.sessionNumber})
+                            </div>
+                          </td>
+
+                          <td style={{ padding: "12px 14px" }}>
+                            <div style={{ fontWeight: 700, color: "var(--color-text-primary)" }}>
+                              {s.classroom?.name || "Kelas"}
+                            </div>
+                            <div style={{ fontSize: 11.5, color: "var(--color-text-muted)" }}>
+                              {s.classroom?.programLevel?.name || "Reguler"}
+                            </div>
+                          </td>
+
+                          <td style={{ padding: "12px 14px", color: "var(--color-text-primary)", fontWeight: 600 }}>
+                            {tName}
+                          </td>
+
+                          <td style={{ padding: "12px 14px", maxWidth: 220 }}>
+                            {logbook?.material ? (
+                              <div>
+                                <div style={{ fontWeight: 600, color: "var(--color-text-primary)", fontSize: 12.5 }}>
+                                  {logbook.material}
+                                </div>
+                                <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>
+                                  {logbook.teaching_minutes || 60} menit
+                                </div>
+                              </div>
+                            ) : (
+                              <span style={{ fontSize: 11.5, color: "#94a3b8", fontStyle: "italic" }}>
+                                Belum diisi
+                              </span>
+                            )}
+                          </td>
+
+                          <td style={{ padding: "12px 14px", whiteSpace: "nowrap" }}>
+                            {attendances.length > 0 ? (
+                              <div style={{ fontSize: 12 }}>
+                                <strong style={{ color: "#166534" }}>{presentCount}</strong> / {attendances.length} Hadir
+                              </div>
+                            ) : (
+                              <span style={{ fontSize: 11.5, color: "#94a3b8" }}>–</span>
+                            )}
+                          </td>
+
+                          <td style={{ padding: "12px 14px" }}>
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 800,
+                                padding: "2px 8px",
+                                borderRadius: 4,
+                                background: isCompleted ? "#dcfce7" : "#fef3c7",
+                                color: isCompleted ? "#166534" : "#92400e",
+                              }}
+                            >
+                              {isCompleted ? "Selesai" : "Belum Absen"}
+                            </span>
+                          </td>
+
+                          <td style={{ padding: "12px 14px" }}>
+                            <button
+                              className={`btn btn-sm ${isCompleted ? "btn-outline" : "btn-primary"}`}
+                              style={{ fontSize: 11.5, padding: "4px 10px" }}
+                              onClick={() => handleOpenForm(s)}
+                            >
+                              {isCompleted ? "Edit" : "Input"}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 2: REKAP KEHADIRAN SISWA */}
+      {activeTab === "rekap" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {/* Filter Bar Rekap */}
+          <div
+            className="card"
+            style={{
+              padding: "12px 16px",
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 10,
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <div style={{ display: "flex", gap: 10, flex: 1, minWidth: 240 }}>
+              <input
+                type="text"
+                placeholder="Cari nama siswa / NIS..."
+                className="form-input"
+                style={{ padding: "5px 10px", fontSize: 12.5 }}
+                value={searchStudent}
+                onChange={(e) => setSearchStudent(e.target.value)}
+              />
+              <select
+                className="form-input"
+                style={{ width: "auto", minWidth: 150, padding: "5px 8px", fontSize: 12.5 }}
+                value={rekapClassFilter}
+                onChange={(e) => setRekapClassFilter(e.target.value)}
+              >
+                <option value="all">Semua Kelas</option>
+                {classrooms.map((c) => (
+                  <option key={c.id} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+              Total: <strong>{studentRecapList.length}</strong> siswa
+            </div>
+          </div>
+
+          {/* Tabel Rekap */}
+          <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", minWidth: 700, borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
+                <thead style={{ background: "#f8fafc", borderBottom: "1px solid var(--color-border-light)" }}>
+                  <tr>
+                    <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
+                      NIS
+                    </th>
+                    <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
+                      Nama Siswa
+                    </th>
+                    <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
+                      Kelas
+                    </th>
+                    <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center" }}>
+                      Total Sesi
+                    </th>
+                    <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center" }}>
+                      Hadir
+                    </th>
+                    <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center" }}>
+                      Telat
+                    </th>
+                    <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center" }}>
+                      Izin
+                    </th>
+                    <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", textAlign: "center" }}>
+                      Alpa
+                    </th>
+                    <th style={{ padding: "10px 14px", fontSize: 11, fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase" }}>
+                      % Kehadiran
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {studentRecapList.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} style={{ textAlign: "center", padding: 24, color: "var(--color-text-muted)" }}>
+                        Tidak ada data siswa ditemukan.
+                      </td>
+                    </tr>
+                  ) : (
+                    studentRecapList.map((row, idx) => (
+                      <tr
+                        key={row.id + idx}
+                        style={{ borderBottom: idx < studentRecapList.length - 1 ? "1px solid var(--color-border-light)" : "none" }}
                       >
-                        <option value="present">Hadir</option>
-                        <option value="absent">Absen (Tanpa Ket)</option>
-                        <option value="late">Terlambat</option>
-                        <option value="excused">Izin / Sakit</option>
-                      </SearchableSelect>
-                    </div>
-                    <div>
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="Catatan nilai/perilaku..."
-                        style={{ padding: "4px 8px", fontSize: 12 }}
-                        value={studentsAttendance[student.id]?.notes || ""}
-                        onChange={e => handleAttendanceChange(student.id, "notes", e.target.value)}
-                      />
-                    </div>
+                        <td style={{ padding: "10px 14px", fontFamily: "monospace", fontSize: 12, color: "var(--color-text-muted)" }}>
+                          {row.code}
+                        </td>
+                        <td style={{ padding: "10px 14px", fontWeight: 700, color: "var(--color-text-primary)" }}>
+                          {row.name}
+                        </td>
+                        <td style={{ padding: "10px 14px", color: "var(--color-text-secondary)" }}>
+                          {row.className}
+                        </td>
+                        <td style={{ padding: "10px 14px", textAlign: "center", fontWeight: 600 }}>
+                          {row.total}
+                        </td>
+                        <td style={{ padding: "10px 14px", textAlign: "center", fontWeight: 700, color: "#166534" }}>
+                          {row.present}
+                        </td>
+                        <td style={{ padding: "10px 14px", textAlign: "center", color: "#92400e" }}>
+                          {row.late}
+                        </td>
+                        <td style={{ padding: "10px 14px", textAlign: "center", color: "#0369a1" }}>
+                          {row.excused}
+                        </td>
+                        <td style={{ padding: "10px 14px", textAlign: "center", color: "#991b1b" }}>
+                          {row.absent}
+                        </td>
+                        <td style={{ padding: "10px 14px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <div style={{ flex: 1, minWidth: 50, height: 5, background: "#e2e8f0", borderRadius: 999 }}>
+                              <div
+                                style={{
+                                  width: `${row.rate}%`,
+                                  height: "100%",
+                                  background: row.rate >= 80 ? "#10b981" : row.rate >= 60 ? "#f59e0b" : "#ef4444",
+                                  borderRadius: 999,
+                                }}
+                              />
+                            </div>
+                            <span style={{ fontSize: 11.5, fontWeight: 700, width: 30 }}>{row.rate}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL INPUT / EDIT ABSENSI */}
+      <Modal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        title={`Absensi: ${activeSession?.classroom?.name || "Kelas"} (Pertemuan #${activeSession?.sessionNumber || 1})`}
+        maxWidth={640}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ background: "#f8fafc", padding: "8px 12px", borderRadius: 6, fontSize: 12.5, color: "var(--color-text-secondary)" }}>
+            Tanggal: <strong>{activeSession?.sessionDate?.split("T")[0]}</strong> ({activeSession?.startTime?.substring(0, 5)} - {activeSession?.endTime?.substring(0, 5)}) • Guru: <strong>{activeSession?.teacher?.name || "–"}</strong>
+          </div>
+
+          {/* Checklist Siswa */}
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: "var(--color-text-primary)" }}>
+              Daftar Presensi Siswa
+            </div>
+            {loadingClassroom ? (
+              <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Memuat murid...</div>
+            ) : !activeClassroom || activeClassroom.students.length === 0 ? (
+              <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Tidak ada siswa di kelas ini.</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {activeClassroom.students.map((st) => (
+                  <div
+                    key={st.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      background: "#fff",
+                      border: "1px solid #e2e8f0",
+                      padding: "6px 10px",
+                      borderRadius: 6,
+                    }}
+                  >
+                    <div style={{ flex: 1, fontSize: 12.5, fontWeight: 700 }}>{st.name}</div>
+                    <select
+                      className="form-input"
+                      style={{ width: "auto", padding: "3px 6px", fontSize: 12 }}
+                      value={studentsAttendance[st.id]?.status || "present"}
+                      onChange={(e) => handleAttendanceChange(st.id, "status", e.target.value)}
+                    >
+                      <option value="present">Hadir</option>
+                      <option value="late">Telat</option>
+                      <option value="excused">Izin / Sakit</option>
+                      <option value="absent">Alpa</option>
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="Catatan..."
+                      className="form-input"
+                      style={{ width: 140, padding: "3px 6px", fontSize: 12 }}
+                      value={studentsAttendance[st.id]?.notes || ""}
+                      onChange={(e) => handleAttendanceChange(st.id, "notes", e.target.value)}
+                    />
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Bagian Logbook */}
-          <div>
-            <h4 style={{ margin: "0 0 12px 0", fontSize: 15, color: "var(--color-text-primary)", borderBottom: "1px solid var(--color-border-light)", paddingBottom: 8 }}>Logbook Guru (Jurnal)</h4>
+          {/* Jurnal Logbook */}
+          <div style={{ borderTop: "1px solid var(--color-border-light)", paddingTop: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, color: "var(--color-text-primary)" }}>
+              Jurnal Mengajar Guru
+            </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label" style={{ fontSize: 12 }}>Jam Masuk Aktual</label>
-                <input type="datetime-local" className="form-input" value={logbookForm.check_in} onChange={e => setLogbookForm({...logbookForm, check_in: e.target.value})} />
+                <label className="form-label" style={{ fontSize: 11 }}>Jam Masuk</label>
+                <input
+                  type="datetime-local"
+                  className="form-input"
+                  style={{ fontSize: 11.5 }}
+                  value={logbookForm.check_in}
+                  onChange={(e) => setLogbookForm({ ...logbookForm, check_in: e.target.value })}
+                />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label" style={{ fontSize: 12 }}>Jam Keluar Aktual</label>
-                <input type="datetime-local" className="form-input" value={logbookForm.check_out} onChange={e => setLogbookForm({...logbookForm, check_out: e.target.value})} />
+                <label className="form-label" style={{ fontSize: 11 }}>Jam Keluar</label>
+                <input
+                  type="datetime-local"
+                  className="form-input"
+                  style={{ fontSize: 11.5 }}
+                  value={logbookForm.check_out}
+                  onChange={(e) => setLogbookForm({ ...logbookForm, check_out: e.target.value })}
+                />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label" style={{ fontSize: 12 }}>Total Menit (Untuk Payroll)</label>
-                <input type="number" className="form-input" value={logbookForm.teaching_minutes} onChange={e => setLogbookForm({...logbookForm, teaching_minutes: parseInt(e.target.value) || 0})} />
+                <label className="form-label" style={{ fontSize: 11 }}>Durasi (Menit)</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  style={{ fontSize: 11.5 }}
+                  value={logbookForm.teaching_minutes}
+                  onChange={(e) => setLogbookForm({ ...logbookForm, teaching_minutes: Number(e.target.value) || 0 })}
+                />
               </div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: 12 }}>
-              <label className="form-label" style={{ fontSize: 12 }}>Materi yang Diajarkan *</label>
-              <textarea className="form-input" rows={2} placeholder="Contoh: Phonics Blends, Membaca 2 Suku Kata..." value={logbookForm.material} onChange={e => setLogbookForm({...logbookForm, material: e.target.value})}></textarea>
+            <div className="form-group" style={{ marginBottom: 8 }}>
+              <label className="form-label" style={{ fontSize: 11 }}>Materi Pelajaran *</label>
+              <textarea
+                className="form-input"
+                rows={2}
+                placeholder="Materi yang diajarkan pada sesi ini..."
+                style={{ fontSize: 12 }}
+                value={logbookForm.material}
+                onChange={(e) => setLogbookForm({ ...logbookForm, material: e.target.value })}
+              />
             </div>
 
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ fontSize: 12 }}>Catatan Kelas (Opsional)</label>
-              <textarea className="form-input" rows={2} placeholder="Kondisi kelas secara keseluruhan..." value={logbookForm.notes} onChange={e => setLogbookForm({...logbookForm, notes: e.target.value})}></textarea>
+              <label className="form-label" style={{ fontSize: 11 }}>Catatan Sesi (Opsional)</label>
+              <textarea
+                className="form-input"
+                rows={2}
+                placeholder="Catatan kelas atau evaluasi siswa..."
+                style={{ fontSize: 12 }}
+                value={logbookForm.notes}
+                onChange={(e) => setLogbookForm({ ...logbookForm, notes: e.target.value })}
+              />
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 10, marginTop: 10, position: "sticky", bottom: -20, background: "#fff", paddingTop: 10, borderTop: "1px solid var(--color-border-light)", flexWrap: "wrap" }}>
-            <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setShowModal(false)} disabled={submitting}>Batal</button>
-            <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleSubmit} disabled={submitting || !activeClassroom}>
-              {submitting ? "Menyimpan Data..." : "Simpan Absensi & Logbook"}
+          {/* Actions */}
+          <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+            <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setShowModal(false)} disabled={submitting}>
+              Batal
+            </button>
+            <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleSubmit} disabled={submitting}>
+              {submitting ? "Menyimpan..." : "Simpan Absensi"}
             </button>
           </div>
-
         </div>
       </Modal>
-
     </div>
   );
 }

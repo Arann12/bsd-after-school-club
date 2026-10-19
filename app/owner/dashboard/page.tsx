@@ -337,7 +337,6 @@ export default function OwnerDashboardPage() {
           <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 14px" }}>Laporan</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {[{ label: "Laporan Keuangan", sub: "Bulanan & Detail", href: "/owner/laporan/keuangan", color: "#1d4ed8", bg: "var(--color-info-bg)" },
-              { label: "Laporan Kehadiran", sub: "Siswa & Guru", href: "/owner/laporan/kehadiran", color: "#059669", bg: "var(--color-success-bg)" },
               { label: "Laporan Inventaris", sub: "Status Barang", href: "/owner/laporan/inventaris", color: "#0369a1", bg: "var(--color-info-bg)" },
             ].map(m => (
               <Link key={m.href} href={m.href} style={{ textDecoration: "none" }}>
@@ -369,11 +368,11 @@ export default function OwnerDashboardPage() {
         <div className="card" style={{ padding: 22 }}>
           <h3 style={{ fontSize: 15, fontWeight: 800, color: "var(--color-text-primary)", margin: "0 0 14px" }}>Pengaturan</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <Link href="/owner/tarif" style={{ textDecoration: "none" }}>
+            <Link href="/owner/honor?tab=tarif" style={{ textDecoration: "none" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "#ede9fe", borderRadius: 8, border: "1.5px solid #7c3aed18" }}>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#7c3aed" }}>Pengaturan Honor</div>
-                  <div style={{ fontSize: 11, color: "#64748b" }}>Tarif per jam per guru</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#7c3aed" }}>Tarif & Honor Guru</div>
+                  <div style={{ fontSize: 11, color: "#64748b" }}>Pengaturan tarif per jam guru</div>
                 </div>
               </div>
             </Link>

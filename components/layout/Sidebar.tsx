@@ -208,7 +208,7 @@ export const ownerNav: NavSection[] = [
     items: [
       { label: "Tagihan & Kasir", href: "/owner/tagihan", icon: "Invoice" },
       { label: "Pembayaran", href: "/owner/pembayaran", icon: "CreditCard" },
-      { label: "Honor Guru/Staff", href: "/owner/honor", icon: "DollarSign" },
+      { label: "Honor & Tarif Guru", href: "/owner/honor", icon: "DollarSign" },
     ],
   },
   {
@@ -222,7 +222,6 @@ export const ownerNav: NavSection[] = [
     section: "LAPORAN",
     items: [
       { label: "Laporan Keuangan", href: "/owner/laporan/keuangan", icon: "BarChart2" },
-      { label: "Laporan Kehadiran", href: "/owner/laporan/kehadiran", icon: "ClipboardCheck" },
       { label: "Laporan Inventaris", href: "/owner/laporan/inventaris", icon: "FileText" },
     ],
   },
@@ -232,12 +231,6 @@ export const ownerNav: NavSection[] = [
       { label: "Akun Admin", href: "/owner/kelola-akun/admin", icon: "ShieldCheck" },
       { label: "Guru & Staff", href: "/owner/guru", icon: "GraduationCap" },
       { label: "Orang Tua", href: "/owner/orang-tua", icon: "Users" },
-    ],
-  },
-  {
-    section: "SYSTEM",
-    items: [
-      { label: "Pengaturan Honor", href: "/owner/tarif", icon: "Settings" },
     ],
   },
 ];
