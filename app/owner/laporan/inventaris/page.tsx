@@ -11,6 +11,7 @@ import {
 import { formatRupiah } from "@/lib/constants";
 import { SkeletonCard, SkeletonTable } from "@/components/ui/Skeleton";
 import SearchableSelect from "@/components/ui/SearchableSelect";
+import { exportToExcel } from "@/lib/utils/exportExcel";
 
 interface ItemInventaris {
   id: string;
@@ -116,6 +117,29 @@ export default function InventarisLaporanPage() {
     catch { showToast("Gagal menghapus barang."); }
   };
 
+  const handleExportExcel = () => {
+    if (terfilter.length === 0) {
+      showToast("Tidak ada data inventaris untuk diekspor.");
+      return;
+    }
+    const excelData = terfilter.map((item, idx) => ({
+      "No": idx + 1,
+      "Kode Barang": item.inventory_code,
+      "Nama Barang": item.nama,
+      "Kategori": item.kategori,
+      "Jumlah (Unit)": item.jumlah,
+      "Kondisi": item.kondisi,
+      "Lokasi": item.lokasi,
+      "Harga Satuan (Rp)": item.hargaSatuan,
+      "Total Nilai (Rp)": item.jumlah * item.hargaSatuan,
+      "Tanggal Pengadaan": item.tglPengadaan,
+    }));
+
+    const dateStr = new Date().toISOString().split("T")[0];
+    exportToExcel(excelData, `Laporan_Inventaris_${dateStr}.xlsx`, "Inventaris & Aset");
+    showToast("Laporan inventaris berhasil diekspor ke Excel!");
+  };
+
   const statCards = [
     { label:"Total Nilai Aset",         value:formatRupiah(totalAssetValue),                                      color:"#1d4ed8" },
     { label:"Total Item Barang",         value:String(items.length) + " Item / " + String(totalUnits) + " Unit",  color:"#0f172a" },
@@ -138,9 +162,25 @@ export default function InventarisLaporanPage() {
           <h1 className="page-title">Inventaris &amp; Laporan Aset</h1>
           <p className="page-subtitle">Pengelolaan dan laporan fasilitas, alat peraga, serta aset BSD After School Club.</p>
         </div>
-        <div className="page-header-actions">
+        <div className="page-header-actions" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            className="btn btn-outline btn-sm"
+            onClick={handleExportExcel}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, borderColor: "#059669", color: "#059669" }}
+            title="Download file Excel .xlsx"
+          >
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="8" y1="13" x2="16" y2="13" />
+              <line x1="8" y1="17" x2="16" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+            <span>Ekspor Excel</span>
+          </button>
           <button className="btn btn-outline btn-sm" onClick={() => window.print()}>Cetak PDF</button>
-          <button className="btn btn-accent" onClick={openAdd}>+ Tambah Barang</button>
+          <button className="btn btn-accent btn-sm" onClick={openAdd}>+ Tambah Barang</button>
         </div>
       </div>
 
