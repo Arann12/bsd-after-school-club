@@ -872,7 +872,7 @@ export default function SchedulePage() {
                   fetchAgendaSessions();
                 }}
               >
-                🔄 Reset Filter & Segarkan
+                Reset Filter & Segarkan
               </button>
             </div>
           </div>
@@ -966,11 +966,11 @@ export default function SchedulePage() {
                             <td style={{ padding: "12px 16px" }}>
                               {isResched ? (
                                 <span style={{ fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999, background: "#fef3c7", color: "#b45309" }}>
-                                  🔄 Di-reschedule
+                                  Di-reschedule
                                 </span>
                               ) : isSelesai ? (
                                 <span style={{ fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999, background: "#d1fae5", color: "#059669" }}>
-                                  ✓ Selesai
+                                  Selesai
                                 </span>
                               ) : isHariIni ? (
                                 <span style={{ fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 999, background: "#dbeafe", color: "#1d4ed8" }}>
@@ -997,7 +997,7 @@ export default function SchedulePage() {
                                   title="Geser tanggal atau jam sesi ini ke waktu lain (tidak hangus)"
                                   onClick={() => handleOpenReschedule(s)}
                                 >
-                                  🔄 Geser / Reschedule
+                                  Geser / Reschedule
                                 </button>
                                 {!s.isProjected && (
                                   <button
@@ -1029,7 +1029,7 @@ export default function SchedulePage() {
       <Modal
         open={showPeriodModal}
         onClose={() => setShowPeriodModal(false)}
-        title="⚡ Generate Sesi Periode (Multi-Hari)"
+        title="Generate Sesi Periode (Multi-Hari)"
         maxWidth={620}
       >
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -1254,7 +1254,7 @@ export default function SchedulePage() {
         <Modal
           open
           onClose={() => setSessionToReschedule(null)}
-          title="🔄 Geser / Reschedule Jadwal Sesi"
+          title="Geser / Reschedule Jadwal Sesi"
           maxWidth={480}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>

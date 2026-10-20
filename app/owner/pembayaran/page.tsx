@@ -506,7 +506,7 @@ export default function OwnerPembayaranPage() {
             </div>
             {overduePlans.length === 0 ? (
               <div style={{ padding: "48px 20px", textAlign: "center", color: "var(--color-text-muted)", fontSize: 13 }}>
-                🎉 Tidak ada tagihan yang melewati jatuh tempo. Semua tagihan tertib dibayar!
+                Tidak ada tagihan yang melewati jatuh tempo. Semua tagihan tertib dibayar.
               </div>
             ) : (
               <div style={{ overflowX: "auto" }}>

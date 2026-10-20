@@ -428,7 +428,10 @@ export default function GuruJadwalPage() {
                         </div>
                       ) : sesi.status === "Hari Ini" ? (
                         <Link href={`/guru/kelas/${sesi.classroomId || sesi.id}`} style={{ background: "var(--color-primary)", color: "#fff", padding: "9px 18px", borderRadius: 10, fontWeight: 700, fontSize: 13, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
-                          ▶ Mulai
+                          <svg width={14} height={14} viewBox="0 0 24 24" fill="currentColor">
+                            <polygon points="5 3 19 12 5 21 5 3" />
+                          </svg>
+                          <span>Mulai</span>
                         </Link>
                       ) : (
                         <span style={{ fontSize: 12, color: "var(--color-text-muted)", fontWeight: 600, padding: "6px 12px", background: "var(--color-bg)", borderRadius: 8, display: "inline-block" }}>

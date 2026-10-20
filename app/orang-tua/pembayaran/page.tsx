@@ -1128,7 +1128,9 @@ export default function PembayaranPage() {
                               <polyline points="20 6 9 17 4 12" />
                             </svg>
                           ) : isPendingCash ? (
-                            <span style={{ fontSize: 11, fontWeight: 900 }}>⏳</span>
+                            <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                            </svg>
                           ) : (
                             <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                               <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
@@ -1158,7 +1160,7 @@ export default function PembayaranPage() {
                           borderRadius: 999,
                         }}
                       >
-                        {isPlanPaid ? "LUNAS" : isPendingCash ? "⏳ MENUNGGU KASIR" : "BELUM DIBAYAR"}
+                        {isPlanPaid ? "LUNAS" : isPendingCash ? "MENUNGGU KASIR" : "BELUM DIBAYAR"}
                       </span>
                     </div>
                   );
@@ -1265,7 +1267,7 @@ export default function PembayaranPage() {
                   : unpaidPlans.length === 0
                   ? "Semua Pertemuan Lunas"
                   : nextUnpaidIsPendingCash
-                  ? "⏳ Menunggu Verifikasi Kasir"
+                  ? "Menunggu Verifikasi Kasir"
                   : `Bayar Pertemuan (${formatRupiah(nextUnpaidNominal)})`}
               </span>
             </button>

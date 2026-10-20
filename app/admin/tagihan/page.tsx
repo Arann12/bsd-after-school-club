@@ -554,7 +554,7 @@ export default function AdminTagihanPage() {
                   }}
                   style={{ background: "none", border: "none", color: "#dc2626", fontSize: 11.5, fontWeight: 600, cursor: "pointer" }}
                 >
-                  ✕ Batalkan Pilihan
+                  Batalkan Pilihan
                 </button>
               )}
             </div>
@@ -623,7 +623,7 @@ export default function AdminTagihanPage() {
                                 setCashAmount(t.jumlah);
                               }}
                             >
-                              {isSelected ? "✓ Dipilih" : "Pilih"}
+                              {isSelected ? "Dipilih" : "Pilih"}
                             </button>
                           </td>
                         </tr>

@@ -343,7 +343,7 @@ export function printReceipt(data: ReceiptData) {
         </div>
       </div>
       <div class="status-badge">
-        ${isPaid ? "✓ LUNAS (PAID)" : data.status}
+        ${isPaid ? "LUNAS (PAID)" : data.status}
       </div>
     </div>
 
