@@ -86,6 +86,8 @@ export default function AdminDashboardPage() {
           { label: "Kelas", sub: `${stats.activeClasses} Aktif`, href: "/admin/classes", color: "#d97706", bg: "var(--color-accent-bg)" },
           { label: "Jadwal", sub: "Kelola Jadwal Mingguan", href: "/admin/schedule", color: "#059669", bg: "var(--color-success-bg)" },
           { label: "Absensi & Logbook", sub: "Isi Absensi Harian", href: "/admin/absensi", color: "#0369a1", bg: "var(--color-info-bg)" },
+          { label: "Penilaian Siswa", sub: "Input & Rekap Nilai", href: "/admin/penilaian", color: "#b45309", bg: "#fef3c7" },
+          { label: "Sertifikat Kelulusan", sub: "Cetak Dokumen Resmi", href: "/admin/sertifikat", color: "#7c3aed", bg: "#ede9fe" },
           { label: "Program", sub: "Kelola Program", href: "/admin/programs", color: "#059669", bg: "var(--color-success-bg)" },
           { label: "Orang Tua", sub: `Data Orang Tua`, href: "/admin/orang-tua", color: "#059669", bg: "var(--color-success-bg)" },
         ]} />

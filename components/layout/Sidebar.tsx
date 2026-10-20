@@ -200,7 +200,8 @@ export const ownerNav: NavSection[] = [
       { label: "Kelas", href: "/owner/kelas", icon: "Door" },
       { label: "Jadwal", href: "/owner/jadwal", icon: "Calendar" },
       { label: "Absensi & Logbook", href: "/owner/absensi", icon: "ClipboardCheck" },
-      { label: "Penilaian & Sertifikat", href: "/owner/penilaian", icon: "Award" },
+      { label: "Penilaian Siswa", href: "/owner/penilaian", icon: "Award" },
+      { label: "Sertifikat Kelulusan", href: "/owner/sertifikat", icon: "FileText" },
     ],
   },
   {
@@ -251,7 +252,8 @@ export const adminNav: NavSection[] = [
       { label: "Kelas", href: "/admin/classes", icon: "Door" },
       { label: "Jadwal", href: "/admin/schedule", icon: "Calendar" },
       { label: "Absensi & Logbook", href: "/admin/absensi", icon: "ClipboardCheck" },
-      { label: "Sertifikat Kelulusan", href: "/admin/sertifikat", icon: "Award" },
+      { label: "Penilaian Siswa", href: "/admin/penilaian", icon: "Award" },
+      { label: "Sertifikat Kelulusan", href: "/admin/sertifikat", icon: "FileText" },
     ],
   },
   {
@@ -307,6 +309,7 @@ export const guruNav: NavSection[] = [
     items: [
       { label: "Jadwal Mengajar", href: "/guru/jadwal", icon: "Calendar" },
       { label: "Kelas & Absensi", href: "/guru/kelas", icon: "UserCheck" },
+      { label: "Penilaian Siswa", href: "/guru/progress", icon: "Award" },
       { label: "Kalender & Logbook", href: "/guru/logbook", icon: "ClipboardCheck" },
       { label: "Pengumuman", href: "/guru/pengumuman", icon: "Bell" },
     ],

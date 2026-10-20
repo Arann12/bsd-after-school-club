@@ -13,6 +13,7 @@ export interface ProgramLevelRaw {
   name: string;
   level_order: number;
   is_active: boolean;
+  program?: ProgramRaw;
   classrooms?: ClassroomRaw[];
 }
 
@@ -63,6 +64,7 @@ export interface ProgramLevel {
   name: string;
   levelOrder: number;
   isActive: boolean;
+  program?: Program;
   classrooms?: Classroom[];
 }
 
@@ -86,7 +88,7 @@ export interface Classroom {
   programLevel?: ProgramLevel;
   teachers: ClassTeacher[];
   schedules?: ClassSchedule[];
-  students: { id: string; name: string }[];
+  students: { id: string; name: string; enrollmentId?: string }[];
 }
 
 export interface ClassTeacher {
@@ -193,6 +195,7 @@ export function mapProgramLevel(raw: ProgramLevelRaw): ProgramLevel {
     name: raw.name,
     levelOrder: raw.level_order,
     isActive: raw.is_active,
+    program: raw.program ? mapProgram(raw.program) : undefined,
     classrooms: raw.classrooms ? raw.classrooms.map(mapClassroom) : undefined,
   };
 }
@@ -235,7 +238,8 @@ export function mapClassroom(raw: ClassroomRaw): Classroom {
     schedules: raw.class_schedules ? raw.class_schedules.map(mapClassSchedule) : [],
     students: raw.enrollments ? raw.enrollments.map(e => ({
       id: e.student_id,
-      name: e.student?.full_name || "Unknown Student"
+      name: e.student?.full_name || "Unknown Student",
+      enrollmentId: e.id,
     })) : [],
   };
 }

@@ -226,10 +226,25 @@ export default function GuruKelasListPage() {
                     {k.siswa} Siswa
                   </div>
                   <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>Level: {k.level}</div>
-                  <Link href={`/guru/kelas/${k.id}`} onClick={e => e.stopPropagation()} className="btn btn-accent" style={{ padding: "7px 16px", fontSize: 12.5, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
-                    <svg width={13} height={13} viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                    Mulai Sesi
-                  </Link>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    <Link
+                      href={`/guru/kelas/${k.id}?tab=penilaian`}
+                      onClick={e => e.stopPropagation()}
+                      className="btn btn-outline"
+                      style={{ padding: "6px 12px", fontSize: 12, textDecoration: "none" }}
+                    >
+                      Input Nilai
+                    </Link>
+                    <Link
+                      href={`/guru/kelas/${k.id}`}
+                      onClick={e => e.stopPropagation()}
+                      className="btn btn-accent"
+                      style={{ padding: "6px 14px", fontSize: 12, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5 }}
+                    >
+                      <svg width={12} height={12} viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                      Mulai Sesi
+                    </Link>
+                  </div>
                 </div>
               </div>
             );
@@ -277,11 +292,22 @@ export default function GuruKelasListPage() {
             </div>
 
             {/* Tombol Aksi */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10 }}>
               <button className="btn btn-ghost" onClick={() => setDipilih(null)}>Tutup</button>
-              <Link href={`/guru/kelas/${dipilih?.id}`} className="btn btn-accent" style={{ textDecoration: "none", textAlign: "center", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <Link
+                href={`/guru/kelas/${dipilih?.id}?tab=penilaian`}
+                className="btn btn-outline"
+                style={{ textDecoration: "none", textAlign: "center", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 12.5 }}
+              >
+                Input Nilai Kelas
+              </Link>
+              <Link
+                href={`/guru/kelas/${dipilih?.id}`}
+                className="btn btn-accent"
+                style={{ textDecoration: "none", textAlign: "center", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 12.5 }}
+              >
                 <svg width={13} height={13} viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                Mulai Sesi Sekarang
+                Mulai Sesi
               </Link>
             </div>
       </Modal>

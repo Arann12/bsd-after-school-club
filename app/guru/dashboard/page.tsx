@@ -144,6 +144,7 @@ export default function GuruDashboardPage() {
           {[
             { label: "Jadwal Mengajar", sub: `${data.sessionsToday} Sesi Hari Ini`, href: "/guru/jadwal", color: "#1d4ed8", bg: "var(--color-info-bg)" },
             { label: "Kelas & Absensi",  sub: "Isi Absensi",  href: "/guru/kelas",    color: "#7c3aed", bg: "#ede9fe" },
+            { label: "Penilaian Siswa",  sub: "Input Nilai Siswa", href: "/guru/progress", color: "#0284c7", bg: "#e0f2fe" },
             { label: "Logbook",          sub: "Isi Materi",   href: "/guru/logbook",  color: "#059669", bg: "var(--color-success-bg)" },
             { label: "Pengumuman",       sub: "Info Terbaru", href: "/guru/pengumuman", color: "#b45309", bg: "var(--color-warning-bg)" },
             { label: "Honor Saya",       sub: "Cek Rekap",   href: "/guru/honor",    color: "#0369a1", bg: "var(--color-info-bg)" },

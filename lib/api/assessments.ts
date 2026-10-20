@@ -83,6 +83,25 @@ export async function getAssessment(id: string): Promise<any> {
   return data;
 }
 
+export async function updateAssessment(
+  id: string,
+  payload: Partial<{
+    assessment_name: string;
+    score: number;
+    weight: number;
+    assessment_date: string;
+    status: "draft" | "final";
+  }>
+): Promise<any> {
+  const { data } = await axiosInstance.put(`/assessments/${id}`, payload);
+  return data;
+}
+
+export async function deleteAssessment(id: string): Promise<any> {
+  const { data } = await axiosInstance.delete(`/assessments/${id}`);
+  return data;
+}
+
 // ── Final Reports API ────────────────────────────────────────
 export async function getFinalReports(params?: {
   student_id?: string;

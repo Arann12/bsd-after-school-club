@@ -26,7 +26,8 @@ interface EnrollmentRaw {
 
 interface AssessmentRaw {
   id: string;
-  assessment_type: string;
+  assessment_name?: string;
+  assessment_type?: string;
   score: number | null;
   max_score: number | null;
   assessment_date: string;
@@ -329,7 +330,7 @@ export default function OrangTuaProgressPage() {
                         <div key={a.id} style={{ background: "var(--color-bg)", borderRadius: 10, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
                           <div>
                             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--color-text-primary)" }}>
-                              {a.assessment_type}
+                              {a.assessment_name || a.assessment_type || "Penilaian"}
                             </div>
                             <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 2 }}>
                               {formatDate(a.assessment_date)}

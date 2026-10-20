@@ -253,7 +253,8 @@ export default function OwnerDashboardPage() {
           { label: "Kelas", sub: `${data.activeClasses} Kelas`, href: "/owner/kelas", color: "#7c3aed", bg: "#ede9fe" },
           { label: "Jadwal", sub: `${data.sessionsToday} Hari Ini`, href: "/owner/jadwal", color: "#059669", bg: "var(--color-success-bg)" },
           { label: "Absensi & Logbook", sub: "Rekap kehadiran", href: "/owner/absensi", color: "#0369a1", bg: "var(--color-info-bg)" },
-          { label: "Penilaian", sub: "Nilai & Sertifikat", href: "/owner/penilaian", color: "#d97706", bg: "var(--color-accent-bg)" },
+          { label: "Penilaian Siswa", sub: "Input & Rekap Nilai", href: "/owner/penilaian", color: "#b45309", bg: "#fef3c7" },
+          { label: "Sertifikat Kelulusan", sub: "Cetak Dokumen Resmi", href: "/owner/sertifikat", color: "#7c3aed", bg: "#ede9fe" },
         ]} />
       </div>
 

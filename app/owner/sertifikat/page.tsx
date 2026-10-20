@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { getCertificates } from "@/lib/api/assessments";
 import { SkeletonTable } from "@/components/ui/Skeleton";
 
@@ -24,6 +26,9 @@ const predikatDesc: Record<string, string> = {
 };
 
 export default function SertifikatPage() {
+  const pathname = usePathname();
+  const penilaianLink = pathname?.startsWith("/admin") ? "/admin/penilaian" : "/owner/penilaian";
+
   const [certList, setCertList] = useState<CertificateItemDisplay[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -107,6 +112,11 @@ export default function SertifikatPage() {
         <div>
           <h1 className="page-title">Sertifikat Kelulusan Siswa</h1>
           <p className="page-subtitle">Modul penerbitan sertifikat kelulusan program dan pencetakan dokumen resmi BSD After School Club.</p>
+        </div>
+        <div className="page-header-actions">
+          <Link href={penilaianLink} className="btn btn-outline" style={{ fontSize: 13, fontWeight: 700 }}>
+            &larr; Kelola &amp; Input Penilaian
+          </Link>
         </div>
       </div>
 
@@ -262,7 +272,11 @@ export default function SertifikatPage() {
               {/* Main Content */}
               <div style={{ textAlign: "left", position: "relative", zIndex: 1 }}>
                 <h1 style={{ fontSize: "clamp(24px, 5vw, 38px)", fontFamily: "Georgia, serif", fontWeight: 700, color: "#1e3a8a", letterSpacing: "0.08em", marginBottom: 20 }}>
-                  SERTIFIKAT KELULUSAN
+                  {selectedCert.program.toUpperCase().includes("AHE") ||
+                  selectedCert.program.toUpperCase().includes("ASE") ||
+                  selectedCert.program.toUpperCase().includes("PHONICS")
+                    ? "PIAGAM KELULUSAN"
+                    : "SERTIFIKAT KELULUSAN"}
                 </h1>
 
                 <p style={{ fontSize: 13.5, color: "#334155", marginBottom: 4 }}>Diberikan Kepada :</p>
@@ -271,7 +285,12 @@ export default function SertifikatPage() {
                 </h2>
 
                 <p style={{ fontSize: 13.5, color: "#334155", lineHeight: 1.7, maxWidth: 540 }}>
-                  Telah berhasil menyelesaikan program pembelajaran <strong>{getProgramFullName(selectedCert.program, selectedCert.level)}</strong> di BSD After School Club {predikatDesc[selectedCert.predikat] || `dengan nilai akhir ${selectedCert.nilaiAkhir}.`}
+                  Telah berhasil menyelesaikan program pembelajaran <strong>{getProgramFullName(selectedCert.program, selectedCert.level)}</strong> di BSD After School Club{" "}
+                  {selectedCert.program.toUpperCase().includes("AHE") ||
+                  selectedCert.program.toUpperCase().includes("ASE") ||
+                  selectedCert.program.toUpperCase().includes("PHONICS")
+                    ? "dan dinyatakan telah menyelesaikan seluruh materi dengan baik."
+                    : predikatDesc[selectedCert.predikat] || `dengan nilai akhir ${selectedCert.nilaiAkhir}.`}
                 </p>
 
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16, marginTop: 32, paddingTop: 16 }}>

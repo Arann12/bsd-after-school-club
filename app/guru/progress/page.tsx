@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import Modal from "@/components/ui/Modal";
 import { getAssessments, createAssessment } from "@/lib/api/assessments";
 import { getStudents, Student } from "@/lib/api/students";
@@ -133,13 +134,42 @@ export default function GuruProgressPage() {
       {/* Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">Progress & Penilaian Belajar Siswa</h1>
-          <p className="page-subtitle">Pencatatan perkembangan belajar siswa per program & level.</p>
+          <h1 className="page-title">Progress &amp; Penilaian Belajar Siswa</h1>
+          <p className="page-subtitle">Pencatatan perkembangan belajar dan evaluasi nilai siswa BSD After School Club.</p>
         </div>
-        <div className="page-header-actions">
-          <button className="btn btn-accent" onClick={() => setShowInputModal(true)}>
-            + Input Progress Belajar Siswa
+        <div className="page-header-actions" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <Link href="/guru/kelas" className="btn btn-outline" style={{ fontSize: 13, textDecoration: "none" }}>
+            Input Nilai Sekelas (Batch) &rarr;
+          </Link>
+          <button className="btn btn-accent" onClick={() => setShowInputModal(true)} style={{ fontSize: 13 }}>
+            + Input Nilai Siswa
           </button>
+        </div>
+      </div>
+
+      {/* Ketentuan Penilaian Sesuai Dokumen Kurikulum Bimbel */}
+      <div
+        style={{
+          background: "#f0f9ff",
+          border: "1px solid #bae6fd",
+          borderRadius: 10,
+          padding: "12px 16px",
+          fontSize: 12.5,
+          color: "#0369a1",
+          lineHeight: 1.5,
+        }}
+      >
+        <div style={{ fontWeight: 800, color: "#0369a1", marginBottom: 3 }}>
+          Standar Penilaian BSD After School Club:
+        </div>
+        <div style={{ color: "#334155" }}>
+          1. <strong>Bahasa Inggris</strong> memiliki 4 komponen nilai: <strong>Vocabulary</strong>, <strong>Test 1</strong>, <strong>Test 2</strong>, dan <strong>Test Grammar</strong> (Rata-rata 4 nilai otomatis menjadi <strong>Penilaian Akhir</strong> untuk Sertifikat Kelulusan).
+        </div>
+        <div style={{ color: "#334155", marginTop: 2 }}>
+          2. <strong>AHE, ASE, &amp; Phonics</strong> tidak menggunakan penilaian angka, melainkan diberikan <strong>Piagam Kelulusan</strong> berdasarkan ketuntasan materi.
+        </div>
+        <div style={{ color: "#334155", marginTop: 2 }}>
+          3. <strong>Matematika</strong> menggunakan sistem latihan modul tematik mandiri tanpa sertifikat kelulusan.
         </div>
       </div>
 
@@ -231,16 +261,37 @@ export default function GuruProgressPage() {
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Indikator Pembelajaran / Topik Capaian</label>
+              <label style={{ display: "block", fontSize: 12.5, fontWeight: 700, marginBottom: 4 }}>Komponen Penilaian / Materi Capaian *</label>
               <input
                 type="text"
                 required
                 className="input-control"
                 value={indikatorText}
                 onChange={(e) => setIndikatorText(e.target.value)}
-                placeholder="Contoh: Mengenal Abjad Vokal & Membaca 2 Suku Kata"
+                placeholder="Pilih cepat di bawah atau ketik manual..."
                 style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid var(--color-border)" }}
               />
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap", alignItems: "center", marginTop: 6 }}>
+                <span style={{ fontSize: 11, color: "var(--color-text-muted)", fontWeight: 700 }}>Preset English:</span>
+                {["Vocabulary", "Test 1", "Test 2", "Test Grammar"].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    style={{
+                      fontSize: 11,
+                      padding: "2px 7px",
+                      background: indikatorText === preset ? "#dbeafe" : "#f1f5f9",
+                      color: indikatorText === preset ? "#1d4ed8" : "inherit",
+                      borderRadius: 4,
+                      fontWeight: 600,
+                    }}
+                    onClick={() => setIndikatorText(preset)}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div>

@@ -197,14 +197,23 @@ export default function OrangTuaSertifikatPage() {
         >
           <div style={{ background: "#fff", borderRadius: 12, maxWidth: 640, width: "100%", padding: 32, position: "relative" }}>
             <h2 style={{ fontSize: 24, fontWeight: 800, color: "var(--color-primary)", textAlign: "center", margin: "0 0 16px" }}>
-              Sertifikat Kelulusan
+              {selectedCert.program.toUpperCase().includes("AHE") ||
+              selectedCert.program.toUpperCase().includes("ASE") ||
+              selectedCert.program.toUpperCase().includes("PHONICS")
+                ? "Piagam Kelulusan"
+                : "Sertifikat Kelulusan"}
             </h2>
             <div style={{ textAlign: "center", lineHeight: 1.8, fontSize: 14 }}>
               Diberikan kepada:
               <div style={{ fontSize: 22, fontWeight: 800, color: "var(--color-text-primary)", margin: "8px 0" }}>
                 {selectedCert.studentName}
               </div>
-              Telah menyelesaikan program <strong>{selectedCert.program} ({selectedCert.level})</strong> dengan predikat <strong>{selectedCert.predikat}</strong>.
+              Telah menyelesaikan program <strong>{selectedCert.program} ({selectedCert.level})</strong>{" "}
+              {selectedCert.program.toUpperCase().includes("AHE") ||
+              selectedCert.program.toUpperCase().includes("ASE") ||
+              selectedCert.program.toUpperCase().includes("PHONICS")
+                ? "di BSD After School Club dan dinyatakan tuntas."
+                : `dengan predikat ${selectedCert.predikat}.`}
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginTop: 24, fontSize: 12, color: "var(--color-text-muted)" }}>
               <span>No. Registrasi: {selectedCert.nomorSertifikat}</span>
