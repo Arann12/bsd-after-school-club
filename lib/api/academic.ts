@@ -456,6 +456,27 @@ export async function getClassSessionById(id: string) {
   return mapClassSession(res.data.data);
 }
 
+export async function rescheduleClassSession(
+  sessionId: string,
+  data: { session_date: string; start_time: string; end_time: string }
+) {
+  const res = await axiosInstance.post<ApiResponse<ClassSessionRaw>>(`/class-sessions/${sessionId}/reschedule`, data);
+  return mapClassSession(res.data.data);
+}
+
+export async function updateClassSession(
+  sessionId: string,
+  data: { status?: string; is_holiday?: boolean }
+) {
+  const res = await axiosInstance.put<ApiResponse<ClassSessionRaw>>(`/class-sessions/${sessionId}`, data);
+  return mapClassSession(res.data.data);
+}
+
+export async function deleteClassSession(sessionId: string) {
+  const res = await axiosInstance.delete<ApiResponse<null>>(`/class-sessions/${sessionId}`);
+  return res.data;
+}
+
 export async function submitAttendanceAndLogbook(sessionId: string, payload: SubmitAttendancePayload) {
   const res = await axiosInstance.post<ApiResponse<any>>(`/class-sessions/${sessionId}/submit-attendance`, payload);
   return res.data;
